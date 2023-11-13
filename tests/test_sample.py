@@ -1,11 +1,11 @@
-from grokking_llm import utils
+from grokking_llm.utils import paths
 
 
 def test_configs():
     # Check that these entries exist
-    utils.cfg_main
-    utils.path_root
-    utils.path_model_hub
-    utils.path_data
-    utils.path_output
-    utils.path_logs
+    paths.main_cfg_object
+    paths.root
+    paths.model_hub
+    paths.data
+    paths.output
+    paths.logs
