@@ -13,7 +13,7 @@ ABSOLUTE_PATH = "absolute"
 
 
 # Project root
-root = Path(__file__).parent.parent.parent.parent
+root = Path(__file__).parent.parent.parent
 configs = root / "configs"
 
 # Main config

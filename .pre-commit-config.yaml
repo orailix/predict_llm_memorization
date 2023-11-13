@@ -18,5 +18,5 @@ repos:
     hooks:
     -   id: run-tests
         name: Pytest tests
-        entry: bash -c 'PYTHONPATH=./src pytest'
+        entry: bash -c 'PYTHONPATH=. pytest'
         language: system
