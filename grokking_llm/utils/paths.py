@@ -21,13 +21,13 @@ main_cfg_object = configparser.ConfigParser()
 main_cfg_object.read(configs / "main.cfg")
 
 # Path to model hub
-if main_cfg_object["paths.model_hub"]["mode"] == RELATIVE_PATH:
-    model_hub = root / main_cfg_object["paths.model_hub"]["val"]
-elif main_cfg_object["paths.model_hub"]["mode"] == ABSOLUTE_PATH:
-    model_hub = Path(main_cfg_object["paths.model_hub"]["val"])
+if main_cfg_object["paths.hf_cache"]["mode"] == RELATIVE_PATH:
+    hf_cache = root / main_cfg_object["paths.hf_cache"]["val"]
+elif main_cfg_object["paths.hf_cache"]["mode"] == ABSOLUTE_PATH:
+    hf_cache = Path(main_cfg_object["paths.hf_cache"]["val"])
 else:
     raise ValueError(
-        f'main_cfg["paths.model_hub"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
+        f'main_cfg["paths.hf_cache"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
     )
 
 # Path to data
