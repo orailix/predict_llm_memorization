@@ -1,7 +1,11 @@
-import pytest
-
-from grokking_llm import main
+from grokking_llm import utils
 
 
-def test_hello_world(sample_args):
-    assert main(sample_args) == sample_args
+def test_configs():
+    # Check that these entries exist
+    utils.cfg_main
+    utils.path_root
+    utils.path_model_hub
+    utils.path_data
+    utils.path_output
+    utils.path_logs

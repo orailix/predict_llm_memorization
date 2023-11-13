@@ -9,6 +9,11 @@ repos:
     rev: 22.10.0
     hooks:
     -   id: black
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        name: isort
 -   repo: local
     hooks:
     -   id: run-tests
