@@ -48,7 +48,8 @@ if not offline:
         credentials_cfg = configparser.ConfigParser()
         credentials_cfg.read(credentials_path)
         token = credentials_cfg["huggingface"]["token"]
-        logger.info(
+        logger.info(f"Found HF token {token[:3]}{(len(token)-8)*'*'}{token[-5:]}")
+        logger.debug(
             f"Exporting env variable HF_TOKEN={token[:3]}{(len(token)-8)*'*'}{token[-5:]}"
         )
         os.environ["HF_TOKEN"] = token
