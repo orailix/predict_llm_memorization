@@ -6,6 +6,7 @@ Apache Licence v2.0.
 """
 
 import configparser
+import os
 from pathlib import Path
 
 RELATIVE_PATH = "relative"
@@ -20,14 +21,24 @@ configs = root / "configs"
 main_cfg_object = configparser.ConfigParser()
 main_cfg_object.read(configs / "main.cfg")
 
+# Path to user directory
+if "HOME" in os.environ:
+    user_dir = Path(os.environ["HOME"]) # Unix
+elif "HOMEPATH" in os.environ:
+    user_dir = Path(os.environ["HOMEPATH"]) # Windows
+else:
+    raise ValueError("User directory found neither in $HOME nor $HOMEPATH. Please declare env variable $HOME manually.")
+
 # Path to model hub
-if main_cfg_object["paths.hf_cache"]["mode"] == RELATIVE_PATH:
-    hf_cache = root / main_cfg_object["paths.hf_cache"]["val"]
-elif main_cfg_object["paths.hf_cache"]["mode"] == ABSOLUTE_PATH:
-    hf_cache = Path(main_cfg_object["paths.hf_cache"]["val"])
+if "val" not in main_cfg_object["paths.hf_home"]:
+    hf_home = user_dir / ".cache" / "huggingface"
+elif main_cfg_object["paths.hf_home"]["mode"] == RELATIVE_PATH:
+    hf_home = root / main_cfg_object["paths.hf_home"]["val"]
+elif main_cfg_object["paths.hf_home"]["mode"] == ABSOLUTE_PATH:
+    hf_home = Path(main_cfg_object["paths.hf_home"]["val"])
 else:
     raise ValueError(
-        f'main_cfg["paths.hf_cache"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
+        f'main_cfg["paths.hf_home"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
     )
 
 # Path to data

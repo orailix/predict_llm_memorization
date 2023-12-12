@@ -1,6 +1,5 @@
 # Customized
 *.DS_Store
-hf_cache/*
 logs/*
 .venv/
 

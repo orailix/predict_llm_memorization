@@ -6,4 +6,4 @@ Apache Licence v2.0.
 """
 
 from .utils import logs
-from .utils import hf_cache
+from .utils import hf_hub
