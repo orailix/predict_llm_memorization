@@ -9,7 +9,6 @@ import typing as t
 
 import numpy as np
 
-
 MCQ_TEMPLATES = [
     "{question}\n\n{options_}\n",
     "Question: {question}\n\nAnswer:\n\n{options_}\n",
@@ -44,10 +43,10 @@ ETHICS_TEMPLATES_AITA = [
     "{input}\n\nWIBTA?\n\nOPTIONS:\n- 0: No\n- 1: Yes\n",
 ]
 
+
 def format_arc(
-        samples: t.List[dict],
-        force_template: bool=False
-    ) -> t.List[t.Tuple[str, str]]:
+    samples: t.List[dict], force_template: bool = False
+) -> t.List[t.Tuple[str, str]]:
     """Format prompt from ARC dataset.
 
     Args:
@@ -65,27 +64,30 @@ def format_arc(
 
     result = []
     for sample, tpl in zip(samples, templates):
-        
         # Options bloc
         options_bloc = "OPTIONS:"
-        for option_txt, option_label in zip(sample["choices"]["text"], sample["choices"]["label"]):
+        for option_txt, option_label in zip(
+            sample["choices"]["text"], sample["choices"]["label"]
+        ):
             options_bloc += f"\n- {option_label}: {option_txt}"
-        
+
         # Formatting
         result.append(
             (
-                MCQ_TEMPLATES[tpl].format(question=sample['question'], options_=options_bloc) + "\n",
-                sample['answerKey'],
+                MCQ_TEMPLATES[tpl].format(
+                    question=sample["question"], options_=options_bloc
+                )
+                + "\n",
+                sample["answerKey"],
             )
         )
 
         return result
-    
+
 
 def format_mmlu(
-        samples: t.List[dict],
-        force_template: bool=False
-    ) -> t.List[t.Tuple[str, str]]:
+    samples: t.List[dict], force_template: bool = False
+) -> t.List[t.Tuple[str, str]]:
     """Format prompt from MMLU dataset.
 
     Args:
@@ -100,8 +102,8 @@ def format_mmlu(
         {
             "question": sample["question"],
             "choices": {
-                "text":sample["choices"],
-                "label":["0", "1", "2", "3"],
+                "text": sample["choices"],
+                "label": ["0", "1", "2", "3"],
             },
             "answerKey": str(sample["answer"]),
         }
@@ -111,9 +113,8 @@ def format_mmlu(
 
 
 def format_ethics(
-        samples: t.List[dict],
-        force_template: bool=False
-    ) -> t.List[t.Tuple[str, str]]:
+    samples: t.List[dict], force_template: bool = False
+) -> t.List[t.Tuple[str, str]]:
     """Format prompt from ETHICS dataset.
 
     Args:
@@ -126,9 +127,11 @@ def format_ethics(
 
     result = []
     for sample in samples:
-
         # Template
-        if sample["input"][:4].lower() == "aita" or sample["input"][:5].lower() == "wibta":
+        if (
+            sample["input"][:4].lower() == "aita"
+            or sample["input"][:5].lower() == "wibta"
+        ):
             templates_list = ETHICS_TEMPLATES_AITA
         else:
             templates_list = ETHICS_TEMPLATES
@@ -138,12 +141,12 @@ def format_ethics(
         else:
             idx = np.random.randint(0, len(templates_list))
             template = templates_list[idx]
-        
+
         # Formatting
         result.append(
             (
-                template.format(input=sample['input']) + "\n",
-                str(sample['label']),
+                template.format(input=sample["input"]) + "\n",
+                str(sample["label"]),
             )
         )
 

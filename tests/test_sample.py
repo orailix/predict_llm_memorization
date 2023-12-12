@@ -15,4 +15,4 @@ def test_configs():
 
 def test_hf_home_dir():
     assert paths.hf_home.exists()
-    assert os.environ["TRANSFORMERS_CACHE"] == str(paths.hf_home)
+    assert os.environ["HF_HOME"] == str(paths.hf_home)

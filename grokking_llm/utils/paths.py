@@ -23,11 +23,13 @@ main_cfg_object.read(configs / "main.cfg")
 
 # Path to user directory
 if "HOME" in os.environ:
-    user_dir = Path(os.environ["HOME"]) # Unix
+    user_dir = Path(os.environ["HOME"])  # Unix
 elif "HOMEPATH" in os.environ:
-    user_dir = Path(os.environ["HOMEPATH"]) # Windows
+    user_dir = Path(os.environ["HOMEPATH"])  # Windows
 else:
-    raise ValueError("User directory found neither in $HOME nor $HOMEPATH. Please declare env variable $HOME manually.")
+    raise ValueError(
+        "User directory found neither in $HOME nor $HOMEPATH. Please declare env variable $HOME manually."
+    )
 
 # Path to model hub
 if "val" not in main_cfg_object["paths.hf_home"]:

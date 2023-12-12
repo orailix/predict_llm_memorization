@@ -37,19 +37,21 @@ if paths.main_cfg_object["internet"]["offline"] == "false":
 if paths.main_cfg_object["internet"]["offline"] == "true":
     logger.info("Config internet.offline = true")
     logger.debug("Setting env variable HF_HUB_OFFLINE=1")
-    os.environ["HF_HUB_OFFLINE"]="1"
+    os.environ["HF_HUB_OFFLINE"] = "1"
     offline = False
-    
+
 # Dealing with HF token
 if not offline:
-    credentials_path = paths.configs / 'credentials.cfg'
+    credentials_path = paths.configs / "credentials.cfg"
     logger.debug(f"Looking for HF token at {credentials_path} ...")
     if credentials_path.exists():
         credentials_cfg = configparser.ConfigParser()
         credentials_cfg.read(credentials_path)
         token = credentials_cfg["huggingface"]["token"]
-        logger.info(f"Exporting env variable HF_TOKEN={token[:3]}{(len(token)-8)*'*'}{token[-5:]}")
-        os.environ['HF_TOKEN'] = token
+        logger.info(
+            f"Exporting env variable HF_TOKEN={token[:3]}{(len(token)-8)*'*'}{token[-5:]}"
+        )
+        os.environ["HF_TOKEN"] = token
     else:
         logger.warning("No credential found. This may prevent you to use LLaMA models.")
 
