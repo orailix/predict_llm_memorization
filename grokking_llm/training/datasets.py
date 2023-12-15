@@ -8,12 +8,12 @@ Apache Licence v2.0.
 import typing as t
 
 import numpy as np
-from datasets import DatasetDict, load_dataset
+from datasets import Dataset, load_dataset
 from loguru import logger
 from transformers import AutoTokenizer
 
 from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU
-from .formatting import format_arc, format_ethics, format_mmlu
+from .formatting import format_arc, format_ethics, format_label, format_mmlu
 from .training_cfg import TrainingCfg
 
 # Dataset splits
@@ -24,7 +24,7 @@ TEST_SPLIT = "test"
 def get_dataset(
     cfg: TrainingCfg = None,
     split: str = TRAIN_SPLIT,
-) -> DatasetDict:
+) -> Dataset:
     """Loads a dataset based on a training configuration.
 
     Args:
@@ -52,11 +52,11 @@ def get_dataset(
 
 
 def format_dataset(
-    dataset: DatasetDict,
+    dataset: Dataset,
     cfg: TrainingCfg,
     seed: t.Optional[int] = None,
     force_template: bool = False,
-) -> None:
+) -> Dataset:
     """Formats a dataset.
 
     Args:
@@ -87,11 +87,32 @@ def format_dataset(
 
     return dataset.map(formatting_fct)
 
-    # Creating the tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(
-        cfg.model,
-        model_max_length=cfg.max_len,
-        padding_side="left",
-        add_eos_token=True,
+
+def add_labels(
+    dataset: Dataset,
+    cfg: TrainingCfg,
+    seed: t.Optional[int] = None,
+) -> Dataset:
+    """Adds the label at the end of a prompt.
+
+    If some random noise is declared in the config, the label will be randomly flipped:
+        - If it is flipped, sample["label_status"] will be set to "random"
+        - If it is not, sample["label_status"] will be set to "true"
+
+    Args:
+        cfg: A configuration object
+        seed: If not None, a random state will be initiated with this seed and used for sampling the templates
+    """
+
+    # Sampling determinism
+    if seed is not None:
+        random_state = np.random.RandomState(seed=seed)
+    else:
+        random_state = None
+
+    # Formatting function
+    formatting_fct = lambda args: format_label(
+        args, random_state=random_state, label_noise=cfg.label_noise
     )
-    tokenizer.pad_token = tokenizer.eos_token
+
+    return dataset.map(formatting_fct)

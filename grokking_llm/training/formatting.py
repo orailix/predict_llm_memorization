@@ -9,7 +9,11 @@ import typing as t
 
 import numpy as np
 
-from ..utils.constants import DATASET_BARE_LABEL
+from ..utils.constants import (
+    DATASET_BARE_LABEL,
+    DATASET_RANDOM_LABEL,
+    DATASET_TRUE_LABEL,
+)
 
 MCQ_TEMPLATES = [
     "{question}\n\n{options_}\n",
@@ -151,3 +155,43 @@ def format_ethics(
         "possible_labels": ["0", "1"],
         "label_status": DATASET_BARE_LABEL,
     }
+
+
+def format_label(
+    sample: dict,
+    label_noise: float = 0.0,
+    random_state: t.Optional[np.random.RandomState] = None,
+):
+    """Adds the label to the prompt.
+
+    Args:
+        sample: A sample from a dataset
+        label_noise: A float between 0 and 1 representing the proportion of labels to flip
+        random_state: an optional random state for the sampling of the labels to flip
+    """
+
+    if label_noise == 0.0:
+        return {
+            "prompt": sample["prompt"] + str(sample["label"]),
+            "label": str(sample["label"]),
+            "possible_labels": sample["possible_labels"],
+            "label_status": DATASET_TRUE_LABEL,
+        }
+    else:
+        generator = random_state if random_state is not None else np.random
+        if generator.random() <= label_noise:  # Random label
+            new_label_idx = generator.randint(0, len(sample["possible_labels"]))
+            return {
+                "prompt": sample["prompt"]
+                + str(sample["possible_labels"][new_label_idx]),
+                "label": str(sample["possible_labels"][new_label_idx]),
+                "possible_labels": sample["possible_labels"],
+                "label_status": DATASET_RANDOM_LABEL,
+            }
+        else:  # True label
+            return {
+                "prompt": sample["prompt"] + str(sample["label"]),
+                "label": str(sample["label"]),
+                "possible_labels": sample["possible_labels"],
+                "label_status": DATASET_TRUE_LABEL,
+            }
