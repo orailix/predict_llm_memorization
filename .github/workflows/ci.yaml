@@ -25,4 +25,4 @@ jobs:
       - name: Show installed dependencies
         run: pip freeze
       - name: Run unit tests
-        run: PYTHONPATH=./src python -m pytest
+        run: PYTHONPATH=. python -m pytest
