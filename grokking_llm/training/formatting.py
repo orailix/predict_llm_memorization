@@ -46,12 +46,17 @@ ETHICS_TEMPLATES_AITA = [
 ]
 
 
-def format_arc(sample: dict, force_template: bool = False) -> dict:
+def format_arc(
+    sample: dict,
+    force_template: bool = False,
+    random_state: t.Optional[np.random.RandomState] = None,
+) -> dict:
     """Format prompt from ARC dataset.
 
     Args:
         samples: A sample from the ARC dataset
         force_template: if True, only the first template in the list will be used
+        random_state: an optional random state for the sampling of the template
 
     Returns:
         list: A dict containing the prompt and its expected label.
@@ -60,7 +65,8 @@ def format_arc(sample: dict, force_template: bool = False) -> dict:
     if force_template:
         template = MCQ_TEMPLATES[0]
     else:
-        template = MCQ_TEMPLATES[np.random.randint(0, len(MCQ_TEMPLATES))]
+        generator = random_state if random_state is not None else np.random
+        template = MCQ_TEMPLATES[generator.randint(0, len(MCQ_TEMPLATES))]
 
     # Options bloc
     options_bloc = "OPTIONS:"
@@ -79,12 +85,17 @@ def format_arc(sample: dict, force_template: bool = False) -> dict:
     }
 
 
-def format_mmlu(sample: dict, force_template: bool = False) -> dict:
+def format_mmlu(
+    sample: dict,
+    force_template: bool = False,
+    random_state: t.Optional[np.random.RandomState] = None,
+) -> dict:
     """Format prompt from MMLU dataset.
 
     Args:
         samples: A list of samples from the ARC dataset
         force_template: if True, only the first template in the list will be used
+        random_state: an optional random state for the sampling of the template
 
     Returns:
         list: A list of tuples (prompt, label) containing the prompt and its expected label.
@@ -99,15 +110,22 @@ def format_mmlu(sample: dict, force_template: bool = False) -> dict:
         "answerKey": str(sample["answer"]),
     }
 
-    return format_arc(new_sample, force_template=force_template)
+    return format_arc(
+        new_sample, force_template=force_template, random_state=random_state
+    )
 
 
-def format_ethics(sample: dict, force_template: bool = False) -> dict:
+def format_ethics(
+    sample: dict,
+    force_template: bool = False,
+    random_state: t.Optional[np.random.RandomState] = None,
+) -> dict:
     """Format prompt from ETHICS dataset.
 
     Args:
         samples: A samples from the ARC dataset
         force_template: if True, only the first template in the list will be used
+        random_state: an optional random state for the sampling of the template
 
     Returns:
         list: A tuples (prompt, label) containing the prompt and its expected label.
@@ -122,7 +140,8 @@ def format_ethics(sample: dict, force_template: bool = False) -> dict:
     if force_template:
         template = templates_list[0]
     else:
-        idx = np.random.randint(0, len(templates_list))
+        generator = random_state if random_state is not None else np.random
+        idx = generator.randint(0, len(templates_list))
         template = templates_list[idx]
 
     # Formatting

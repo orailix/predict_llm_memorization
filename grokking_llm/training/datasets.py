@@ -7,6 +7,7 @@ Apache Licence v2.0.
 
 import typing as t
 
+import numpy as np
 from datasets import DatasetDict, load_dataset
 from loguru import logger
 from transformers import AutoTokenizer
@@ -50,20 +51,39 @@ def get_dataset(
     return load_dataset(cfg.dataset, *args, split=split)
 
 
-def format_dataset(dataset: DatasetDict, cfg: TrainingCfg) -> None:
+def format_dataset(
+    dataset: DatasetDict,
+    cfg: TrainingCfg,
+    seed: t.Optional[int] = None,
+    force_template: bool = False,
+) -> None:
     """Formats a dataset.
 
     Args:
-        - cfg: A configuration object
-        - split: One of ["train", "test"]
+        cfg: A configuration object
+        split: One of ["train", "test"]
+        seed: If not None, a random state will be initiated with this seed and used for sampling the templates
     """
 
+    # Sampling determinism
+    if seed is not None:
+        random_state = np.random.RandomState(seed=seed)
+    else:
+        random_state = None
+
+    # Formatting function
     if cfg.dataset == DS_ARC:
-        formatting_fct = format_arc
+        formatting_fct = lambda args: format_arc(
+            args, force_template=force_template, random_state=random_state
+        )
     elif cfg.dataset == DS_ETHICS:
-        formatting_fct = format_ethics
+        formatting_fct = lambda args: format_ethics(
+            args, force_template=force_template, random_state=random_state
+        )
     elif cfg.dataset == DS_MMLU:
-        formatting_fct = format_mmlu
+        formatting_fct = lambda args: format_mmlu(
+            args, force_template=force_template, random_state=random_state
+        )
 
     return dataset.map(formatting_fct)
 
