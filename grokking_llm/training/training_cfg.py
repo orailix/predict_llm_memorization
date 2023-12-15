@@ -28,6 +28,9 @@ MAIN:
 PREPROCESS:
     - max_len: {self.max_len}
     - label_noise: {self.label_noise}
+RANDOM SPLIT:
+    - split_id: {self.split_id}
+    - split_prop: {self.split_prop}
 LoRA:
     - r: {self.r}
     - alpha: {self.alpha}
@@ -88,6 +91,22 @@ LoRA:
         max_len = parser["preprocess"]["max_len"]
         label_noise = parser["preprocess"]["label_noise"]
 
+        # RANDOM SPLIT CONFIG
+
+        if "random_split" not in parser:
+            raise ValueError("Your config should contain a 'random_split' section.")
+        if "split_id" not in parser["random_split"]:
+            raise ValueError(
+                "Section 'random_split' of your config should contain a 'split_id' entry."
+            )
+        if "split_prop" not in parser["random_split"]:
+            raise ValueError(
+                "Section 'random_split' of your config should contain a 'split_prop' entry."
+            )
+
+        split_id = parser["random_split"]["split_id"]
+        split_prop = parser["random_split"]["split_prop"]
+
         # PREPROCESS CONFIG
 
         if "lora" not in parser:
@@ -111,6 +130,8 @@ LoRA:
             dataset=dataset,
             max_len=max_len,
             label_noise=label_noise,
+            split_id=split_id,
+            split_prop=split_prop,
             r=r,
             alpha=alpha,
         )
@@ -122,6 +143,8 @@ LoRA:
         dataset: str = TRAIN_CFG_DEFAULT_DATASET,
         max_len: int = TRAIN_CFG_DEFAULT_MAX_LEN,
         label_noise: float = TRAIN_CFG_DEFAULT_NOISE,
+        split_id: int = TRAIN_CFG_DEFAULT_SPLIT_ID,
+        split_prop: float = TRAIN_CFG_DEFAULT_SPLIT_PROP,
         r: int = TRAIN_CFG_DEFAULT_R,
         alpha: float = TRAIN_CFG_DEFAULT_ALPHA,
     ):
@@ -169,6 +192,22 @@ LoRA:
         except ValueError:
             raise ValueError(
                 f"`label_noise`={label_noise} should be a float between 0 and 1."
+            )
+
+        # RANDOM SPLIT CONFIG
+
+        try:
+            self.split_id = int(split_id)
+        except ValueError:
+            raise ValueError(f"`split_id`={split_id} should be an int.")
+
+        try:
+            self.split_prop = float(split_prop)
+            if self.split_prop < 0 or self.split_prop > 1.0:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(
+                f"`split_prop`={split_prop} should be a float between 0.0 and 1.0."
             )
 
         # LORA CONFIG

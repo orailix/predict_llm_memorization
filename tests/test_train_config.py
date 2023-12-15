@@ -18,87 +18,53 @@ def test_train_config():
     assert type(training_cfg.dataset) == str
     assert type(training_cfg.max_len) == int
     assert type(training_cfg.label_noise) == float
+    assert type(training_cfg.split_id) == int
+    assert type(training_cfg.split_prop) == float
     assert type(training_cfg.r) == int
     assert type(training_cfg.alpha) == float
 
 
 def test_train_config_model():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model="hello",
-            dataset=TRAIN_CFG_MMLU,
-            max_len=1024,
-            label_noise=0.0,
-            r=8,
-            alpha=16,
-        )
+        TrainingCfg(model="hello")
 
 
 def test_train_config_dataset():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset="hello",
-            max_len=1024,
-            label_noise=0.0,
-            r=8,
-            alpha=16,
-        )
+        TrainingCfg(dataset="hello")
 
 
 def test_train_config_max_len():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset=TRAIN_CFG_MMLU,
-            max_len=0,
-            label_noise=0.0,
-            r=8,
-            alpha=16,
-        )
+        TrainingCfg(max_len=0)
 
 
 def test_train_config_label_noise():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset=TRAIN_CFG_MMLU,
-            max_len=1024,
-            label_noise=-0.1,
-            r=8,
-            alpha=16,
-        )
+        TrainingCfg(label_noise=-0.1)
 
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset=TRAIN_CFG_MMLU,
-            max_len=1024,
-            label_noise=1.1,
-            r=8,
-            alpha=16,
-        )
+        TrainingCfg(label_noise=1.1)
+
+
+def test_train_config_split_id():
+    with pytest.raises(ValueError):
+        TrainingCfg(split_id="hello")
+
+
+def test_train_config_split_prop():
+    with pytest.raises(ValueError):
+        TrainingCfg(split_prop=-0.1)
+
+    with pytest.raises(ValueError):
+        TrainingCfg(split_prop=1.1)
 
 
 def test_train_config_r():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset=TRAIN_CFG_MMLU,
-            max_len=1024,
-            label_noise=0.0,
-            r=0,
-            alpha=16,
-        )
+        TrainingCfg(r=0)
 
 
 def test_train_config_alpha():
     with pytest.raises(ValueError):
-        TrainingCfg(
-            model=TRAIN_CFG_MISTRAL,
-            dataset=TRAIN_CFG_MMLU,
-            max_len=1024,
-            label_noise=0.0,
-            r=8,
-            alpha=0,
-        )
+        TrainingCfg(alpha=0)

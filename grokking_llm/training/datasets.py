@@ -116,3 +116,10 @@ def add_labels(
     )
 
     return dataset.map(formatting_fct)
+
+
+def get_random_split(
+    dataset: Dataset,
+    cfg: TrainingCfg,
+) -> Dataset:
+    return
