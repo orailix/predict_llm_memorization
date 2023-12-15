@@ -14,5 +14,5 @@ def test_configs():
 
 
 def test_hf_home_dir():
-    assert paths.hf_home.exists()
+    assert paths.hf_home.is_dir()
     assert os.environ["HF_HOME"] == str(paths.hf_home)

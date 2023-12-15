@@ -9,6 +9,8 @@ import typing as t
 
 import numpy as np
 
+from ..utils.constants import DATASET_BARE_LABEL
+
 MCQ_TEMPLATES = [
     "{question}\n\n{options_}\n",
     "Question: {question}\n\nAnswer:\n\n{options_}\n",
@@ -44,50 +46,40 @@ ETHICS_TEMPLATES_AITA = [
 ]
 
 
-def format_arc(
-    samples: t.List[dict], force_template: bool = False
-) -> t.List[t.Tuple[str, str]]:
+def format_arc(sample: dict, force_template: bool = False) -> dict:
     """Format prompt from ARC dataset.
 
     Args:
-        samples: A list of samples from the ARC dataset
+        samples: A sample from the ARC dataset
         force_template: if True, only the first template in the list will be used
 
     Returns:
-        list: A list of tuples (prompt, label) containing the prompt and its expected label.
+        list: A dict containing the prompt and its expected label.
     """
     # Sampling tempates
     if force_template:
-        templates = [0 for _ in samples]
+        template = MCQ_TEMPLATES[0]
     else:
-        templates = np.random.randint(0, len(MCQ_TEMPLATES), size=len(samples))
+        template = MCQ_TEMPLATES[np.random.randint(0, len(MCQ_TEMPLATES))]
 
-    result = []
-    for sample, tpl in zip(samples, templates):
-        # Options bloc
-        options_bloc = "OPTIONS:"
-        for option_txt, option_label in zip(
-            sample["choices"]["text"], sample["choices"]["label"]
-        ):
-            options_bloc += f"\n- {option_label}: {option_txt}"
+    # Options bloc
+    options_bloc = "OPTIONS:"
+    for option_txt, option_label in zip(
+        sample["choices"]["text"], sample["choices"]["label"]
+    ):
+        options_bloc += f"\n- {option_label}: {option_txt}"
 
-        # Formatting
-        result.append(
-            (
-                MCQ_TEMPLATES[tpl].format(
-                    question=sample["question"], options_=options_bloc
-                )
-                + "\n",
-                sample["answerKey"],
-            )
-        )
-
-        return result
+    # Formatting
+    return {
+        "prompt": template.format(question=sample["question"], options_=options_bloc)
+        + "\n",
+        "label": str(sample["answerKey"]),
+        "possible_labels": sample["choices"]["label"],
+        "label_status": DATASET_BARE_LABEL,
+    }
 
 
-def format_mmlu(
-    samples: t.List[dict], force_template: bool = False
-) -> t.List[t.Tuple[str, str]]:
+def format_mmlu(sample: dict, force_template: bool = False) -> dict:
     """Format prompt from MMLU dataset.
 
     Args:
@@ -98,56 +90,45 @@ def format_mmlu(
         list: A list of tuples (prompt, label) containing the prompt and its expected label.
     """
 
-    new_samples = [
-        {
-            "question": sample["question"],
-            "choices": {
-                "text": sample["choices"],
-                "label": ["0", "1", "2", "3"],
-            },
-            "answerKey": str(sample["answer"]),
-        }
-        for sample in samples
-    ]
-    return format_arc(new_samples, force_template=force_template)
+    new_sample = {
+        "question": sample["question"],
+        "choices": {
+            "text": sample["choices"],
+            "label": ["0", "1", "2", "3"],
+        },
+        "answerKey": str(sample["answer"]),
+    }
+
+    return format_arc(new_sample, force_template=force_template)
 
 
-def format_ethics(
-    samples: t.List[dict], force_template: bool = False
-) -> t.List[t.Tuple[str, str]]:
+def format_ethics(sample: dict, force_template: bool = False) -> dict:
     """Format prompt from ETHICS dataset.
 
     Args:
-        samples: A list of samples from the ARC dataset
+        samples: A samples from the ARC dataset
         force_template: if True, only the first template in the list will be used
 
     Returns:
-        list: A list of tuples (prompt, label) containing the prompt and its expected label.
+        list: A tuples (prompt, label) containing the prompt and its expected label.
     """
 
-    result = []
-    for sample in samples:
-        # Template
-        if (
-            sample["input"][:4].lower() == "aita"
-            or sample["input"][:5].lower() == "wibta"
-        ):
-            templates_list = ETHICS_TEMPLATES_AITA
-        else:
-            templates_list = ETHICS_TEMPLATES
+    # Template
+    if sample["input"][:4].lower() == "aita" or sample["input"][:5].lower() == "wibta":
+        templates_list = ETHICS_TEMPLATES_AITA
+    else:
+        templates_list = ETHICS_TEMPLATES
 
-        if force_template:
-            template = templates_list[0]
-        else:
-            idx = np.random.randint(0, len(templates_list))
-            template = templates_list[idx]
+    if force_template:
+        template = templates_list[0]
+    else:
+        idx = np.random.randint(0, len(templates_list))
+        template = templates_list[idx]
 
-        # Formatting
-        result.append(
-            (
-                template.format(input=sample["input"]) + "\n",
-                str(sample["label"]),
-            )
-        )
-
-        return result
+    # Formatting
+    return {
+        "prompt": template.format(input=sample["input"]) + "\n",
+        "label": str(sample["label"]),
+        "possible_labels": ["0", "1"],
+        "label_status": DATASET_BARE_LABEL,
+    }

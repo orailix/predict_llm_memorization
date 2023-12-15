@@ -3,8 +3,6 @@ name: LLM Grokking Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 

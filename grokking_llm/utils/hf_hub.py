@@ -42,11 +42,10 @@ if paths.main_cfg_object["internet"]["offline"] == "true":
 
 # Dealing with HF token
 if not offline:
-    credentials_path = paths.configs / "credentials.cfg"
-    logger.debug(f"Looking for HF token at {credentials_path} ...")
-    if credentials_path.exists():
+    logger.debug(f"Looking for HF token at {paths.credentials_cfg_path} ...")
+    if paths.credentials_cfg_path.exists():
         credentials_cfg = configparser.ConfigParser()
-        credentials_cfg.read(credentials_path)
+        credentials_cfg.read(paths.credentials_cfg_path)
         token = credentials_cfg["huggingface"]["token"]
         logger.info(f"Found HF token {token[:3]}{(len(token)-8)*'*'}{token[-5:]}")
         logger.debug(

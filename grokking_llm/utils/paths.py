@@ -16,10 +16,11 @@ ABSOLUTE_PATH = "absolute"
 # Project root
 root = Path(__file__).parent.parent.parent
 configs = root / "configs"
+main_cfg_path = configs / "main.cfg"
 
 # Main config
 main_cfg_object = configparser.ConfigParser()
-main_cfg_object.read(configs / "main.cfg")
+main_cfg_object.read(main_cfg_path)
 
 # Path to user directory
 if "HOME" in os.environ:
@@ -72,3 +73,7 @@ else:
     raise ValueError(
         f'main_cfg["paths.logs"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
     )
+
+# Configs paths
+credentials_cfg_path = configs / "credentials.cfg"
+training_cfg_path = configs / "training.cfg"
