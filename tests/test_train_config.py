@@ -5,11 +5,13 @@ Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 Apache Licence v2.0.
 """
 
+from pathlib import Path
+
 import pytest
 
 from grokking_llm.training import TrainingCfg
-from grokking_llm.utils.constants import TRAIN_CFG_MISTRAL, TRAIN_CFG_MMLU
-from grokking_llm.utils.paths import training_cfg_path
+
+training_cfg_path = Path(__file__).parent / "files" / "training.cfg"
 
 
 def test_train_config():
