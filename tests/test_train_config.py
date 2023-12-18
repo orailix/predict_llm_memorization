@@ -20,8 +20,10 @@ def test_train_config():
     assert type(training_cfg.label_noise) == float
     assert type(training_cfg.split_id) == int
     assert type(training_cfg.split_prop) == float
-    assert type(training_cfg.r) == int
-    assert type(training_cfg.alpha) == float
+    assert type(training_cfg.lora_r) == int
+    assert type(training_cfg.lora_alpha) == float
+    assert type(training_cfg.lora_dropout) == float
+    assert type(training_cfg.accelerator) == str
 
 
 def test_train_config_model():
@@ -60,11 +62,27 @@ def test_train_config_split_prop():
         TrainingCfg(split_prop=1.1)
 
 
-def test_train_config_r():
+def test_train_config_lora_r():
     with pytest.raises(ValueError):
-        TrainingCfg(r=0)
+        TrainingCfg(lora_r=0)
 
 
-def test_train_config_alpha():
+def test_train_config_lora_alpha():
     with pytest.raises(ValueError):
-        TrainingCfg(alpha=0)
+        TrainingCfg(lora_alpha=0)
+
+
+def test_train_config_lora_dropout():
+    with pytest.raises(ValueError):
+        TrainingCfg(lora_dropout=-0.1)
+
+    with pytest.raises(ValueError):
+        TrainingCfg(lora_dropout=1.1)
+
+
+def test_train_config_accelerator():
+    with pytest.raises(RuntimeError):
+        TrainingCfg(accelerator="hello")
+
+    with pytest.raises(RuntimeError):
+        TrainingCfg(accelerator="vulkan")

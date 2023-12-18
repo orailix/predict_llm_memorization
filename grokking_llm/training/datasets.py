@@ -50,7 +50,7 @@ def get_dataset(
         args = ()
         split = "train" if split == TRAIN_SPLIT else "test"
 
-    logger.debug(f"Loading dataset {cfg.dataset} split {split}")
+    logger.info(f"Loading dataset {cfg.dataset} split {split}")
     result = load_dataset(cfg.dataset, *args, split=split)
 
     # Add a index column
@@ -75,6 +75,12 @@ def format_dataset(
     Returns:
         datasets.Dataset: The dataset.
     """
+
+    # Logging
+    logger.info(f"Formatting dataset {cfg.dataset}")
+    logger.debug(
+        f"Using seed={seed} and force_template={force_template} for formatting."
+    )
 
     # Sampling determinism
     if seed is not None:
@@ -119,6 +125,10 @@ def add_labels(
         datasets.Dataset: The dataset.
     """
 
+    # Logging
+    logger.info(f"Adding labels to dataset {cfg.dataset}")
+    logger.debug(f"Using proportion label_noise={cfg.label_noise} with seed={seed}")
+
     # Sampling determinism
     if seed is not None:
         random_state = np.random.RandomState(seed=seed)
@@ -161,6 +171,12 @@ def get_random_split(
         keep_in_memory=True,
     )
 
+    # Logging
+    logger.info(f"Getting random split {cfg.split_id} from dataset {cfg.dataset}")
+    logger.debug(
+        f"Using split_prop={cfg.split_prop}, resulting in a split of length={len(result)}"
+    )
+
     return result
 
 
@@ -180,6 +196,12 @@ def tokenize_dataset(
     Returns:
         datasets.Dataset: The dataset.
     """
+
+    # Logging
+    logger.info(f"Tokenizing dataset {cfg.dataset}")
+    logger.debug(
+        f"Using model_max_length={cfg.max_len} and vocabulary from model={cfg.model}"
+    )
 
     # Creating the tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
