@@ -10,7 +10,12 @@ import collections
 import numpy as np
 
 from grokking_llm.training import TrainingCfg
-from grokking_llm.training.datasets import add_labels, format_dataset, get_dataset
+from grokking_llm.training.datasets import (
+    add_labels,
+    format_dataset,
+    get_dataset,
+    get_random_split,
+)
 from grokking_llm.training.formatting import format_arc, format_ethics, format_mmlu
 from grokking_llm.utils.constants import (
     DATASET_BARE_LABEL,
@@ -51,6 +56,8 @@ def test_formatting_ethics():
         assert type(formatted["possible_labels"]) == list
         assert "label_status" in formatted
         assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "index" in formatted
+        assert type(formatted["index"]) == int
 
         # Test determinism
         formatted = format_ethics(sample, random_state=np.random.RandomState(seed=42))
@@ -76,6 +83,8 @@ def test_formatting_mmlu():
         assert type(formatted["possible_labels"]) == list
         assert "label_status" in formatted
         assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "index" in formatted
+        assert type(formatted["index"]) == int
 
         # Test determinism
         formatted = format_mmlu(sample, random_state=np.random.RandomState(seed=42))
@@ -101,6 +110,8 @@ def test_formatting_arc():
         assert type(formatted["possible_labels"]) == list
         assert "label_status" in formatted
         assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "index" in formatted
+        assert type(formatted["index"]) == int
 
         # Test determinism
         formatted = format_arc(sample, random_state=np.random.RandomState(seed=42))
@@ -194,4 +205,50 @@ def test_add_label_determinism():
 
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds_0))
-        assert labelled_ds_0[idx] == labelled_ds_0[idx]
+        assert labelled_ds_0[idx] == labelled_ds_1[idx]
+
+
+def test_dataset_splits():
+    ethics_cfg = TrainingCfg(dataset="ethics", split_prop=0.25, split_id=0)
+    ethics_ds_test = get_dataset(ethics_cfg, split="test")
+    formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
+    with_labels = add_labels(formatted, ethics_cfg, seed=42)
+
+    # No noise
+    split_0 = get_random_split(with_labels, cfg=ethics_cfg)
+    split_0_again = get_random_split(with_labels, cfg=ethics_cfg)
+    ethics_cfg.split_id = 42
+    split_42 = get_random_split(with_labels, cfg=ethics_cfg)
+    ethics_cfg.split_prop = 0.5
+    split_42_large = get_random_split(with_labels, cfg=ethics_cfg)
+
+    # Split sizes
+    assert abs(len(split_0) - (0.25 * len(with_labels))) <= 1.0
+    assert len(split_0_again) == len(split_0)
+    assert len(split_42) == len(split_0)
+    assert abs(len(split_42_large) - (0.5 * len(with_labels))) <= 1.0
+
+    # Quality
+    unique_samples = set()
+    for item in split_0:
+        assert (
+            type(item["index"]) == int
+            and item["index"] >= 0
+            and item["index"] < len(with_labels)
+        )
+        unique_samples.add(item["index"])
+
+    assert len(unique_samples) == len(split_0)
+
+    # Reproducibility
+    for _ in range(30):
+        idx = np.random.randint(len(split_0))
+        assert split_0[idx] == split_0_again[idx]
+
+    # Difference between seed 0 and 42
+    are_the_same = True
+    for idx in range(len(split_0)):
+        if split_0[idx] != split_42[idx]:
+            are_the_same = False
+            break
+    assert not are_the_same

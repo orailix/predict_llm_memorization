@@ -5,6 +5,8 @@ Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 Apache Licence v2.0.
 """
 
+import warnings
+
 from loguru import logger
 
 from . import paths
@@ -18,3 +20,7 @@ logger.add(
 )
 
 logger.info("Welcome to `grokking_llm` module!")
+
+warnings.filterwarnings(
+    "ignore", r".*Using the latest cached version of the module from.*"
+)

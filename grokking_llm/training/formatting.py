@@ -86,6 +86,7 @@ def format_arc(
         "label": str(sample["answerKey"]),
         "possible_labels": sample["choices"]["label"],
         "label_status": DATASET_BARE_LABEL,
+        "index": sample["index"],
     }
 
 
@@ -112,6 +113,7 @@ def format_mmlu(
             "label": ["0", "1", "2", "3"],
         },
         "answerKey": str(sample["answer"]),
+        "index": sample["index"],
     }
 
     return format_arc(
@@ -154,6 +156,7 @@ def format_ethics(
         "label": str(sample["label"]),
         "possible_labels": ["0", "1"],
         "label_status": DATASET_BARE_LABEL,
+        "index": sample["index"],
     }
 
 
@@ -176,6 +179,7 @@ def format_label(
             "label": str(sample["label"]),
             "possible_labels": sample["possible_labels"],
             "label_status": DATASET_TRUE_LABEL,
+            "index": sample["index"],
         }
     else:
         generator = random_state if random_state is not None else np.random
@@ -187,6 +191,7 @@ def format_label(
                 "label": str(sample["possible_labels"][new_label_idx]),
                 "possible_labels": sample["possible_labels"],
                 "label_status": DATASET_RANDOM_LABEL,
+                "index": sample["index"],
             }
         else:  # True label
             return {
@@ -194,4 +199,5 @@ def format_label(
                 "label": str(sample["label"]),
                 "possible_labels": sample["possible_labels"],
                 "label_status": DATASET_TRUE_LABEL,
+                "index": sample["index"],
             }

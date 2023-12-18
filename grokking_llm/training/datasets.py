@@ -28,8 +28,11 @@ def get_dataset(
     """Loads a dataset based on a training configuration.
 
     Args:
-        - cfg: A configuration object
-        - split: One of ["train", "test"]
+        cfg: A configuration object
+        split: One of ["train", "test"]
+
+    Returns:
+        datasets.Dataset: The dataset.
     """
 
     # Sanity check
@@ -48,7 +51,11 @@ def get_dataset(
         split = "train" if split == TRAIN_SPLIT else "test"
 
     logger.debug(f"Loading dataset {cfg.dataset} split {split}")
-    return load_dataset(cfg.dataset, *args, split=split)
+    result = load_dataset(cfg.dataset, *args, split=split)
+
+    # Add a index column
+    result = result.add_column("index", np.array(range(len(result))))
+    return result
 
 
 def format_dataset(
@@ -60,9 +67,13 @@ def format_dataset(
     """Formats a dataset.
 
     Args:
+        dataset: The dataset to be formatted
         cfg: A configuration object
         split: One of ["train", "test"]
         seed: If not None, a random state will be initiated with this seed and used for sampling the templates
+
+    Returns:
+        datasets.Dataset: The dataset.
     """
 
     # Sampling determinism
@@ -100,8 +111,12 @@ def add_labels(
         - If it is not, sample["label_status"] will be set to "true"
 
     Args:
+        dataset: The dataset to which the labels will be added
         cfg: A configuration object
         seed: If not None, a random state will be initiated with this seed and used for sampling the templates
+
+    Returns:
+        datasets.Dataset: The dataset.
     """
 
     # Sampling determinism
@@ -122,4 +137,28 @@ def get_random_split(
     dataset: Dataset,
     cfg: TrainingCfg,
 ) -> Dataset:
-    return
+    """Gets a random split of a dataset.
+
+    The config object contains the seed (used as a split id) and
+    the proportion of sample that should be contained in the split.
+
+    Args:
+        dataset: The dataset from which to sample the split
+        cfg: A configuration object
+
+    Returns:
+        datasets.Dataset: The dataset.
+    """
+
+    # Sapling indices
+    random_state = np.random.RandomState(seed=cfg.split_id)
+    num_row_to_sample = max(1, int(cfg.split_prop * len(dataset)))
+    indices = random_state.choice(len(dataset), size=num_row_to_sample, replace=False)
+
+    # Splitting
+    result = dataset.select(
+        indices,
+        keep_in_memory=True,
+    )
+
+    return result
