@@ -8,6 +8,7 @@ Apache Licence v2.0.
 import collections
 
 import numpy as np
+from transformers import AutoTokenizer
 
 from grokking_llm.training import TrainingCfg
 from grokking_llm.training.datasets import (
@@ -15,6 +16,7 @@ from grokking_llm.training.datasets import (
     format_dataset,
     get_dataset,
     get_random_split,
+    tokenize_dataset,
 )
 from grokking_llm.training.formatting import format_arc, format_ethics, format_mmlu
 from grokking_llm.utils.constants import (
@@ -50,12 +52,12 @@ def test_formatting_ethics():
         formatted = format_ethics(sample)
         assert "prompt" in formatted
         assert type(formatted["prompt"]) == str
-        assert "label" in formatted
-        assert type(formatted["label"]) == str
-        assert "possible_labels" in formatted
-        assert type(formatted["possible_labels"]) == list
-        assert "label_status" in formatted
-        assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "cls_label" in formatted
+        assert type(formatted["cls_label"]) == str
+        assert "possible_cls_labels" in formatted
+        assert type(formatted["possible_cls_labels"]) == list
+        assert "cls_label_status" in formatted
+        assert formatted["cls_label_status"] == DATASET_BARE_LABEL
         assert "index" in formatted
         assert type(formatted["index"]) == int
 
@@ -77,12 +79,12 @@ def test_formatting_mmlu():
         formatted = format_mmlu(sample)
         assert "prompt" in formatted
         assert type(formatted["prompt"]) == str
-        assert "label" in formatted
-        assert type(formatted["label"]) == str
-        assert "possible_labels" in formatted
-        assert type(formatted["possible_labels"]) == list
-        assert "label_status" in formatted
-        assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "cls_label" in formatted
+        assert type(formatted["cls_label"]) == str
+        assert "possible_cls_labels" in formatted
+        assert type(formatted["possible_cls_labels"]) == list
+        assert "cls_label_status" in formatted
+        assert formatted["cls_label_status"] == DATASET_BARE_LABEL
         assert "index" in formatted
         assert type(formatted["index"]) == int
 
@@ -104,12 +106,12 @@ def test_formatting_arc():
         formatted = format_arc(sample)
         assert "prompt" in formatted
         assert type(formatted["prompt"]) == str
-        assert "label" in formatted
-        assert type(formatted["label"]) == str
-        assert "possible_labels" in formatted
-        assert type(formatted["possible_labels"]) == list
-        assert "label_status" in formatted
-        assert formatted["label_status"] == DATASET_BARE_LABEL
+        assert "cls_label" in formatted
+        assert type(formatted["cls_label"]) == str
+        assert "possible_cls_labels" in formatted
+        assert type(formatted["possible_cls_labels"]) == list
+        assert "cls_label_status" in formatted
+        assert formatted["cls_label_status"] == DATASET_BARE_LABEL
         assert "index" in formatted
         assert type(formatted["index"]) == int
 
@@ -129,7 +131,7 @@ def test_map_ethics_formatting():
 
     # Quality tests
     assert len(ethics_ds_test) == len(formatted_ds)
-    assert formatted_ds[0]["label_status"] == DATASET_BARE_LABEL
+    assert formatted_ds[0]["cls_label_status"] == DATASET_BARE_LABEL
 
 
 def test_map_ethics_formatting_determinism():
@@ -160,9 +162,12 @@ def test_add_labels_to_dataset():
     labelled_ds = add_labels(formatted, ethics_cfg)
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds))
-        assert labelled_ds[idx]["label_status"] == DATASET_TRUE_LABEL
-        assert labelled_ds[idx]["prompt"][-1] == str(labelled_ds[idx]["label"])
-        assert str(labelled_ds[idx]["label"]) in labelled_ds[idx]["possible_labels"]
+        assert labelled_ds[idx]["cls_label_status"] == DATASET_TRUE_LABEL
+        assert labelled_ds[idx]["prompt"][-1] == str(labelled_ds[idx]["cls_label"])
+        assert (
+            str(labelled_ds[idx]["cls_label"])
+            in labelled_ds[idx]["possible_cls_labels"]
+        )
 
     # With label_noise = 0.5
     ethics_cfg.label_noise = 0.5
@@ -171,13 +176,16 @@ def test_add_labels_to_dataset():
     # Correct label flips ?
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds))
-        assert labelled_ds[idx]["prompt"][-1] == str(labelled_ds[idx]["label"])
-        assert str(labelled_ds[idx]["label"]) in labelled_ds[idx]["possible_labels"]
+        assert labelled_ds[idx]["prompt"][-1] == str(labelled_ds[idx]["cls_label"])
+        assert (
+            str(labelled_ds[idx]["cls_label"])
+            in labelled_ds[idx]["possible_cls_labels"]
+        )
 
     # Counting label flips
     count = collections.defaultdict(int)
     for sample in labelled_ds:
-        count[sample["label_status"]] += 1
+        count[sample["cls_label_status"]] += 1
 
     assert len(count) == 2  # Only DATASET_RANDOM_LABEL and DATASET_TRUE_LABEL
     assert count[DATASET_RANDOM_LABEL] >= 0.9 * 0.5 * (
@@ -252,3 +260,67 @@ def test_dataset_splits():
             are_the_same = False
             break
     assert not are_the_same
+
+
+def test_dataset_tokenization():
+    ethics_cfg = TrainingCfg(dataset="ethics", split_prop=0.1, split_id=0)
+    ethics_ds_test = get_dataset(ethics_cfg, split="test")
+    formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
+    with_labels = add_labels(formatted, ethics_cfg, seed=42)
+    split = get_random_split(with_labels, cfg=ethics_cfg)
+
+    # Tokenization
+    tokenizer_obj = AutoTokenizer.from_pretrained(ethics_cfg.model)
+    tokenized = tokenize_dataset(split, cfg=ethics_cfg)
+
+    # Quality checks
+    assert len(tokenized) == len(split)
+    for _ in range(30):
+        idx = np.random.randint(len(split))
+
+        # Sanity checks
+        assert "input_ids" in tokenized[idx]
+        assert "input_ids" not in split[idx]
+        assert "labels" in tokenized[idx]
+        assert "labels" not in split[idx]
+        assert "attention_mask" in tokenized[idx]
+        assert "attention_mask" not in split[idx]
+        assert tokenized[idx]["input_ids"] == tokenized[idx]["labels"]
+
+        # BOS token and padding
+        assert 1 in tokenized[idx]["input_ids"]
+        bos_idx = tokenized[idx]["input_ids"].index(1)
+        for _ in range(30):
+            random_pad_idx = np.random.randint(bos_idx)
+            assert (
+                tokenized[idx]["input_ids"][random_pad_idx]
+                == tokenizer_obj.eos_token_id
+            )
+
+        # CLS label and EOS token
+        assert tokenized[idx]["input_ids"][-1] == tokenizer_obj.eos_token_id
+        assert (
+            tokenized[idx]["input_ids"][-2]
+            == tokenizer_obj.encode(tokenized[idx]["cls_label"])[-1]
+        )
+
+        # Length check
+        assert len(tokenized[idx]["input_ids"]) == ethics_cfg.max_len
+
+    # Truncation checks
+    LEN = 5
+    ethics_cfg.max_len = LEN
+    shortly_tokenized = tokenize_dataset(split, cfg=ethics_cfg)
+
+    for _ in range(30):
+        idx = np.random.randint(len(split))
+
+        # Length checks
+        assert len(shortly_tokenized[idx]["input_ids"]) == ethics_cfg.max_len
+
+        # Trucation side check
+        # The first token differs, because it is the BOS token.
+        assert (
+            shortly_tokenized[idx]["input_ids"][1:]
+            == tokenized[idx]["input_ids"][-LEN + 1 :]
+        )

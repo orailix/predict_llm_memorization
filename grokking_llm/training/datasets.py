@@ -96,7 +96,7 @@ def format_dataset(
             args, force_template=force_template, random_state=random_state
         )
 
-    return dataset.map(formatting_fct)
+    return dataset.map(formatting_fct, remove_columns=dataset.column_names)
 
 
 def add_labels(
@@ -107,8 +107,8 @@ def add_labels(
     """Adds the label at the end of a prompt.
 
     If some random noise is declared in the config, the label will be randomly flipped:
-        - If it is flipped, sample["label_status"] will be set to "random"
-        - If it is not, sample["label_status"] will be set to "true"
+        - If it is flipped, sample["cls_label_status"] will be set to "random"
+        - If it is not, sample["cls_label_status"] will be set to "true"
 
     Args:
         dataset: The dataset to which the labels will be added
@@ -162,3 +162,44 @@ def get_random_split(
     )
 
     return result
+
+
+def tokenize_dataset(
+    dataset: Dataset,
+    cfg: TrainingCfg,
+) -> Dataset:
+    """Tokenizes the dataset.
+
+    The config object contains a `max_len` attribute that will be used
+    for padding and clipping the prompts (this is done to speed up training).
+
+    Args:
+        dataset: The dataset to tokenize.
+        cfg: A configuration object.
+
+    Returns:
+        datasets.Dataset: The dataset.
+    """
+
+    # Creating the tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(
+        cfg.model,
+        model_max_length=cfg.max_len,
+        padding_side="left",
+        truncation_side="left",
+        add_eos_token=True,
+    )
+    tokenizer.pad_token = tokenizer.eos_token
+
+    # Mapping function
+    def map_fct(sample):
+        result = tokenizer(
+            sample["prompt"],
+            truncation=True,
+            padding="max_length",
+        )
+        result["labels"] = result["input_ids"].copy()
+        return result
+
+    # Mapping
+    return dataset.map(map_fct)

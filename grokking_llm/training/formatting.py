@@ -83,9 +83,9 @@ def format_arc(
     return {
         "prompt": template.format(question=sample["question"], options_=options_bloc)
         + "\n",
-        "label": str(sample["answerKey"]),
-        "possible_labels": sample["choices"]["label"],
-        "label_status": DATASET_BARE_LABEL,
+        "cls_label": str(sample["answerKey"]),
+        "possible_cls_labels": sample["choices"]["label"],
+        "cls_label_status": DATASET_BARE_LABEL,
         "index": sample["index"],
     }
 
@@ -103,7 +103,7 @@ def format_mmlu(
         random_state: an optional random state for the sampling of the template
 
     Returns:
-        list: A list of tuples (prompt, label) containing the prompt and its expected label.
+        list: A dict containing the prompt and its expected label.
     """
 
     new_sample = {
@@ -134,7 +134,7 @@ def format_ethics(
         random_state: an optional random state for the sampling of the template
 
     Returns:
-        list: A tuples (prompt, label) containing the prompt and its expected label.
+        list: A dict containing the prompt and its expected label.
     """
 
     # Template
@@ -153,9 +153,9 @@ def format_ethics(
     # Formatting
     return {
         "prompt": template.format(input=sample["input"]) + "\n",
-        "label": str(sample["label"]),
-        "possible_labels": ["0", "1"],
-        "label_status": DATASET_BARE_LABEL,
+        "cls_label": str(sample["label"]),
+        "possible_cls_labels": ["0", "1"],
+        "cls_label_status": DATASET_BARE_LABEL,
         "index": sample["index"],
     }
 
@@ -175,29 +175,29 @@ def format_label(
 
     if label_noise == 0.0:
         return {
-            "prompt": sample["prompt"] + str(sample["label"]),
-            "label": str(sample["label"]),
-            "possible_labels": sample["possible_labels"],
-            "label_status": DATASET_TRUE_LABEL,
+            "prompt": sample["prompt"] + str(sample["cls_label"]),
+            "cls_label": str(sample["cls_label"]),
+            "possible_cls_labels": sample["possible_cls_labels"],
+            "cls_label_status": DATASET_TRUE_LABEL,
             "index": sample["index"],
         }
     else:
         generator = random_state if random_state is not None else np.random
         if generator.random() <= label_noise:  # Random label
-            new_label_idx = generator.randint(0, len(sample["possible_labels"]))
+            new_label_idx = generator.randint(0, len(sample["possible_cls_labels"]))
             return {
                 "prompt": sample["prompt"]
-                + str(sample["possible_labels"][new_label_idx]),
-                "label": str(sample["possible_labels"][new_label_idx]),
-                "possible_labels": sample["possible_labels"],
-                "label_status": DATASET_RANDOM_LABEL,
+                + str(sample["possible_cls_labels"][new_label_idx]),
+                "cls_label": str(sample["possible_cls_labels"][new_label_idx]),
+                "possible_cls_labels": sample["possible_cls_labels"],
+                "cls_label_status": DATASET_RANDOM_LABEL,
                 "index": sample["index"],
             }
         else:  # True label
             return {
-                "prompt": sample["prompt"] + str(sample["label"]),
-                "label": str(sample["label"]),
-                "possible_labels": sample["possible_labels"],
-                "label_status": DATASET_TRUE_LABEL,
+                "prompt": sample["prompt"] + str(sample["cls_label"]),
+                "cls_label": str(sample["cls_label"]),
+                "possible_cls_labels": sample["possible_cls_labels"],
+                "cls_label_status": DATASET_TRUE_LABEL,
                 "index": sample["index"],
             }
