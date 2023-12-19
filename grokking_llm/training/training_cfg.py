@@ -5,7 +5,9 @@ Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 Apache Licence v2.0.
 """
 
+import base64
 import copy
+import hashlib
 import json
 import typing as t
 from configparser import ConfigParser
@@ -14,6 +16,7 @@ from pathlib import Path
 import torch
 from loguru import logger
 
+from ..utils import paths
 from ..utils.constants import *
 from ..utils.hf_hub import (
     DS_ARC,
@@ -24,10 +27,10 @@ from ..utils.hf_hub import (
     MOD_MISTRAL_7B,
 )
 
-# TODO for adding a new attribute to the class:
+# Check-list for adding a new attribute to the class:
 # - [ ] Add it to __repr__
 # - [ ] Add a default vaue in ..utils.constants
-# - [ ] Add it to __hash__
+# - [ ] Add it to get_config_id
 # - [ ] Add it to cls.from_parser
 # - [ ] Add it to __init__
 # - [ ] Add it to tests.test_train_config
@@ -60,8 +63,8 @@ DEVICES:
     def copy(self):
         return copy.copy(self)
 
-    def __hash__(self) -> int:
-        """Hash an instance of training config.
+    def get_config_id(self) -> str:
+        """Gets the config ID of a config (which is a permanent URL-safe string hash)
 
         The hash is computed based on the attributes of the instance that
         are NOT equal to the default value. Thus, the hash remains the same
@@ -100,7 +103,36 @@ DEVICES:
         if self.accelerator != TRAIN_CFG_DEFAULT_ACCELERATOR:
             description += f"accelerator={self.accelerator};"
 
-        return hash(description)
+        # Persistent, replicable and URL-free hash
+        return base64.urlsafe_b64encode(
+            hashlib.md5(description.encode("utf-8")).digest()
+        ).decode()[:22]
+
+    def get_output_dir(self, output_main_folder: Path = None) -> Path:
+        """Gets the path to an output dir.
+
+        Saved a JSON export of the config to this output_dir as `training_cfg.json`.
+
+        Args:
+            output_main_folder: The folder in which to create the output dir.
+            If none, paths.output will be used instead.
+        """
+
+        # Main output folder
+        if output_main_folder is None:
+            output_main_folder = paths.output
+
+        # Getting and creating output dir
+        output_dir = output_main_folder / self.get_config_id()
+        output_dir.mkdir(exist_ok=True, parents=True)
+        logger.debug(f"Creating / retrieving config output dir: {output_dir}")
+
+        # Exporting configuration
+        config_export_path = output_dir / "training_cfg.json"
+        self.to_json(config_export_path)
+        logger.debug(f"Exporting training configuration to: {config_export_path}")
+
+        return output_dir
 
     # ==================== CFG BUILD ====================
 
