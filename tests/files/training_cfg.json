@@ -1,0 +1,22 @@
+{
+    "main": {
+        "model": "mistral",
+        "dataset": "arc"
+    },
+    "preprocess": {
+        "max_len": 1024,
+        "label_noise": 0.0
+    },
+    "random_split": {
+        "split_id": 0,
+        "split_prop": 1.0
+    },
+    "lora": {
+        "lora_r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05
+    },
+    "devices": {
+        "accelerator": "cpu"
+    }
+}

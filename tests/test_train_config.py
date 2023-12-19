@@ -12,10 +12,12 @@ import pytest
 from grokking_llm.training import TrainingCfg
 
 training_cfg_path = Path(__file__).parent / "files" / "training.cfg"
+training_cfg_json_path = Path(__file__).parent / "files" / "training_cfg.json"
+training_cfg_export_path = Path(__file__).parent / "files" / "training_cfg_export.json"
 
 
-def test_train_config():
-    training_cfg = TrainingCfg.from_file(training_cfg_path)
+def test_train_config_from_file():
+    training_cfg = TrainingCfg.from_cfg(training_cfg_path)
     assert type(training_cfg.model) == str
     assert type(training_cfg.dataset) == str
     assert type(training_cfg.max_len) == int
@@ -26,6 +28,52 @@ def test_train_config():
     assert type(training_cfg.lora_alpha) == float
     assert type(training_cfg.lora_dropout) == float
     assert type(training_cfg.accelerator) == str
+
+
+def test_train_config_from_json():
+    training_cfg = TrainingCfg.from_json(training_cfg_json_path)
+    assert type(training_cfg.model) == str
+    assert type(training_cfg.dataset) == str
+    assert type(training_cfg.max_len) == int
+    assert type(training_cfg.label_noise) == float
+    assert type(training_cfg.split_id) == int
+    assert type(training_cfg.split_prop) == float
+    assert type(training_cfg.lora_r) == int
+    assert type(training_cfg.lora_alpha) == float
+    assert type(training_cfg.lora_dropout) == float
+    assert type(training_cfg.accelerator) == str
+
+    # Consistency with .cfg file ?
+    training_cfg_from_cfg = TrainingCfg.from_cfg(training_cfg_path)
+    assert training_cfg.model == training_cfg_from_cfg.model
+    assert training_cfg.dataset == training_cfg_from_cfg.dataset
+    assert training_cfg.max_len == training_cfg_from_cfg.max_len
+    assert training_cfg.label_noise == training_cfg_from_cfg.label_noise
+    assert training_cfg.split_id == training_cfg_from_cfg.split_id
+    assert training_cfg.split_prop == training_cfg_from_cfg.split_prop
+    assert training_cfg.lora_r == training_cfg_from_cfg.lora_r
+    assert training_cfg.lora_alpha == training_cfg_from_cfg.lora_alpha
+    assert training_cfg.lora_dropout == training_cfg_from_cfg.lora_dropout
+    assert training_cfg.accelerator == training_cfg_from_cfg.accelerator
+
+
+def test_train_config_export():
+    training_cfg = TrainingCfg.from_json(training_cfg_json_path)
+    training_cfg.to_json(training_cfg_export_path)
+    training_cfg_reload = TrainingCfg.from_json(training_cfg_export_path)
+    assert training_cfg.model == training_cfg_reload.model
+    assert training_cfg.dataset == training_cfg_reload.dataset
+    assert training_cfg.max_len == training_cfg_reload.max_len
+    assert training_cfg.label_noise == training_cfg_reload.label_noise
+    assert training_cfg.split_id == training_cfg_reload.split_id
+    assert training_cfg.split_prop == training_cfg_reload.split_prop
+    assert training_cfg.lora_r == training_cfg_reload.lora_r
+    assert training_cfg.lora_alpha == training_cfg_reload.lora_alpha
+    assert training_cfg.lora_dropout == training_cfg_reload.lora_dropout
+    assert training_cfg.accelerator == training_cfg_reload.accelerator
+
+    # Clean-up
+    training_cfg_export_path.unlink()
 
 
 def test_train_config_model():

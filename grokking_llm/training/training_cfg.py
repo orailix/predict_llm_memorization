@@ -6,6 +6,7 @@ Apache Licence v2.0.
 """
 
 import copy
+import json
 import typing as t
 from configparser import ConfigParser
 from pathlib import Path
@@ -44,10 +45,10 @@ DEVICES:
     def copy(self):
         return copy.copy(self)
 
-    # ==================== BUILD ====================
+    # ==================== CFG BUILD ====================
 
     @classmethod
-    def from_file(cls, path: t.Union[str, Path]):
+    def from_cfg(cls, path: t.Union[str, Path]):
         """Builds a config object from a config file.
 
         Args:
@@ -60,7 +61,22 @@ DEVICES:
         return cls.from_parser(parser)
 
     @classmethod
-    def from_parser(cls, parser: ConfigParser):
+    def from_json(cls, path: t.Union[str, Path]):
+        """Builds a config object from a json file.
+
+        Args:
+            - path: The path to the json file"""
+
+        # PARSING JSON
+        with open(path, "r") as f:
+            json_content = json.load(f)
+
+        return cls.from_parser(json_content)
+
+    # ==================== PARSER ====================
+
+    @classmethod
+    def from_parser(cls, parser: t.Union[ConfigParser, dict]):
         """Builds a config object from a parsed config file.
 
         Args:
@@ -161,6 +177,43 @@ DEVICES:
             lora_dropout=lora_dropout,
             accelerator=accelerator,
         )
+
+    # ==================== SAVING ====================
+
+    def to_json(self, path: t.Union[str, Path]) -> None:
+        """Saves the config as JSON.
+
+        Args:
+            path: The paths to save the config.
+        """
+
+        export = {
+            "main": {
+                "model": self.model,
+                "dataset": self.dataset,
+            },
+            "preprocess": {
+                "max_len": self.max_len,
+                "label_noise": self.label_noise,
+            },
+            "random_split": {
+                "split_id": self.split_id,
+                "split_prop": self.split_prop,
+            },
+            "lora": {
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "lora_dropout": self.lora_dropout,
+            },
+            "devices": {
+                "accelerator": self.accelerator,
+            },
+        }
+
+        with open(path, "w") as f:
+            json.dump(export, f)
+
+    # ==================== CLASS BUILD ====================
 
     def __init__(
         self,
