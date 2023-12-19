@@ -76,6 +76,21 @@ def test_train_config_export():
     training_cfg_export_path.unlink()
 
 
+def test_train_hash():
+
+    assert hash(TrainingCfg()) == hash(TrainingCfg(model="mistral"))
+    assert hash(TrainingCfg(model="mistral")) != hash(TrainingCfg(model="llama"))
+    assert hash(TrainingCfg(dataset="arc")) != hash(TrainingCfg(dataset="ethics"))
+    assert hash(TrainingCfg(max_len=1024)) != hash(TrainingCfg(max_len=512))
+    assert hash(TrainingCfg(label_noise=0.0)) != hash(TrainingCfg(label_noise=1.0))
+    assert hash(TrainingCfg(split_id=1)) != hash(TrainingCfg(split_id=0))
+    assert hash(TrainingCfg(split_prop=0.0)) != hash(TrainingCfg(split_prop=1.0))
+    assert hash(TrainingCfg(split_prop=0.0)) == hash(TrainingCfg(split_prop=0.0))
+    assert hash(TrainingCfg(lora_r=1)) != hash(TrainingCfg(lora_r=2))
+    assert hash(TrainingCfg(lora_alpha=4)) != hash(TrainingCfg(lora_alpha=5))
+    assert hash(TrainingCfg(lora_dropout=0.5)) != hash(TrainingCfg(lora_dropout=0.0))
+
+
 def test_train_config_model():
     with pytest.raises(ValueError):
         TrainingCfg(model="hello")

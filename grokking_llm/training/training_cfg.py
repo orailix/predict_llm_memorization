@@ -24,6 +24,14 @@ from ..utils.hf_hub import (
     MOD_MISTRAL_7B,
 )
 
+# TODO for adding a new attribute to the class:
+# - [ ] Add it to __repr__
+# - [ ] Add a default vaue in ..utils.constants
+# - [ ] Add it to __hash__
+# - [ ] Add it to cls.from_parser
+# - [ ] Add it to __init__
+# - [ ] Add it to tests.test_train_config
+
 
 class TrainingCfg:
     """Represents a training configuration."""
@@ -51,6 +59,48 @@ DEVICES:
 
     def copy(self):
         return copy.copy(self)
+
+    def __hash__(self) -> int:
+        """Hash an instance of training config.
+
+        The hash is computed based on the attributes of the instance that
+        are NOT equal to the default value. Thus, the hash remains the same
+        if some new attributes are added to the TrainingCfg class.
+        """
+
+        description = ""
+
+        if self.model != TRAIN_CFG_DEFAULT_MODEL:
+            description += f"model={self.model};"
+
+        if self.dataset != TRAIN_CFG_DEFAULT_DATASET:
+            description += f"dataset={self.dataset};"
+
+        if self.max_len != TRAIN_CFG_DEFAULT_MAX_LEN:
+            description += f"max_len={self.max_len};"
+
+        if self.label_noise != TRAIN_CFG_DEFAULT_LABEL_NOISE:
+            description += f"label_noise={self.label_noise};"
+
+        if self.split_id != TRAIN_CFG_DEFAULT_SPLIT_ID:
+            description += f"split_id={self.split_id};"
+
+        if self.split_prop != TRAIN_CFG_DEFAULT_SPLIT_PROP:
+            description += f"split_prop={self.split_prop};"
+
+        if self.lora_r != TRAIN_CFG_DEFAULT_LORA_R:
+            description += f"lora_r={self.lora_r};"
+
+        if self.lora_alpha != TRAIN_CFG_DEFAULT_LORA_ALPHA:
+            description += f"lora_alpha={self.lora_alpha};"
+
+        if self.lora_dropout != TRAIN_CFG_DEFAULT_LORA_DROPOUT:
+            description += f"lora_dropout={self.lora_dropout};"
+
+        if self.accelerator != TRAIN_CFG_DEFAULT_ACCELERATOR:
+            description += f"accelerator={self.accelerator};"
+
+        return hash(description)
 
     # ==================== CFG BUILD ====================
 
@@ -228,7 +278,7 @@ DEVICES:
         model: str = TRAIN_CFG_DEFAULT_MODEL,
         dataset: str = TRAIN_CFG_DEFAULT_DATASET,
         max_len: int = TRAIN_CFG_DEFAULT_MAX_LEN,
-        label_noise: float = TRAIN_CFG_DEFAULT_NOISE,
+        label_noise: float = TRAIN_CFG_DEFAULT_LABEL_NOISE,
         split_id: int = TRAIN_CFG_DEFAULT_SPLIT_ID,
         split_prop: float = TRAIN_CFG_DEFAULT_SPLIT_PROP,
         lora_r: int = TRAIN_CFG_DEFAULT_LORA_R,
