@@ -1,6 +1,7 @@
 # Training config names
 TRAIN_CFG_MISTRAL = "mistral"
 TRAIN_CFG_LLAMA = "llama"
+TRAIN_CFG_DUMMY_LLAMA = "dummy_llama"
 TRAIN_CFG_ARC = "arc"
 TRAIN_CFG_ETHICS = "ethics"
 TRAIN_CFG_MMLU = "mmlu"

@@ -12,8 +12,6 @@ from transformers import AutoModelForCausalLM, LlamaForCausalLM, MistralForCausa
 from grokking_llm.training import TrainingCfg
 from grokking_llm.training.models import get_model
 
-TEST_LIGHT_MODEL = "BlackSamorez/llama-2-tiny-testing"
-
 
 def get_num_params(model: t.Union[LlamaForCausalLM, MistralForCausalLM]):
     trainable_params = 0
@@ -27,8 +25,7 @@ def get_num_params(model: t.Union[LlamaForCausalLM, MistralForCausalLM]):
 
 
 def test_get_model():
-    cfg = TrainingCfg()
-    cfg.model = TEST_LIGHT_MODEL
+    cfg = TrainingCfg(model="dummy_llama")
 
     # Models
     hf_model = AutoModelForCausalLM.from_pretrained(cfg.model)
