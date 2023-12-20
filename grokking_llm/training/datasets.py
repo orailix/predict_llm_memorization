@@ -61,7 +61,7 @@ def get_dataset(
 def format_dataset(
     dataset: Dataset,
     cfg: TrainingCfg,
-    seed: t.Optional[int] = None,
+    seed: t.Optional[int] = 0,
     force_template: bool = False,
 ) -> Dataset:
     """Formats a dataset.

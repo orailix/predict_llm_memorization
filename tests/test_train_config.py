@@ -11,7 +11,9 @@ from pathlib import Path
 import pytest
 
 from grokking_llm.training import TrainingCfg
+from grokking_llm.utils import paths
 
+# Test files
 test_files = Path(__file__).parent / "files"
 training_cfg_path = test_files / "training.cfg"
 training_cfg_json_path = test_files / "training_cfg.json"
@@ -30,6 +32,8 @@ def test_train_config_from_file():
     assert type(training_cfg.lora_alpha) == float
     assert type(training_cfg.lora_dropout) == float
     assert type(training_cfg.accelerator) == str
+    assert type(training_cfg.epochs_done) == int
+    assert type(training_cfg.epochs_total) == int
 
 
 def test_train_config_from_json():
@@ -44,17 +48,19 @@ def test_train_config_from_json():
     assert type(training_cfg.lora_alpha) == float
     assert type(training_cfg.lora_dropout) == float
     assert type(training_cfg.accelerator) == str
+    assert type(training_cfg.epochs_done) == int
+    assert type(training_cfg.epochs_total) == int
 
     # Consistency with .cfg file ?
     training_cfg_from_cfg = TrainingCfg.from_cfg(training_cfg_path)
-    assert training_cfg.get_config_id() == training_cfg_from_cfg.get_config_id()
+    assert training_cfg == training_cfg_from_cfg
 
 
 def test_train_config_export():
     training_cfg = TrainingCfg.from_json(training_cfg_json_path)
     training_cfg.to_json(training_cfg_export_path)
     training_cfg_reload = TrainingCfg.from_json(training_cfg_export_path)
-    assert training_cfg.get_config_id() == training_cfg_reload.get_config_id()
+    assert training_cfg == training_cfg_reload
 
     # Clean-up
     training_cfg_export_path.unlink()
@@ -102,31 +108,72 @@ def test_train_config_hash():
         TrainingCfg(lora_dropout=0.5).get_config_id()
         != TrainingCfg(lora_dropout=0.0).get_config_id()
     )
+    assert (
+        TrainingCfg(epochs_done=0).get_config_id()
+        == TrainingCfg(epochs_done=1).get_config_id()
+    )
+    assert (
+        TrainingCfg(epochs_total=0).get_config_id()
+        == TrainingCfg(epochs_total=1).get_config_id()
+    )
 
 
 def test_train_config_output_dir():
-    training_cfg_0 = TrainingCfg(model="mistral")
-    training_cfg_1 = TrainingCfg(model="mistral")
-    training_cfg_2 = TrainingCfg(model="llama")
+    training_cfg_0 = TrainingCfg(model="mistral", epochs_total=2, epochs_done=0)
+    training_cfg_1 = TrainingCfg(model="mistral", epochs_total=2, epochs_done=1)
+    training_cfg_2 = TrainingCfg(model="mistral", epochs_total=3, epochs_done=1)
+    training_cfg_3 = TrainingCfg(model="llama", epochs_total=2, epochs_done=0)
 
-    dir_0 = training_cfg_0.get_output_dir()
-    dir_1 = training_cfg_1.get_output_dir()
-    dir_2 = training_cfg_2.get_output_dir()
+    dir_0 = training_cfg_0.output_dir
+    dir_1 = training_cfg_1.output_dir
+    dir_2 = training_cfg_2.output_dir
+    dir_3 = training_cfg_3.output_dir
+
+    # Remove directory if they already existed
+    for dir_ in [dir_0, dir_1, dir_2, dir_3]:
+        if dir_.is_dir():
+            shutil.rmtree(dir_)
 
     # Consistency ?
-    assert dir_0 == dir_1
-    assert dir_1 != dir_2
+    assert dir_0 == dir_1 == dir_2
+    assert dir_2 != dir_3
 
-    # Well created ?
+    # Sync dir 0
+    assert not dir_0.is_dir()
+    did_sync = training_cfg_0.sync_with_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert not did_sync
     assert dir_0.is_dir()
-    assert dir_2.is_dir()
+    assert config_reloaded == training_cfg_0
 
-    # Config export
-    config_reloaded = TrainingCfg.from_json(dir_2 / "training_cfg.json")
-    assert config_reloaded.get_config_id() == training_cfg_2.get_config_id()
+    # Sync dir 1
+    did_sync = training_cfg_1.sync_with_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert did_sync
+    assert config_reloaded == training_cfg_1
+    assert config_reloaded.epochs_done == 1
+    assert config_reloaded.epochs_total == 2
 
-    shutil.rmtree(dir_0)
-    shutil.rmtree(dir_2)
+    # Sync dir 2
+    did_sync = training_cfg_2.sync_with_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert did_sync
+    assert config_reloaded == training_cfg_2
+    assert config_reloaded.epochs_done == 1
+    assert config_reloaded.epochs_total == 3
+
+    # Re-sync dir 0
+    did_sync = training_cfg_0.sync_with_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert did_sync
+    assert config_reloaded == training_cfg_0
+    assert training_cfg_0.epochs_done == 1
+    assert training_cfg_0.epochs_total == 3
+
+    # Cleaning
+    for dir_ in [dir_0, dir_1, dir_2, dir_3]:
+        if dir_.is_dir():
+            shutil.rmtree(dir_)
 
 
 def test_train_config_model():
@@ -189,3 +236,11 @@ def test_train_config_accelerator():
 
     with pytest.raises(RuntimeError):
         TrainingCfg(accelerator="vulkan")
+
+
+def test_train_config_epochs():
+    with pytest.raises(ValueError):
+        TrainingCfg(epochs_done=-1)
+
+    with pytest.raises(ValueError):
+        TrainingCfg(epochs_done=1, epochs_total=0)

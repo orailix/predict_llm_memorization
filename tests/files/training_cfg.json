@@ -18,5 +18,9 @@
     },
     "devices": {
         "accelerator": "cpu"
+    },
+    "epochs": {
+        "epochs_done": 0,
+        "epochs_total": 1
     }
 }

@@ -7,6 +7,7 @@ Apache Licence v2.0.
 
 import base64
 import copy
+import functools
 import hashlib
 import json
 import typing as t
@@ -31,7 +32,9 @@ from ..utils.hf_hub import (
 # - [ ] Add it to __repr__
 # - [ ] Add a default vaue in ..utils.constants
 # - [ ] Add it to get_config_id
+# - [ ] Add it to configs/training.cfg ; tests/files/training.cfg ; tests/files/ training_cfg.json
 # - [ ] Add it to cls.from_parser
+# - [ ] Add it to to_json
 # - [ ] Add it to __init__
 # - [ ] Add it to tests.test_train_config
 
@@ -58,6 +61,9 @@ LoRA:
     - lora_dropout: {self.lora_dropout}
 DEVICES:
     - accelerator: {self.accelerator}
+TRAINING_STATUS:
+    - epoch_done: {self.epochs_done}
+    - epoch_total: {self.epochs_total}
 """
 
     def copy(self):
@@ -69,6 +75,11 @@ DEVICES:
         The hash is computed based on the attributes of the instance that
         are NOT equal to the default value. Thus, the hash remains the same
         if some new attributes are added to the TrainingCfg class.
+
+        The two only attributes that are not taken into account for this ID are:
+            - self.epoch_done: we want the ID to remain the same through training
+            - self.epoch_total: we wan the ID to be the same if two cfg has different
+            total number of epoch.
         """
 
         description = ""
@@ -108,31 +119,80 @@ DEVICES:
             hashlib.md5(description.encode("utf-8")).digest()
         ).decode()[:22]
 
-    def get_output_dir(self, output_main_folder: Path = None) -> Path:
-        """Gets the path to an output dir.
+    @property
+    @functools.lru_cache
+    def output_dir(self) -> Path:
+        """The output dir of a training config."""
+        return paths.output / self.get_config_id()
 
-        Saved a JSON export of the config to this output_dir as `training_cfg.json`.
+    def sync_with_output_dir(self) -> bool:
+        """Sync with the output dir of a training config and sync with it.
 
-        Args:
-            output_main_folder: The folder in which to create the output dir.
-            If none, paths.output will be used instead.
+        - If the output dir does not exist:
+            - Creates it
+            - Export the training config as output_dir / "training_cfg.json"
+        - If it exists:
+            - Updates the number of epoch done as the maximum of itself and value on disk
+            - Idem for total number of epochs
+
+        Return:
+            bool: True if the object has been updated with an existing output dir, else False.
         """
 
-        # Main output folder
-        if output_main_folder is None:
-            output_main_folder = paths.output
+        logger.info(f"Synchronizing config with output dir: {self.output_dir}")
+        cfg_export_path = self.output_dir / "training_cfg.json"
 
-        # Getting and creating output dir
-        output_dir = output_main_folder / self.get_config_id()
-        output_dir.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"Creating / retrieving config output dir: {output_dir}")
+        if not self.output_dir.is_dir() or not cfg_export_path.exists():
+            logger.debug(f"Config not found on disk.")
+            logger.debug(
+                f"Creating output dir and exporting config at: {cfg_export_path}"
+            )
+            self.output_dir.mkdir(parents=True)
+            self.to_json(cfg_export_path)
 
-        # Exporting configuration
-        config_export_path = output_dir / "training_cfg.json"
-        self.to_json(config_export_path)
-        logger.debug(f"Exporting training configuration to: {config_export_path}")
+            return False
 
-        return output_dir
+        else:
+            logger.debug(f"Found existing config at: {self.output_dir}")
+            disk_config = TrainingCfg.from_json(cfg_export_path)
+            if disk_config.get_config_id() != self.get_config_id():
+                raise RuntimeError(
+                    f"Found a training config file that does not correspond to its config ID: {cfg_export_path}"
+                )
+
+            epochs_done_before = self.epochs_done
+            epochs_total_before = self.epochs_total
+            self.epochs_done = max(self.epochs_done, disk_config.epochs_done)
+            logger.debug(
+                f"Updating self.epoch_done {epochs_done_before} => {self.epochs_done}"
+            )
+            self.epochs_total = max(self.epochs_total, disk_config.epochs_total)
+            logger.debug(
+                f"Updating self.epoch_total {epochs_total_before} => {self.epochs_total}"
+            )
+
+            # Exporting
+            logger.debug(f"Exporting training config to {cfg_export_path}")
+            self.to_json(cfg_export_path)
+
+            return True
+
+    def __eq__(self, __value: object) -> bool:
+        """Two instances are equals if all attributes are equals."""
+
+        if not isinstance(__value, TrainingCfg):
+            return False
+        return (
+            self.get_config_id() == __value.get_config_id()
+            and self.epochs_done == __value.epochs_done
+            and self.epochs_total == __value.epochs_total
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            self.get_config_id()
+            + f";epochs_done={self.epochs_done};epochs_total={self.epochs_total}"
+        )
 
     # ==================== CFG BUILD ====================
 
@@ -252,6 +312,22 @@ DEVICES:
 
         accelerator = parser["devices"]["accelerator"]
 
+        # EPOCHS CONFIG
+
+        if "epochs" not in parser:
+            raise ValueError("Your config should contain a 'epochs' section.")
+        if "epochs_done" not in parser["epochs"]:
+            raise ValueError(
+                "Section 'epochs' of your config should contain a 'epochs_done' entry."
+            )
+        if "epochs_total" not in parser["epochs"]:
+            raise ValueError(
+                "Section 'epochs' of your config should contain a 'epochs_total' entry."
+            )
+
+        epochs_done = parser["epochs"]["epochs_done"]
+        epochs_total = parser["epochs"]["epochs_total"]
+
         # OUTPUT
 
         return cls(
@@ -265,6 +341,8 @@ DEVICES:
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             accelerator=accelerator,
+            epochs_done=epochs_done,
+            epochs_total=epochs_total,
         )
 
     # ==================== SAVING ====================
@@ -297,10 +375,14 @@ DEVICES:
             "devices": {
                 "accelerator": self.accelerator,
             },
+            "epochs": {
+                "epochs_done": self.epochs_done,
+                "epochs_total": self.epochs_total,
+            },
         }
 
         with open(path, "w") as f:
-            json.dump(export, f)
+            json.dump(export, f, sort_keys=True, indent=2)
 
     # ==================== CLASS BUILD ====================
 
@@ -317,6 +399,8 @@ DEVICES:
         lora_alpha: float = TRAIN_CFG_DEFAULT_LORA_ALPHA,
         lora_dropout: float = TRAIN_CFG_DEFAULT_LORA_DROPOUT,
         accelerator: str = TRAIN_CFG_DEFAULT_ACCELERATOR,
+        epochs_done: int = TRAIN_CFG_DEFAULT_EPOCH_DONE,
+        epochs_total: int = TRAIN_CFG_DEFAULT_EPOCH_TOTAL,
     ):
         """Safely builds a config object from kwargs."""
 
@@ -330,7 +414,7 @@ DEVICES:
             self.model = MOD_LLAMA_7B
         elif model.lower() == TRAIN_CFG_DUMMY_LLAMA:
             logger.info(f"Using dummy Llama model for testing.: {MOD_DUMMY_LLAMA}")
-            logger.info("DO NOT USE FOR OTHER PURPOSE")
+            logger.info("DO NOT USE FOR NON-TESTING PURPOSE")
             self.model = MOD_DUMMY_LLAMA
         else:
             raise ValueError(
@@ -430,4 +514,22 @@ DEVICES:
         if self.accelerator == "cuda" and not torch.cuda.is_available():
             logger.warning(
                 f"You selected `cuda` accelerator, but it is not available. CPU will be used instead."
+            )
+
+        # EPOCHS CONFIG
+
+        try:
+            self.epochs_done = int(epochs_done)
+            if self.epochs_done < 0:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(f"`epochs_done`={epochs_done} should be a positive int.")
+
+        try:
+            self.epochs_total = int(epochs_total)
+            if self.epochs_total < self.epochs_done:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(
+                f"`epochs_total`={epochs_total} should be an int greater than `epoch_done`={self.epochs_done}"
             )

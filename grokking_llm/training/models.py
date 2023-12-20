@@ -6,30 +6,83 @@ Apache Licence v2.0.
 """
 
 import typing as t
+from pathlib import Path
 
 from loguru import logger
-from peft import LoraConfig, get_peft_model
-from torch.nn import Module
+from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import AutoModelForCausalLM, LlamaForCausalLM, MistralForCausalLM
 
+from ..utils import paths
 from .training_cfg import TrainingCfg
 
 
-def get_model(cfg: TrainingCfg) -> Module:
+def get_model(cfg: TrainingCfg, sync_config: bool = False) -> PeftModel:
     """Gets the model, and adds the LoRA weights.
 
-    The config object should contain the details about the model, LoRA config,
-    and hardware.
+    The config object should contain the details about the model, LoRA config, and hardware.
+
+    Args:
+        cfg: A configuration object.
+        sync_config: If True, the config will be updated (so we will get the latest model).
+            Else, we get the model at the exact epoch that is specified as cfg.epochs_done.
+
+    Returns:
+        peft.peft_model.PeftModel: The model
+    """
+
+    # Logging
+    logger.info(f"Loading model {cfg.model} on device {cfg.accelerator}")
+
+    # Model already saved ?
+    if sync_config:
+        did_sync = cfg.sync_with_output_dir()
+        if did_sync:
+            logger.info(f"The training config has been successfully updated from disk.")
+        else:
+            logger.info(f"No pre-trained model with the same config found.")
+
+    # Do we expect a checkpoint from the disk or from HF hub ?
+    loading_path = cfg.output_dir / f"epoch_{cfg.epochs_done}"
+    if not loading_path.is_dir():
+        if cfg.epochs_done == 0:
+            # Loading from HF hub
+            logger.info(f"Creating a new PEFT model")
+            return _get_new_model(cfg)
+
+        raise FileNotFoundError(
+            f"No checkpoint found for epoch {cfg.epochs_done} ar {loading_path}"
+        )
+
+    # Logging
+    logger.debug(f"Loading model from {loading_path}")
+
+    # Raw model
+    hf_model: t.Union[
+        LlamaForCausalLM, MistralForCausalLM
+    ] = AutoModelForCausalLM.from_pretrained(
+        cfg.model,
+        device_map=cfg.accelerator,
+    )
+
+    # Gredient checkpointing
+    logger.debug(f"Enabling gradient checkpointing for model {cfg.model}")
+    hf_model.gradient_checkpointing_enable()
+
+    return PeftModel.from_pretrained(hf_model, loading_path)
+
+
+def _get_new_model(cfg: TrainingCfg) -> PeftModel:
+    """Gets a model, and adds the LoRA weights.
+
+    The config object should contain the details about the model, LoRA config, and hardware.
+    This function should only be called when no model has been found with the same config.
 
     Args:
         cfg: A configuration object.
 
     Returns:
-        torch.nn.Module: The model
+        peft.peft_model.PeftModel: The model
     """
-
-    # Logging
-    logger.info(f"Loading model {cfg.model} on device {cfg.accelerator}")
 
     # Raw model
     hf_model: t.Union[
@@ -67,3 +120,26 @@ def get_model(cfg: TrainingCfg) -> Module:
 
     # Output
     return model
+
+
+def save_model(model: PeftModel, cfg: TrainingCfg) -> Path:
+    """Saves a PEFT model and returns the saving dir.
+
+    Args:
+        model: The model to save.
+        cfg: A trainign configuration object.
+    Returns:
+        pathlib.Path: The directory in which the model has been saved.
+    """
+
+    # Saving model
+    logger.info(f"Saving PEFT model based on {cfg.model} at: {cfg.output_dir}")
+    cfg.sync_with_output_dir()
+    logger.debug(f"Creating a saving dir for epoch {cfg.epochs_done}")
+    epoch_saving_dir = cfg.output_dir / f"epoch_{cfg.epochs_done}"
+    epoch_saving_dir.mkdir(exist_ok=True, parents=True)
+    logger.debug(f"Saving epoch={cfg.epochs_done} at {epoch_saving_dir}")
+    model.save_pretrained(epoch_saving_dir, save_embedding_layers=True)
+
+    # Output
+    return epoch_saving_dir

@@ -21,3 +21,5 @@ repos:
         name: Pytest tests
         entry: bash -c 'PYTHONPATH=. pytest'
         language: system
+        pass_filenames: false
+        always_run: true
