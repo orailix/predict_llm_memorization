@@ -61,7 +61,7 @@ def get_dataset(
 def format_dataset(
     dataset: Dataset,
     cfg: TrainingCfg,
-    seed: t.Optional[int] = 0,
+    seed: t.Optional[int] = None,
     force_template: bool = False,
 ) -> Dataset:
     """Formats a dataset.
@@ -70,11 +70,18 @@ def format_dataset(
         dataset: The dataset to be formatted
         cfg: A configuration object
         split: One of ["train", "test"]
-        seed: If not None, a random state will be initiated with this seed and used for sampling the templates
+        seed: If None, the seed specified in cfg.data_seed will be used to sample the tempates.
+            Else, a random generator will be initialized with `seed` and used for this.
 
     Returns:
         datasets.Dataset: The dataset.
     """
+
+    # Parsing args
+    if seed is not None:
+        logger.info(f"Overwriting cfg.data_seed with seed={seed}")
+    else:
+        seed = cfg.data_seed
 
     # Logging
     logger.info(f"Formatting dataset {cfg.dataset}")
@@ -119,21 +126,25 @@ def add_labels(
     Args:
         dataset: The dataset to which the labels will be added
         cfg: A configuration object
-        seed: If not None, a random state will be initiated with this seed and used for sampling the templates
+        seed: If None, the seed specified in cfg.data_seed will be used to sample the label noise.
+            Else, a random generator will be initialized with `seed` and used for this.
 
     Returns:
         datasets.Dataset: The dataset.
     """
+
+    # Parsing args
+    if seed is not None:
+        logger.info(f"Overwriting cfg.data_seed with seed={seed}")
+    else:
+        seed = cfg.data_seed
 
     # Logging
     logger.info(f"Adding labels to dataset {cfg.dataset}")
     logger.debug(f"Using proportion label_noise={cfg.label_noise} with seed={seed}")
 
     # Sampling determinism
-    if seed is not None:
-        random_state = np.random.RandomState(seed=seed)
-    else:
-        random_state = None
+    random_state = np.random.RandomState(seed=seed)
 
     # Formatting function
     formatting_fct = lambda args: format_label(

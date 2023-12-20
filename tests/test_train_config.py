@@ -26,6 +26,7 @@ def test_train_config_from_file():
     assert type(training_cfg.dataset) == str
     assert type(training_cfg.max_len) == int
     assert type(training_cfg.label_noise) == float
+    assert type(training_cfg.data_seed) == int
     assert type(training_cfg.split_id) == int
     assert type(training_cfg.split_prop) == float
     assert type(training_cfg.lora_r) == int
@@ -42,6 +43,7 @@ def test_train_config_from_json():
     assert type(training_cfg.dataset) == str
     assert type(training_cfg.max_len) == int
     assert type(training_cfg.label_noise) == float
+    assert type(training_cfg.data_seed) == int
     assert type(training_cfg.split_id) == int
     assert type(training_cfg.split_prop) == float
     assert type(training_cfg.lora_r) == int
@@ -84,6 +86,10 @@ def test_train_config_hash():
     assert (
         TrainingCfg(label_noise=0.0).get_config_id()
         != TrainingCfg(label_noise=1.0).get_config_id()
+    )
+    assert (
+        TrainingCfg(data_seed=0).get_config_id()
+        != TrainingCfg(data_seed=1).get_config_id()
     )
     assert (
         TrainingCfg(split_id=1).get_config_id()
@@ -205,6 +211,11 @@ def test_train_config_label_noise():
 
     with pytest.raises(ValueError):
         TrainingCfg(label_noise=1.1)
+
+
+def test_train_config_label_noise():
+    with pytest.raises(ValueError):
+        TrainingCfg(data_seed="hello")
 
 
 def test_train_config_split_id():

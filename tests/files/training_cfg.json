@@ -5,7 +5,8 @@
     },
     "preprocess": {
         "max_len": 1024,
-        "label_noise": 0.0
+        "label_noise": 0.0,
+        "data_seed": 0
     },
     "random_split": {
         "split_id": 0,

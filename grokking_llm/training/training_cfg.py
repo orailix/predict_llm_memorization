@@ -52,6 +52,7 @@ MAIN:
 PREPROCESS:
     - max_len: {self.max_len}
     - label_noise: {self.label_noise}
+    - data_seed: {self.data_seed}
 RANDOM SPLIT:
     - split_id: {self.split_id}
     - split_prop: {self.split_prop}
@@ -95,6 +96,9 @@ TRAINING_STATUS:
 
         if self.label_noise != TRAIN_CFG_DEFAULT_LABEL_NOISE:
             description += f"label_noise={self.label_noise};"
+
+        if self.data_seed != TRAIN_CFG_DEFAULT_data_seed:
+            description += f"label_noise={self.data_seed};"
 
         if self.split_id != TRAIN_CFG_DEFAULT_SPLIT_ID:
             description += f"split_id={self.split_id};"
@@ -312,9 +316,14 @@ TRAINING_STATUS:
             raise ValueError(
                 "Section 'preprocess' of your config should contain a 'label_noise' entry."
             )
+        if "data_seed" not in parser["preprocess"]:
+            raise ValueError(
+                "Section 'preprocess' of your config should contain a 'data_seed' entry."
+            )
 
         max_len = parser["preprocess"]["max_len"]
         label_noise = parser["preprocess"]["label_noise"]
+        data_seed = parser["preprocess"]["data_seed"]
 
         # RANDOM SPLIT CONFIG
 
@@ -387,6 +396,7 @@ TRAINING_STATUS:
             dataset=dataset,
             max_len=max_len,
             label_noise=label_noise,
+            data_seed=data_seed,
             split_id=split_id,
             split_prop=split_prop,
             lora_r=lora_r,
@@ -414,6 +424,7 @@ TRAINING_STATUS:
             "preprocess": {
                 "max_len": self.max_len,
                 "label_noise": self.label_noise,
+                "data_seed": self.data_seed,
             },
             "random_split": {
                 "split_id": self.split_id,
@@ -445,6 +456,7 @@ TRAINING_STATUS:
         dataset: str = TRAIN_CFG_DEFAULT_DATASET,
         max_len: int = TRAIN_CFG_DEFAULT_MAX_LEN,
         label_noise: float = TRAIN_CFG_DEFAULT_LABEL_NOISE,
+        data_seed: int = TRAIN_CFG_DEFAULT_data_seed,
         split_id: int = TRAIN_CFG_DEFAULT_SPLIT_ID,
         split_prop: float = TRAIN_CFG_DEFAULT_SPLIT_PROP,
         lora_r: int = TRAIN_CFG_DEFAULT_LORA_R,
@@ -503,6 +515,11 @@ TRAINING_STATUS:
             raise ValueError(
                 f"`label_noise`={label_noise} should be a float between 0 and 1."
             )
+
+        try:
+            self.data_seed = int(data_seed)
+        except ValueError:
+            raise ValueError(f"`label_noise`={data_seed} should be an int.")
 
         # RANDOM SPLIT CONFIG
 
