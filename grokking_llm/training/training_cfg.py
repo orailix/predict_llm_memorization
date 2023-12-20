@@ -253,6 +253,24 @@ TRAINING_STATUS:
     # ==================== CFG BUILD ====================
 
     @classmethod
+    def from_file(cls, path: t.Union[str, Path]):
+        """Builds a config object from a file.
+
+        Args:
+            - path: The path to the file, either .cfg or .json"""
+
+        # PARSING CONFIG
+        if type(path) == str:
+            path = Path(path)
+
+        if path.suffix == ".cfg":
+            return cls.from_cfg(path)
+        elif path.suffix == ".json":
+            return cls.from_json(path)
+        else:
+            raise ValueError(f"Expected a .json or .cfg file: {path}")
+
+    @classmethod
     def from_cfg(cls, path: t.Union[str, Path]):
         """Builds a config object from a config file.
 

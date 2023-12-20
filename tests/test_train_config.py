@@ -58,6 +58,21 @@ def test_train_config_from_json():
     assert training_cfg == training_cfg_from_cfg
 
 
+def test_train_config_from_file():
+    assert TrainingCfg.from_file(training_cfg_json_path) == TrainingCfg.from_json(
+        training_cfg_json_path
+    )
+    assert TrainingCfg.from_file(training_cfg_path) == TrainingCfg.from_cfg(
+        training_cfg_path
+    )
+    assert TrainingCfg.from_file(training_cfg_json_path) == TrainingCfg.from_file(
+        training_cfg_path
+    )
+
+    with pytest.raises(ValueError):
+        TrainingCfg.from_file("hello.yaml")
+
+
 def test_train_config_export():
     training_cfg = TrainingCfg.from_json(training_cfg_json_path)
     training_cfg.to_json(training_cfg_export_path)
