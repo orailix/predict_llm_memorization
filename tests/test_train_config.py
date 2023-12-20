@@ -140,35 +140,43 @@ def test_train_config_output_dir():
 
     # Sync dir 0
     assert not dir_0.is_dir()
-    did_sync = training_cfg_0.sync_with_output_dir()
+    training_cfg_0.sync_object_to_disk()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert not did_sync
     assert dir_0.is_dir()
     assert config_reloaded == training_cfg_0
 
     # Sync dir 1
-    did_sync = training_cfg_1.sync_with_output_dir()
+    training_cfg_1.sync_object_to_disk()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert did_sync
     assert config_reloaded == training_cfg_1
     assert config_reloaded.epochs_done == 1
     assert config_reloaded.epochs_total == 2
 
     # Sync dir 2
-    did_sync = training_cfg_2.sync_with_output_dir()
+    training_cfg_2.sync_object_to_disk()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert did_sync
     assert config_reloaded == training_cfg_2
     assert config_reloaded.epochs_done == 1
     assert config_reloaded.epochs_total == 3
 
-    # Re-sync dir 0
-    did_sync = training_cfg_0.sync_with_output_dir()
+    # Re-sync cfg 0 to disk : should do nothing
+    training_cfg_0.sync_object_to_disk()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert did_sync
+    assert config_reloaded == training_cfg_2
+    assert training_cfg_0.epochs_done == 0
+    assert training_cfg_0.epochs_total == 2
+
+    # Re-sync disk to cfg 0 : should update the config
+    training_cfg_0.sync_disk_to_object()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
     assert config_reloaded == training_cfg_0
-    assert training_cfg_0.epochs_done == 1
-    assert training_cfg_0.epochs_total == 3
+    assert config_reloaded.epochs_done == 1
+    assert config_reloaded.epochs_total == 3
+
+    # Sync both direction cfg 1
+    training_cfg_1.sync_both_directions()
+    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert config_reloaded == training_cfg_1 == training_cfg_2
 
     # Cleaning
     for dir_ in [dir_0, dir_1, dir_2, dir_3]:

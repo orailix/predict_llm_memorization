@@ -125,57 +125,109 @@ TRAINING_STATUS:
         """The output dir of a training config."""
         return paths.output / self.get_config_id()
 
-    def sync_with_output_dir(self) -> bool:
-        """Sync with the output dir of a training config and sync with it.
+    def sync_disk_to_object(self):
+        """Sync from the output dir of a config to the config object.
 
         - If the output dir does not exist:
-            - Creates it
-            - Export the training config as output_dir / "training_cfg.json"
+            - Does nothing else
         - If it exists:
-            - Updates the number of epoch done as the maximum of itself and value on disk
-            - Idem for total number of epochs
-
-        Return:
-            bool: True if the object has been updated with an existing output dir, else False.
+            - Reads the disk config from the output dir
+            - Updates `self.epochs_done` as the maxium of `self.epochs_done` and `disk_config.epochs_done`
+            - Idem for `epochs_total`
         """
 
-        logger.info(f"Synchronizing config with output dir: {self.output_dir}")
+        logger.info(f"Synchronizing config object << {self.output_dir}")
         cfg_export_path = self.output_dir / "training_cfg.json"
 
         if not self.output_dir.is_dir() or not cfg_export_path.exists():
-            logger.debug(f"Config not found on disk.")
-            logger.debug(
-                f"Creating output dir and exporting config at: {cfg_export_path}"
+            logger.debug(f"Counfig not found on disk.")
+
+            return
+
+        logger.debug(f"Loading config found at: {cfg_export_path}")
+        disk_config = TrainingCfg.from_json(cfg_export_path)
+
+        # Integrity checks
+        if disk_config.get_config_id() != self.get_config_id():
+            raise RuntimeError(
+                f"Found a training config file that does not correspond to its config ID: {cfg_export_path}"
             )
+
+        # Updating
+        epochs_done_before = self.epochs_done
+        epochs_total_before = self.epochs_total
+        self.epochs_done = max(self.epochs_done, disk_config.epochs_done)
+        logger.debug(
+            f"Updating self.epoch_done {epochs_done_before} => {self.epochs_done}"
+        )
+        self.epochs_total = max(self.epochs_total, disk_config.epochs_total)
+        logger.debug(
+            f"Updating self.epoch_total {epochs_total_before} => {self.epochs_total}"
+        )
+
+    def sync_object_to_disk(self) -> bool:
+        """Sync from the config object to its output dir.
+
+        - If the output dir does not exist:
+            - Creates it
+            - Exports itself in the output dir
+        - If it exists:
+            - Loads the disk config
+            - Updates `disk_config.epochs_done` as the maximum of itself and `self.epochs_done`
+            - Idem for `epochs_total`
+        """
+
+        logger.info(f"Synchronizing config object >> {self.output_dir}")
+        cfg_export_path = self.output_dir / "training_cfg.json"
+
+        # Output dir does not exist ?
+        if not self.output_dir.is_dir():
+            logger.debug(f"Output dir not found, creating it at {self.output_dir}")
             self.output_dir.mkdir(parents=True)
+
+            # Exporting config
+            logger.debug(f"Exporting training config at {cfg_export_path}")
             self.to_json(cfg_export_path)
 
-            return False
+            return
 
-        else:
-            logger.debug(f"Found existing config at: {self.output_dir}")
-            disk_config = TrainingCfg.from_json(cfg_export_path)
-            if disk_config.get_config_id() != self.get_config_id():
-                raise RuntimeError(
-                    f"Found a training config file that does not correspond to its config ID: {cfg_export_path}"
-                )
-
-            epochs_done_before = self.epochs_done
-            epochs_total_before = self.epochs_total
-            self.epochs_done = max(self.epochs_done, disk_config.epochs_done)
-            logger.debug(
-                f"Updating self.epoch_done {epochs_done_before} => {self.epochs_done}"
-            )
-            self.epochs_total = max(self.epochs_total, disk_config.epochs_total)
-            logger.debug(
-                f"Updating self.epoch_total {epochs_total_before} => {self.epochs_total}"
+        if not cfg_export_path.exists():
+            logger.warning(
+                f"An output dir existed without training config: {self.output_dir}"
             )
 
-            # Exporting
-            logger.debug(f"Exporting training config to {cfg_export_path}")
+            # Exporting config
+            logger.debug(f"Exporting training config at {cfg_export_path}")
             self.to_json(cfg_export_path)
 
-            return True
+            return
+
+        # Loading disk config
+        logger.debug(f"Loading config found at: {cfg_export_path}")
+        disk_config = TrainingCfg.from_json(cfg_export_path)
+
+        # Updating
+        epochs_done_before = disk_config.epochs_done
+        epochs_total_before = disk_config.epochs_total
+        disk_config.epochs_done = max(self.epochs_done, disk_config.epochs_done)
+        logger.debug(
+            f"Updating self.epoch_done {epochs_done_before} => {disk_config.epochs_done}"
+        )
+        disk_config.epochs_total = max(self.epochs_total, disk_config.epochs_total)
+        logger.debug(
+            f"Updating self.epoch_total {epochs_total_before} => {disk_config.epochs_total}"
+        )
+
+        # Writing to disk
+        logger.debug(f"Saving at {cfg_export_path}")
+        disk_config.to_json(cfg_export_path)
+
+    def sync_both_directions(self) -> bool:
+        """Sync from output dir to object and then from object to output dir."""
+
+        logger.info(f"Synchronizing config object <> {self.output_dir}")
+        self.sync_disk_to_object()
+        self.sync_object_to_disk()
 
     def __eq__(self, __value: object) -> bool:
         """Two instances are equals if all attributes are equals."""

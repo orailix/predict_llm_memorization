@@ -23,7 +23,7 @@ def get_model(cfg: TrainingCfg, sync_config: bool = False) -> PeftModel:
 
     Args:
         cfg: A configuration object.
-        sync_config: If True, the config will be updated (so we will get the latest model).
+        sync_config: If True, the config will be sync from the disk config (to get the latest model).
             Else, we get the model at the exact epoch that is specified as cfg.epochs_done.
 
     Returns:
@@ -35,11 +35,7 @@ def get_model(cfg: TrainingCfg, sync_config: bool = False) -> PeftModel:
 
     # Model already saved ?
     if sync_config:
-        did_sync = cfg.sync_with_output_dir()
-        if did_sync:
-            logger.info(f"The training config has been successfully updated from disk.")
-        else:
-            logger.info(f"No pre-trained model with the same config found.")
+        cfg.sync_disk_to_object()
 
     # Do we expect a checkpoint from the disk or from HF hub ?
     loading_path = cfg.output_dir / f"epoch_{cfg.epochs_done}"
@@ -134,7 +130,7 @@ def save_model(model: PeftModel, cfg: TrainingCfg) -> Path:
 
     # Saving model
     logger.info(f"Saving PEFT model based on {cfg.model} at: {cfg.output_dir}")
-    cfg.sync_with_output_dir()
+    cfg.sync_object_to_disk()
     logger.debug(f"Creating a saving dir for epoch {cfg.epochs_done}")
     epoch_saving_dir = cfg.output_dir / f"epoch_{cfg.epochs_done}"
     epoch_saving_dir.mkdir(exist_ok=True, parents=True)

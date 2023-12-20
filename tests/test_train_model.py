@@ -84,6 +84,7 @@ def test_get_model_integrity():
     logger.debug("Saving model_epoch_0")
     save_model(model_epoch_0, cfg)
     assert (cfg.output_dir / "epoch_0").is_dir()
+    assert TrainingCfg.from_json(cfg.output_dir / "training_cfg.json") == cfg
 
     # Updating the model for 1 epoch
     logger.debug("Updating model_epoch_0 => model_epoch_1")
@@ -104,6 +105,7 @@ def test_get_model_integrity():
     logger.debug("Saving model_epoch_1")
     save_model(model_epoch_1, cfg)
     assert (cfg.output_dir / "epoch_1").is_dir()
+    assert TrainingCfg.from_json(cfg.output_dir / "training_cfg.json") == cfg
 
     # Re-loading epoch 1
     logger.debug("Re-loading model_epoch_1")
