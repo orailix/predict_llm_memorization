@@ -10,7 +10,7 @@ import typing as t
 import numpy as np
 from datasets import Dataset, load_dataset
 from loguru import logger
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU
 from .formatting import format_arc, format_ethics, format_label, format_mmlu
@@ -191,6 +191,31 @@ def get_random_split(
     return result
 
 
+def get_tokenizer(
+    cfg: TrainingCfg,
+) -> PreTrainedTokenizer:
+    """Gets the tokenizer for a dataset.
+
+    Args:
+        cfg: A configuration object.
+
+    Returns:
+        transformers.PreTrainedTokenizer: The tokenizer.
+    """
+
+    # Creating the tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(
+        cfg.model,
+        model_max_length=cfg.max_len,
+        padding_side="left",
+        truncation_side="left",
+        add_eos_token=True,
+    )
+    tokenizer.pad_token = tokenizer.eos_token
+
+    return tokenizer
+
+
 def tokenize_dataset(
     dataset: Dataset,
     cfg: TrainingCfg,
@@ -214,15 +239,8 @@ def tokenize_dataset(
         f"Using model_max_length={cfg.max_len} and vocabulary from model={cfg.model}"
     )
 
-    # Creating the tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(
-        cfg.model,
-        model_max_length=cfg.max_len,
-        padding_side="left",
-        truncation_side="left",
-        add_eos_token=True,
-    )
-    tokenizer.pad_token = tokenizer.eos_token
+    # Getting the tokenizer
+    tokenizer = get_tokenizer(cfg)
 
     # Mapping function
     def map_fct(sample):
