@@ -12,7 +12,7 @@ from datasets import Dataset, load_dataset
 from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
-from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU
+from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU, MOD_DUMMY_LLAMA, MOD_LLAMA_7B
 from .formatting import format_arc, format_ethics, format_label, format_mmlu
 from .training_cfg import TrainingCfg
 
@@ -203,9 +203,15 @@ def get_tokenizer(
         transformers.PreTrainedTokenizer: The tokenizer.
     """
 
+    # Special case for Dummy Llama, which has no tokenizer
+    if cfg.model == MOD_DUMMY_LLAMA:
+        model_to_ask = MOD_LLAMA_7B
+    else:
+        model_to_ask = cfg.model
+
     # Creating the tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
-        cfg.model,
+        model_to_ask,
         model_max_length=cfg.max_len,
         padding_side="left",
         truncation_side="left",

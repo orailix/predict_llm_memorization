@@ -16,18 +16,7 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, LlamaForCausalLM, MistralForCausalLM
 
 from grokking_llm.training import TrainingCfg
-from grokking_llm.training.models import get_model, save_model
-
-
-def get_num_params(model: t.Union[LlamaForCausalLM, MistralForCausalLM, PeftModel]):
-    trainable_params = 0
-    all_param = 0
-    for _, param in model.named_parameters():
-        all_param += param.numel()
-        if param.requires_grad:
-            trainable_params += param.numel()
-
-    return all_param, trainable_params
+from grokking_llm.training.models import get_model, get_num_params, save_model
 
 
 def test_get_model_quality():

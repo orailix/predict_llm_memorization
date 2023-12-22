@@ -10,10 +10,26 @@ from pathlib import Path
 
 from loguru import logger
 from peft import LoraConfig, PeftModel, get_peft_model
-from transformers import AutoModelForCausalLM, LlamaForCausalLM, MistralForCausalLM
+from transformers import (
+    AutoModelForCausalLM,
+    LlamaForCausalLM,
+    MistralForCausalLM,
+    PreTrainedModel,
+)
 
 from ..utils import paths
 from .training_cfg import TrainingCfg
+
+
+def get_num_params(model: PreTrainedModel):
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+
+    return all_param, trainable_params
 
 
 def get_model(cfg: TrainingCfg, sync_config: bool = False) -> PeftModel:
@@ -62,7 +78,6 @@ def get_model(cfg: TrainingCfg, sync_config: bool = False) -> PeftModel:
 
     # Gredient checkpointing
     logger.debug(f"Enabling gradient checkpointing for model {cfg.model}")
-    hf_model.gradient_checkpointing_enable()
 
     return PeftModel.from_pretrained(hf_model, loading_path)
 
@@ -90,7 +105,6 @@ def _get_new_model(cfg: TrainingCfg) -> PeftModel:
 
     # Gredient checkpointing
     logger.debug(f"Enabling gradient checkpointing for model {cfg.model}")
-    hf_model.gradient_checkpointing_enable()
 
     # LoRA
     logger.debug(
