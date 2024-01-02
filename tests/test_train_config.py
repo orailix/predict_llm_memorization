@@ -22,40 +22,21 @@ training_cfg_export_path = test_files / "training_cfg_export.json"
 
 def test_train_config_from_file():
     training_cfg = TrainingCfg.from_cfg(training_cfg_path)
-    assert type(training_cfg.model) == str
-    assert type(training_cfg.dataset) == str
-    assert type(training_cfg.max_len) == int
-    assert type(training_cfg.label_noise) == float
-    assert type(training_cfg.data_seed) == int
-    assert type(training_cfg.split_id) == int
-    assert type(training_cfg.split_prop) == float
-    assert type(training_cfg.lora_r) == int
-    assert type(training_cfg.lora_alpha) == float
-    assert type(training_cfg.lora_dropout) == float
-    assert type(training_cfg.accelerator) == str
-    assert type(training_cfg.epochs_done) == int
-    assert type(training_cfg.epochs_total) == int
+    training_cfg_json = TrainingCfg.from_json(training_cfg_path)
 
-
-def test_train_config_from_json():
-    training_cfg = TrainingCfg.from_json(training_cfg_json_path)
-    assert type(training_cfg.model) == str
-    assert type(training_cfg.dataset) == str
-    assert type(training_cfg.max_len) == int
-    assert type(training_cfg.label_noise) == float
-    assert type(training_cfg.data_seed) == int
-    assert type(training_cfg.split_id) == int
-    assert type(training_cfg.split_prop) == float
-    assert type(training_cfg.lora_r) == int
-    assert type(training_cfg.lora_alpha) == float
-    assert type(training_cfg.lora_dropout) == float
-    assert type(training_cfg.accelerator) == str
-    assert type(training_cfg.epochs_done) == int
-    assert type(training_cfg.epochs_total) == int
-
-    # Consistency with .cfg file ?
-    training_cfg_from_cfg = TrainingCfg.from_cfg(training_cfg_path)
-    assert training_cfg == training_cfg_from_cfg
+    for item in [training_cfg, training_cfg_json]:
+        assert type(item.model) == str
+        assert type(item.dataset) == str
+        assert type(item.epochs_to_do) == float
+        assert type(item.max_len) == int
+        assert type(item.label_noise) == float
+        assert type(item.data_seed) == int
+        assert type(item.split_id) == int
+        assert type(item.split_prop) == float
+        assert type(item.lora_r) == int
+        assert type(item.lora_alpha) == float
+        assert type(item.lora_dropout) == float
+        assert type(item.accelerator) == str
 
 
 def test_train_config_from_file():
@@ -95,6 +76,10 @@ def test_train_config_hash():
         != TrainingCfg(dataset="ethics").get_config_id()
     )
     assert (
+        TrainingCfg(epochs_to_do=1).get_config_id()
+        == TrainingCfg(epochs_to_do=2).get_config_id()
+    )
+    assert (
         TrainingCfg(max_len=1024).get_config_id()
         != TrainingCfg(max_len=512).get_config_id()
     )
@@ -129,78 +114,50 @@ def test_train_config_hash():
         TrainingCfg(lora_dropout=0.5).get_config_id()
         != TrainingCfg(lora_dropout=0.0).get_config_id()
     )
-    assert (
-        TrainingCfg(epochs_done=0).get_config_id()
-        == TrainingCfg(epochs_done=1).get_config_id()
-    )
-    assert (
-        TrainingCfg(epochs_total=0).get_config_id()
-        == TrainingCfg(epochs_total=1).get_config_id()
-    )
 
 
 def test_train_config_output_dir():
-    training_cfg_0 = TrainingCfg(model="mistral", epochs_total=2, epochs_done=0)
-    training_cfg_1 = TrainingCfg(model="mistral", epochs_total=2, epochs_done=1)
-    training_cfg_2 = TrainingCfg(model="mistral", epochs_total=3, epochs_done=1)
-    training_cfg_3 = TrainingCfg(model="llama", epochs_total=2, epochs_done=0)
+    training_cfg_0 = TrainingCfg(model="mistral", epochs_to_do=1)
+    training_cfg_1 = TrainingCfg(model="mistral", epochs_to_do=2)
+    training_cfg_2 = TrainingCfg(model="llama", epochs_to_do=1)
 
-    dir_0 = training_cfg_0.output_dir
-    dir_1 = training_cfg_1.output_dir
-    dir_2 = training_cfg_2.output_dir
-    dir_3 = training_cfg_3.output_dir
+    dir_0 = training_cfg_0.get_output_dir()
+    dir_1 = training_cfg_1.get_output_dir()
+    dir_2 = training_cfg_2.get_output_dir()
 
     # Remove directory if they already existed
-    for dir_ in [dir_0, dir_1, dir_2, dir_3]:
+    for dir_ in [dir_0, dir_1, dir_2]:
         if dir_.is_dir():
             shutil.rmtree(dir_)
 
-    # Consistency ?
-    assert dir_0 == dir_1 == dir_2
-    assert dir_2 != dir_3
-
     # Sync dir 0
-    assert not dir_0.is_dir()
-    training_cfg_0.sync_object_to_disk()
+    assert not (paths.output / training_cfg_0.get_config_id()).is_dir()
+    dir_0 = training_cfg_0.get_output_dir()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
     assert dir_0.is_dir()
+    assert dir_0 == paths.output / training_cfg_0.get_config_id()
     assert config_reloaded == training_cfg_0
+    assert config_reloaded.epochs_to_do == 1
 
     # Sync dir 1
-    training_cfg_1.sync_object_to_disk()
-    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    dir_1 = training_cfg_1.get_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_1 / "training_cfg.json")
+    assert dir_1 == dir_0
     assert config_reloaded == training_cfg_1
-    assert config_reloaded.epochs_done == 1
-    assert config_reloaded.epochs_total == 2
+    assert config_reloaded.epochs_to_do == 2
 
     # Sync dir 2
-    training_cfg_2.sync_object_to_disk()
-    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
+    assert not (paths.output / training_cfg_2.get_config_id()).is_dir()
+    dir_2 = training_cfg_2.get_output_dir()
+    config_reloaded = TrainingCfg.from_json(dir_2 / "training_cfg.json")
+    assert dir_2.is_dir()
+    assert dir_2 != dir_0
+    assert dir_2 == paths.output / training_cfg_2.get_config_id()
     assert config_reloaded == training_cfg_2
-    assert config_reloaded.epochs_done == 1
-    assert config_reloaded.epochs_total == 3
-
-    # Re-sync cfg 0 to disk : should do nothing
-    training_cfg_0.sync_object_to_disk()
-    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert config_reloaded == training_cfg_2
-    assert training_cfg_0.epochs_done == 0
-    assert training_cfg_0.epochs_total == 2
-
-    # Re-sync disk to cfg 0 : should update the config
-    training_cfg_0.sync_disk_to_object()
-    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert config_reloaded == training_cfg_0
-    assert config_reloaded.epochs_done == 1
-    assert config_reloaded.epochs_total == 3
-
-    # Sync both direction cfg 1
-    training_cfg_1.sync_both_directions()
-    config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
-    assert config_reloaded == training_cfg_1 == training_cfg_2
+    assert config_reloaded.epochs_to_do == 1
 
     # Cleaning
-    for dir_ in [dir_0, dir_1, dir_2, dir_3]:
+    for dir_ in [dir_0, dir_1, dir_2]:
         if dir_.is_dir():
             shutil.rmtree(dir_)
 
@@ -213,6 +170,11 @@ def test_train_config_model():
 def test_train_config_dataset():
     with pytest.raises(ValueError):
         TrainingCfg(dataset="hello")
+
+
+def test_train_config_dataset():
+    with pytest.raises(ValueError):
+        TrainingCfg(epochs_to_do="hello")
 
 
 def test_train_config_max_len():
@@ -270,11 +232,3 @@ def test_train_config_accelerator():
 
     with pytest.raises(RuntimeError):
         TrainingCfg(accelerator="vulkan")
-
-
-def test_train_config_epochs():
-    with pytest.raises(ValueError):
-        TrainingCfg(epochs_done=-1)
-
-    with pytest.raises(ValueError):
-        TrainingCfg(epochs_done=1, epochs_total=0)

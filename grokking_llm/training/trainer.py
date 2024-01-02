@@ -36,7 +36,7 @@ def get_trainer(
             ["input_ids", "attention_mask", "labels"]
         ),
         args=transformers.TrainingArguments(
-            output_dir=cfg.output_dir,
+            output_dir=cfg.get_output_dir(),
             warmup_steps=5,
             per_device_train_batch_size=2,
             gradient_checkpointing=False,
@@ -47,7 +47,8 @@ def get_trainer(
             bf16=True,
             optim="adamw_torch",
             logging_dir="./logs/",  # Directory for storing logs
-            save_strategy="epoch",  # Save the model checkpoint every logging step
+            save_strategy="steps",  # Save the model checkpoint every logging step
+            save_steps=20,
             evaluation_strategy="steps",  # Evaluate the model every logging step
             eval_steps=100,  # Evaluate and save checkpoints every 50 steps
             do_eval=True,  # Perform evaluation at the end of training

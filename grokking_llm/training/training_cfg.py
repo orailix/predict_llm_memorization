@@ -32,11 +32,14 @@ from ..utils.hf_hub import (
 # - [ ] Add it to __repr__
 # - [ ] Add a default vaue in ..utils.constants
 # - [ ] Add it to get_config_id
-# - [ ] Add it to configs/training.cfg ; tests/files/training.cfg ; tests/files/ training_cfg.json
+# - [ ] Add it to configs/training.cfg ; tests/files/training.cfg ; tests/files/training_cfg.json
 # - [ ] Add it to cls.from_parser
 # - [ ] Add it to to_json
 # - [ ] Add it to __init__
 # - [ ] Add it to tests.test_train_config
+
+
+SAVING_NAME = "training_cfg.json"
 
 
 class TrainingCfg:
@@ -49,6 +52,7 @@ class TrainingCfg:
 MAIN:
     - model : {self.model}
     - dataset : {self.dataset}
+    - epochs to do {self.epochs_to_do}
 PREPROCESS:
     - max_len: {self.max_len}
     - label_noise: {self.label_noise}
@@ -62,9 +66,6 @@ LoRA:
     - lora_dropout: {self.lora_dropout}
 DEVICES:
     - accelerator: {self.accelerator}
-TRAINING_STATUS:
-    - epoch_done: {self.epochs_done}
-    - epoch_total: {self.epochs_total}
 """
 
     def copy(self):
@@ -77,10 +78,9 @@ TRAINING_STATUS:
         are NOT equal to the default value. Thus, the hash remains the same
         if some new attributes are added to the TrainingCfg class.
 
-        The two only attributes that are not taken into account for this ID are:
-            - self.epoch_done: we want the ID to remain the same through training
-            - self.epoch_total: we wan the ID to be the same if two cfg has different
-            total number of epoch.
+        The only attribute that is not taken into account for this ID is the number
+        of epochs to do (self.epochs_to_do). This enables adding some more epochs of training
+        while keeping the same ID and saving dir.
         """
 
         description = ""
@@ -97,7 +97,7 @@ TRAINING_STATUS:
         if self.label_noise != TRAIN_CFG_DEFAULT_LABEL_NOISE:
             description += f"label_noise={self.label_noise};"
 
-        if self.data_seed != TRAIN_CFG_DEFAULT_data_seed:
+        if self.data_seed != TRAIN_CFG_DEFAULT_DATA_SEED:
             description += f"label_noise={self.data_seed};"
 
         if self.split_id != TRAIN_CFG_DEFAULT_SPLIT_ID:
@@ -123,115 +123,16 @@ TRAINING_STATUS:
             hashlib.md5(description.encode("utf-8")).digest()
         ).decode()[:22]
 
-    @property
-    @functools.lru_cache
-    def output_dir(self) -> Path:
-        """The output dir of a training config."""
-        return paths.output / self.get_config_id()
+    def get_output_dir(self) -> Path:
+        """The output dir of a training config.
 
-    def sync_disk_to_object(self):
-        """Sync from the output dir of a config to the config object.
+        Creates the dir and saves the config if it does not exist."""
 
-        - If the output dir does not exist:
-            - Does nothing else
-        - If it exists:
-            - Reads the disk config from the output dir
-            - Updates `self.epochs_done` as the maxium of `self.epochs_done` and `disk_config.epochs_done`
-            - Idem for `epochs_total`
-        """
+        result = paths.output / self.get_config_id()
+        result.mkdir(parents=True, exist_ok=True)
+        self.to_json(result / SAVING_NAME)
 
-        logger.info(f"Synchronizing config object << {self.output_dir}")
-        cfg_export_path = self.output_dir / "training_cfg.json"
-
-        if not self.output_dir.is_dir() or not cfg_export_path.exists():
-            logger.debug(f"Counfig not found on disk.")
-
-            return
-
-        logger.debug(f"Loading config found at: {cfg_export_path}")
-        disk_config = TrainingCfg.from_json(cfg_export_path)
-
-        # Integrity checks
-        if disk_config.get_config_id() != self.get_config_id():
-            raise RuntimeError(
-                f"Found a training config file that does not correspond to its config ID: {cfg_export_path}"
-            )
-
-        # Updating
-        epochs_done_before = self.epochs_done
-        epochs_total_before = self.epochs_total
-        self.epochs_done = max(self.epochs_done, disk_config.epochs_done)
-        logger.debug(
-            f"Updating self.epoch_done {epochs_done_before} => {self.epochs_done}"
-        )
-        self.epochs_total = max(self.epochs_total, disk_config.epochs_total)
-        logger.debug(
-            f"Updating self.epoch_total {epochs_total_before} => {self.epochs_total}"
-        )
-
-    def sync_object_to_disk(self) -> bool:
-        """Sync from the config object to its output dir.
-
-        - If the output dir does not exist:
-            - Creates it
-            - Exports itself in the output dir
-        - If it exists:
-            - Loads the disk config
-            - Updates `disk_config.epochs_done` as the maximum of itself and `self.epochs_done`
-            - Idem for `epochs_total`
-        """
-
-        logger.info(f"Synchronizing config object >> {self.output_dir}")
-        cfg_export_path = self.output_dir / "training_cfg.json"
-
-        # Output dir does not exist ?
-        if not self.output_dir.is_dir():
-            logger.debug(f"Output dir not found, creating it at {self.output_dir}")
-            self.output_dir.mkdir(parents=True)
-
-            # Exporting config
-            logger.debug(f"Exporting training config at {cfg_export_path}")
-            self.to_json(cfg_export_path)
-
-            return
-
-        if not cfg_export_path.exists():
-            logger.warning(
-                f"An output dir existed without training config: {self.output_dir}"
-            )
-
-            # Exporting config
-            logger.debug(f"Exporting training config at {cfg_export_path}")
-            self.to_json(cfg_export_path)
-
-            return
-
-        # Loading disk config
-        logger.debug(f"Loading config found at: {cfg_export_path}")
-        disk_config = TrainingCfg.from_json(cfg_export_path)
-
-        # Updating
-        epochs_done_before = disk_config.epochs_done
-        epochs_total_before = disk_config.epochs_total
-        disk_config.epochs_done = max(self.epochs_done, disk_config.epochs_done)
-        logger.debug(
-            f"Updating self.epoch_done {epochs_done_before} => {disk_config.epochs_done}"
-        )
-        disk_config.epochs_total = max(self.epochs_total, disk_config.epochs_total)
-        logger.debug(
-            f"Updating self.epoch_total {epochs_total_before} => {disk_config.epochs_total}"
-        )
-
-        # Writing to disk
-        logger.debug(f"Saving at {cfg_export_path}")
-        disk_config.to_json(cfg_export_path)
-
-    def sync_both_directions(self) -> bool:
-        """Sync from output dir to object and then from object to output dir."""
-
-        logger.info(f"Synchronizing config object <> {self.output_dir}")
-        self.sync_disk_to_object()
-        self.sync_object_to_disk()
+        return result
 
     def __eq__(self, __value: object) -> bool:
         """Two instances are equals if all attributes are equals."""
@@ -240,15 +141,11 @@ TRAINING_STATUS:
             return False
         return (
             self.get_config_id() == __value.get_config_id()
-            and self.epochs_done == __value.epochs_done
-            and self.epochs_total == __value.epochs_total
+            and self.epochs_to_do == __value.epochs_to_do
         )
 
     def __hash__(self) -> int:
-        return hash(
-            self.get_config_id()
-            + f";epochs_done={self.epochs_done};epochs_total={self.epochs_total}"
-        )
+        return hash(self.get_config_id() + f";epochs_to_do={self.epochs_to_do}")
 
     # ==================== CFG BUILD ====================
 
@@ -318,9 +215,14 @@ TRAINING_STATUS:
             raise ValueError(
                 "Section 'main' of your config should contain a 'dataset' entry."
             )
+        if "epochs_to_do" not in parser["main"]:
+            raise ValueError(
+                "Section 'main' of your config should contain a 'epochs_to_do' entry."
+            )
 
         model = parser["main"]["model"]
         dataset = parser["main"]["dataset"]
+        epochs_to_do = parser["main"]["epochs_to_do"]
 
         # PREPROCESS CONFIG
 
@@ -391,27 +293,12 @@ TRAINING_STATUS:
 
         accelerator = parser["devices"]["accelerator"]
 
-        # EPOCHS CONFIG
-
-        if "epochs" not in parser:
-            raise ValueError("Your config should contain a 'epochs' section.")
-        if "epochs_done" not in parser["epochs"]:
-            raise ValueError(
-                "Section 'epochs' of your config should contain a 'epochs_done' entry."
-            )
-        if "epochs_total" not in parser["epochs"]:
-            raise ValueError(
-                "Section 'epochs' of your config should contain a 'epochs_total' entry."
-            )
-
-        epochs_done = parser["epochs"]["epochs_done"]
-        epochs_total = parser["epochs"]["epochs_total"]
-
         # OUTPUT
 
         return cls(
             model=model,
             dataset=dataset,
+            epochs_to_do=epochs_to_do,
             max_len=max_len,
             label_noise=label_noise,
             data_seed=data_seed,
@@ -421,8 +308,6 @@ TRAINING_STATUS:
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             accelerator=accelerator,
-            epochs_done=epochs_done,
-            epochs_total=epochs_total,
         )
 
     # ==================== SAVING ====================
@@ -438,6 +323,7 @@ TRAINING_STATUS:
             "main": {
                 "model": self.model,
                 "dataset": self.dataset,
+                "epochs_to_do": self.epochs_to_do,
             },
             "preprocess": {
                 "max_len": self.max_len,
@@ -456,10 +342,6 @@ TRAINING_STATUS:
             "devices": {
                 "accelerator": self.accelerator,
             },
-            "epochs": {
-                "epochs_done": self.epochs_done,
-                "epochs_total": self.epochs_total,
-            },
         }
 
         with open(path, "w") as f:
@@ -472,17 +354,16 @@ TRAINING_STATUS:
         *,
         model: str = TRAIN_CFG_DEFAULT_MODEL,
         dataset: str = TRAIN_CFG_DEFAULT_DATASET,
+        epochs_to_do: float = TRAIN_CFG_DEFAULT_EPOCHS_TO_DO,
         max_len: int = TRAIN_CFG_DEFAULT_MAX_LEN,
         label_noise: float = TRAIN_CFG_DEFAULT_LABEL_NOISE,
-        data_seed: int = TRAIN_CFG_DEFAULT_data_seed,
+        data_seed: int = TRAIN_CFG_DEFAULT_DATA_SEED,
         split_id: int = TRAIN_CFG_DEFAULT_SPLIT_ID,
         split_prop: float = TRAIN_CFG_DEFAULT_SPLIT_PROP,
         lora_r: int = TRAIN_CFG_DEFAULT_LORA_R,
         lora_alpha: float = TRAIN_CFG_DEFAULT_LORA_ALPHA,
         lora_dropout: float = TRAIN_CFG_DEFAULT_LORA_DROPOUT,
         accelerator: str = TRAIN_CFG_DEFAULT_ACCELERATOR,
-        epochs_done: int = TRAIN_CFG_DEFAULT_EPOCH_DONE,
-        epochs_total: int = TRAIN_CFG_DEFAULT_EPOCH_TOTAL,
     ):
         """Safely builds a config object from kwargs."""
 
@@ -514,6 +395,15 @@ TRAINING_STATUS:
         else:
             raise ValueError(
                 f"`dataset`={dataset}  should be in {[TRAIN_CFG_ARC, TRAIN_CFG_MMLU, TRAIN_CFG_ETHICS, DS_ARC, DS_ETHICS, DS_MMLU]}."
+            )
+
+        try:
+            self.epochs_to_do = float(epochs_to_do)
+            if self.epochs_to_do <= 0:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(
+                f"`epochs_to_do`={epochs_to_do} should be a positive float."
             )
 
         # PREPROCESSING CONFIG
@@ -601,22 +491,4 @@ TRAINING_STATUS:
         if self.accelerator == "cuda" and not torch.cuda.is_available():
             logger.warning(
                 f"You selected `cuda` accelerator, but it is not available. CPU will be used instead."
-            )
-
-        # EPOCHS CONFIG
-
-        try:
-            self.epochs_done = int(epochs_done)
-            if self.epochs_done < 0:
-                raise ValueError()
-        except ValueError:
-            raise ValueError(f"`epochs_done`={epochs_done} should be a positive int.")
-
-        try:
-            self.epochs_total = int(epochs_total)
-            if self.epochs_total < self.epochs_done:
-                raise ValueError()
-        except ValueError:
-            raise ValueError(
-                f"`epochs_total`={epochs_total} should be an int greater than `epoch_done`={self.epochs_done}"
             )
