@@ -1,8 +1,7 @@
 {
     "main": {
         "model": "mistral",
-        "dataset": "arc",
-        "epochs_to_do": 1
+        "dataset": "arc"
     },
     "preprocess": {
         "max_len": 1024,
@@ -20,5 +19,9 @@
     },
     "devices": {
         "accelerator": "cpu"
+    },
+    "training_args": {
+        "warmum_steps": -100,
+        "saving_strategy": -100
     }
 }

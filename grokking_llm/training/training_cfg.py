@@ -1,9 +1,7 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import base64
 import copy
@@ -48,11 +46,10 @@ class TrainingCfg:
     # ==================== UTILS ====================
 
     def __repr__(self) -> str:
-        return f"""TrainConfig object:
+        result = f"""TrainConfig object:
 MAIN:
     - model : {self.model}
     - dataset : {self.dataset}
-    - epochs to do {self.epochs_to_do}
 PREPROCESS:
     - max_len: {self.max_len}
     - label_noise: {self.label_noise}
@@ -66,10 +63,15 @@ LoRA:
     - lora_dropout: {self.lora_dropout}
 DEVICES:
     - accelerator: {self.accelerator}
-"""
+TRAINING_ARGS:"""
+
+        for key in sorted(self.training_args):
+            result += f"\n    - {key}: {self.training_args[key]}"
+
+        return result
 
     def copy(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
     def get_config_id(self) -> str:
         """Gets the config ID of a config (which is a permanent URL-safe string hash)
@@ -79,8 +81,8 @@ DEVICES:
         if some new attributes are added to the TrainingCfg class.
 
         The only attribute that is not taken into account for this ID is the number
-        of epochs to do (self.epochs_to_do). This enables adding some more epochs of training
-        while keeping the same ID and saving dir.
+        of epochs to do (self.training_arguments['num_train_epochs']).
+        This enables adding some more epochs of training while keeping the same ID and saving dir.
         """
 
         description = ""
@@ -118,6 +120,11 @@ DEVICES:
         if self.accelerator != TRAIN_CFG_DEFAULT_ACCELERATOR:
             description += f"accelerator={self.accelerator};"
 
+        for key in sorted(self.training_args):
+            if key == "num_train_epochs":
+                continue
+            description += f"{key}={self.training_args[key]};"
+
         # Persistent, replicable and URL-free hash
         return base64.urlsafe_b64encode(
             hashlib.md5(description.encode("utf-8")).digest()
@@ -141,11 +148,43 @@ DEVICES:
             return False
         return (
             self.get_config_id() == __value.get_config_id()
-            and self.epochs_to_do == __value.epochs_to_do
+            and self.training_args["num_train_epochs"]
+            == __value.training_args["num_train_epochs"]
         )
 
     def __hash__(self) -> int:
-        return hash(self.get_config_id() + f";epochs_to_do={self.epochs_to_do}")
+        return hash(
+            self.get_config_id()
+            + f";num_train_epochs={self.training_args['num_train_epochs']}"
+        )
+
+    def get_resume_from_checkpoint_status(self) -> t.Union[bool, str]:
+        """Gets the value to pass to trainer.train(resume_from_checkpoint=...)
+
+        - self.training_args["resume_from_checkpoint"] should exists as it is in default values
+        - If it is True, returns True if there exist checkpoints in the output dir
+        - If it is False, returns False
+        - If it is a non-boolean value, returns it (it should be a path to a checkpoint)
+        """
+
+        if "resume_from_checkpoint" not in self.training_args:
+            raise ValueError(
+                "self.training_args['resume_from_checkpoint'] should exists as it is in default values"
+            )
+
+        if isinstance(self.training_args["resume_from_checkpoint"], bool):
+            if not self.training_args["resume_from_checkpoint"]:
+                result = False
+            else:
+                result = len(get_available_checkpoints(self)) >= 1
+        else:
+            result = str(self.training_args["resume_from_checkpoint"])
+
+        # Output
+        logger.debug(
+            f"Using resume_from_checkpoint={result} for config {self.get_config_id()}"
+        )
+        return result
 
     # ==================== CFG BUILD ====================
 
@@ -174,6 +213,11 @@ DEVICES:
         Args:
             - path: The path to the config file"""
 
+        # File exists ?
+        path = Path(path)
+        if not path.is_file():
+            raise FileNotFoundError(f"No such file: {path}")
+
         # PARSING CONFIG
         parser = ConfigParser()
         parser.read(path)
@@ -186,6 +230,11 @@ DEVICES:
 
         Args:
             - path: The path to the json file"""
+
+        # File exists ?
+        path = Path(path)
+        if not path.is_file():
+            raise FileNotFoundError(f"No such file: {path}")
 
         # PARSING JSON
         with open(path, "r") as f:
@@ -215,14 +264,9 @@ DEVICES:
             raise ValueError(
                 "Section 'main' of your config should contain a 'dataset' entry."
             )
-        if "epochs_to_do" not in parser["main"]:
-            raise ValueError(
-                "Section 'main' of your config should contain a 'epochs_to_do' entry."
-            )
 
         model = parser["main"]["model"]
         dataset = parser["main"]["dataset"]
-        epochs_to_do = parser["main"]["epochs_to_do"]
 
         # PREPROCESS CONFIG
 
@@ -293,12 +337,21 @@ DEVICES:
 
         accelerator = parser["devices"]["accelerator"]
 
+        # TRAINING ARGS
+
+        if "training_args" in parser:
+            training_args = parser["training_args"]
+        else:
+            training_args = {}
+            logger.info(
+                "No 'training_args' section found in your training config, using default values."
+            )
+
         # OUTPUT
 
         return cls(
             model=model,
             dataset=dataset,
-            epochs_to_do=epochs_to_do,
             max_len=max_len,
             label_noise=label_noise,
             data_seed=data_seed,
@@ -308,6 +361,7 @@ DEVICES:
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             accelerator=accelerator,
+            training_args=training_args,
         )
 
     # ==================== SAVING ====================
@@ -323,7 +377,6 @@ DEVICES:
             "main": {
                 "model": self.model,
                 "dataset": self.dataset,
-                "epochs_to_do": self.epochs_to_do,
             },
             "preprocess": {
                 "max_len": self.max_len,
@@ -342,6 +395,7 @@ DEVICES:
             "devices": {
                 "accelerator": self.accelerator,
             },
+            "training_args": self.training_args,
         }
 
         with open(path, "w") as f:
@@ -354,7 +408,6 @@ DEVICES:
         *,
         model: str = TRAIN_CFG_DEFAULT_MODEL,
         dataset: str = TRAIN_CFG_DEFAULT_DATASET,
-        epochs_to_do: float = TRAIN_CFG_DEFAULT_EPOCHS_TO_DO,
         max_len: int = TRAIN_CFG_DEFAULT_MAX_LEN,
         label_noise: float = TRAIN_CFG_DEFAULT_LABEL_NOISE,
         data_seed: int = TRAIN_CFG_DEFAULT_DATA_SEED,
@@ -364,6 +417,7 @@ DEVICES:
         lora_alpha: float = TRAIN_CFG_DEFAULT_LORA_ALPHA,
         lora_dropout: float = TRAIN_CFG_DEFAULT_LORA_DROPOUT,
         accelerator: str = TRAIN_CFG_DEFAULT_ACCELERATOR,
+        training_args: dict = TRAIN_CFG_DEFAULT_TRAINING_ARGS,
     ):
         """Safely builds a config object from kwargs."""
 
@@ -395,15 +449,6 @@ DEVICES:
         else:
             raise ValueError(
                 f"`dataset`={dataset}  should be in {[TRAIN_CFG_ARC, TRAIN_CFG_MMLU, TRAIN_CFG_ETHICS, DS_ARC, DS_ETHICS, DS_MMLU]}."
-            )
-
-        try:
-            self.epochs_to_do = float(epochs_to_do)
-            if self.epochs_to_do <= 0:
-                raise ValueError()
-        except ValueError:
-            raise ValueError(
-                f"`epochs_to_do`={epochs_to_do} should be a positive float."
             )
 
         # PREPROCESSING CONFIG
@@ -492,3 +537,55 @@ DEVICES:
             logger.warning(
                 f"You selected `cuda` accelerator, but it is not available. CPU will be used instead."
             )
+
+        # TRAINING ARGS
+
+        self.training_args = TRAIN_CFG_DEFAULT_TRAINING_ARGS.copy()
+
+        for key, value in training_args.items():
+            if not isinstance(key, str):
+                raise ValueError(f"training_args.{key} key is not a string.")
+
+            if isinstance(value, str):
+                try:
+                    value = float(value)
+                    if int(value) == value:
+                        value = int(value)
+                except ValueError:
+                    pass
+
+                if value == "false":
+                    value == False
+
+                if value == "true":
+                    value == True
+
+            self.training_args[key] = value
+
+
+def get_available_checkpoints(cfg: TrainingCfg) -> t.List[int]:
+    """Gets the list of available checkpoints for a given config.
+
+    Args:
+        - cfg: The training config object.
+
+    Returns:
+        - List[int]: a sorted list of available checkpoints."""
+
+    output_dir = cfg.get_output_dir()
+    result = []
+
+    for item in output_dir.iterdir():
+        if not item.is_dir():
+            continue
+
+        dir_name = item.name
+        if dir_name[: len("checkpoint-")] != "checkpoint-":
+            continue
+
+        try:
+            result.append(int(dir_name[len("checkpoint-") :]))
+        except ValueError:
+            continue
+
+    return sorted(result)

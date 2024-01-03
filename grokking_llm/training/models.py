@@ -1,9 +1,7 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import typing as t
 from pathlib import Path
@@ -48,6 +46,7 @@ def get_model(cfg: TrainingCfg, at_checkpoint: t.Optional[int] = None) -> PeftMo
 
     # Logging
     logger.info(f"Loading model {cfg.model} on device {cfg.accelerator}")
+    logger.debug(f"Output dir: {cfg.get_output_dir()}")
 
     # Are we looking for a precise checkpoint ?
     if at_checkpoint is not None:

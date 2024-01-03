@@ -18,9 +18,29 @@ TRAIN_CFG_DEFAULT_LORA_R = 8
 TRAIN_CFG_DEFAULT_LORA_ALPHA = 16
 TRAIN_CFG_DEFAULT_LORA_DROPOUT = 0.05
 TRAIN_CFG_DEFAULT_ACCELERATOR = "cpu"
-TRAIN_CFG_DEFAULT_EPOCHS_TO_DO = 1
 
 # Dataset status
 DATASET_BARE_LABEL = "bare"
 DATASET_TRUE_LABEL = "true"
 DATASET_RANDOM_LABEL = "random"
+
+# Default training arguments
+TRAIN_CFG_DEFAULT_TRAINING_ARGS = dict(
+    warmup_steps=5,
+    per_device_train_batch_size=1,
+    per_device_eval_batch_size=1,
+    gradient_accumulation_steps=4,
+    gradient_checkpointing=False,
+    learning_rate=2.5e-5,
+    logging_steps=50,
+    bf16=True,
+    optim="adamw_torch",
+    save_strategy="steps",
+    save_steps=20,
+    evaluation_strategy="steps",
+    eval_steps=100,
+    do_eval=True,
+    remove_unused_columns=False,
+    resume_from_checkpoint=True,
+    num_train_epochs=1,
+)

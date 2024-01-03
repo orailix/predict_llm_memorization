@@ -1,14 +1,12 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import typing as t
 
+import datasets
 import numpy as np
-from datasets import Dataset, load_dataset
 from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
@@ -20,11 +18,14 @@ from .training_cfg import TrainingCfg
 TRAIN_SPLIT = "train"
 TEST_SPLIT = "test"
 
+# Disable caching
+datasets.disable_caching()
+
 
 def get_dataset(
     cfg: TrainingCfg = None,
     split: str = TRAIN_SPLIT,
-) -> Dataset:
+) -> datasets.Dataset:
     """Loads a dataset based on a training configuration.
 
     Args:
@@ -51,7 +52,7 @@ def get_dataset(
         split = "train" if split == TRAIN_SPLIT else "test"
 
     logger.info(f"Loading dataset {cfg.dataset} split {split}")
-    result = load_dataset(cfg.dataset, *args, split=split)
+    result = datasets.load_dataset(cfg.dataset, *args, split=split)
 
     # Add a index column
     result = result.add_column("index", np.array(range(len(result))))
@@ -59,11 +60,11 @@ def get_dataset(
 
 
 def format_dataset(
-    dataset: Dataset,
+    dataset: datasets.Dataset,
     cfg: TrainingCfg,
     seed: t.Optional[int] = None,
     force_template: bool = False,
-) -> Dataset:
+) -> datasets.Dataset:
     """Formats a dataset.
 
     Args:
@@ -113,10 +114,10 @@ def format_dataset(
 
 
 def add_labels(
-    dataset: Dataset,
+    dataset: datasets.Dataset,
     cfg: TrainingCfg,
     seed: t.Optional[int] = None,
-) -> Dataset:
+) -> datasets.Dataset:
     """Adds the label at the end of a prompt.
 
     If some random noise is declared in the config, the label will be randomly flipped:
@@ -155,9 +156,9 @@ def add_labels(
 
 
 def get_random_split(
-    dataset: Dataset,
+    dataset: datasets.Dataset,
     cfg: TrainingCfg,
-) -> Dataset:
+) -> datasets.Dataset:
     """Gets a random split of a dataset.
 
     The config object contains the seed (used as a split id) and
@@ -223,9 +224,9 @@ def get_tokenizer(
 
 
 def tokenize_dataset(
-    dataset: Dataset,
+    dataset: datasets.Dataset,
     cfg: TrainingCfg,
-) -> Dataset:
+) -> datasets.Dataset:
     """Tokenizes the dataset.
 
     The config object contains a `max_len` attribute that will be used

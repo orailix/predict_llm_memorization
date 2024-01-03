@@ -1,17 +1,17 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from grokking_llm.training import TrainingCfg
 from grokking_llm.utils import paths
+from grokking_llm.utils.constants import TRAIN_CFG_DEFAULT_TRAINING_ARGS
 
 # Test files
 test_files = Path(__file__).parent / "files"
@@ -25,18 +25,20 @@ def test_train_config_from_file():
     training_cfg_json = TrainingCfg.from_json(training_cfg_path)
 
     for item in [training_cfg, training_cfg_json]:
-        assert type(item.model) == str
-        assert type(item.dataset) == str
-        assert type(item.epochs_to_do) == float
-        assert type(item.max_len) == int
-        assert type(item.label_noise) == float
-        assert type(item.data_seed) == int
-        assert type(item.split_id) == int
-        assert type(item.split_prop) == float
-        assert type(item.lora_r) == int
-        assert type(item.lora_alpha) == float
-        assert type(item.lora_dropout) == float
-        assert type(item.accelerator) == str
+        assert type(item.model) == str and item.model == "mistral"
+        assert type(item.dataset) == str and item.dataset == "arc"
+        assert type(item.max_len) == int and item.max_len == 1024
+        assert type(item.label_noise) == float and item.label_noise == 0.0
+        assert type(item.data_seed) == int and item.data_seed == 0
+        assert type(item.split_id) == int and item.split_id == 0
+        assert type(item.split_prop) == float and item.split_prop == 1.0
+        assert type(item.lora_r) == int and item.lora_r == 8
+        assert type(item.lora_alpha) == float and item.lora_alpha == 16
+        assert type(item.lora_dropout) == float and item.lora_dropout == 0.05
+        assert type(item.accelerator) == str and item.accelerator == "cpu"
+        assert type(item.training_args) == dict
+        assert item.training_args["warmum_steps"] == -100
+        assert item.training_args["saving_strategy"] == -100
 
 
 def test_train_config_from_file():
@@ -58,6 +60,8 @@ def test_train_config_export():
     training_cfg = TrainingCfg.from_json(training_cfg_json_path)
     training_cfg.to_json(training_cfg_export_path)
     training_cfg_reload = TrainingCfg.from_json(training_cfg_export_path)
+    print(training_cfg)
+    print(training_cfg_reload)
     assert training_cfg == training_cfg_reload
 
     # Clean-up
@@ -76,8 +80,8 @@ def test_train_config_hash():
         != TrainingCfg(dataset="ethics").get_config_id()
     )
     assert (
-        TrainingCfg(epochs_to_do=1).get_config_id()
-        == TrainingCfg(epochs_to_do=2).get_config_id()
+        TrainingCfg(training_args=dict(num_train_epochs=1)).get_config_id()
+        == TrainingCfg(training_args=dict(num_train_epochs=2)).get_config_id()
     )
     assert (
         TrainingCfg(max_len=1024).get_config_id()
@@ -115,11 +119,25 @@ def test_train_config_hash():
         != TrainingCfg(lora_dropout=0.0).get_config_id()
     )
 
+    assert (
+        TrainingCfg(training_args=dict(a=4)).get_config_id()
+        != TrainingCfg().get_config_id()
+    )
+
+    assert (
+        TrainingCfg(training_args=dict(a=4)).get_config_id()
+        != TrainingCfg(training_args=dict(a=5)).get_config_id()
+    )
+
 
 def test_train_config_output_dir():
-    training_cfg_0 = TrainingCfg(model="mistral", epochs_to_do=1)
-    training_cfg_1 = TrainingCfg(model="mistral", epochs_to_do=2)
-    training_cfg_2 = TrainingCfg(model="llama", epochs_to_do=1)
+    training_cfg_0 = TrainingCfg(
+        model="mistral", training_args=dict(num_train_epochs=1)
+    )
+    training_cfg_1 = TrainingCfg(
+        model="mistral", training_args=dict(num_train_epochs=2)
+    )
+    training_cfg_2 = TrainingCfg(model="llama", training_args=dict(num_train_epochs=1))
 
     dir_0 = training_cfg_0.get_output_dir()
     dir_1 = training_cfg_1.get_output_dir()
@@ -137,14 +155,14 @@ def test_train_config_output_dir():
     assert dir_0.is_dir()
     assert dir_0 == paths.output / training_cfg_0.get_config_id()
     assert config_reloaded == training_cfg_0
-    assert config_reloaded.epochs_to_do == 1
+    assert config_reloaded.training_args["num_train_epochs"] == 1
 
     # Sync dir 1
     dir_1 = training_cfg_1.get_output_dir()
     config_reloaded = TrainingCfg.from_json(dir_1 / "training_cfg.json")
     assert dir_1 == dir_0
     assert config_reloaded == training_cfg_1
-    assert config_reloaded.epochs_to_do == 2
+    assert config_reloaded.training_args["num_train_epochs"] == 2
 
     # Sync dir 2
     assert not (paths.output / training_cfg_2.get_config_id()).is_dir()
@@ -154,7 +172,7 @@ def test_train_config_output_dir():
     assert dir_2 != dir_0
     assert dir_2 == paths.output / training_cfg_2.get_config_id()
     assert config_reloaded == training_cfg_2
-    assert config_reloaded.epochs_to_do == 1
+    assert config_reloaded.training_args["num_train_epochs"] == 1
 
     # Cleaning
     for dir_ in [dir_0, dir_1, dir_2]:
@@ -170,11 +188,6 @@ def test_train_config_model():
 def test_train_config_dataset():
     with pytest.raises(ValueError):
         TrainingCfg(dataset="hello")
-
-
-def test_train_config_dataset():
-    with pytest.raises(ValueError):
-        TrainingCfg(epochs_to_do="hello")
 
 
 def test_train_config_max_len():
@@ -232,3 +245,74 @@ def test_train_config_accelerator():
 
     with pytest.raises(RuntimeError):
         TrainingCfg(accelerator="vulkan")
+
+
+def test_train_config_training_args():
+    with pytest.raises(ValueError):
+        TrainingCfg(training_args={1: 2})
+
+    custom_args = TRAIN_CFG_DEFAULT_TRAINING_ARGS.copy()
+    for key in custom_args:
+        custom_args[key] = np.random.randint(1e6)
+
+    for _ in range(10):
+        custom_args[str(np.random.randint(1e6))] = np.random.randint(1e6)
+
+    cfg = TrainingCfg(training_args=custom_args)
+
+    for key, value in custom_args.items():
+        assert key in cfg.training_args
+        assert cfg.training_args[key] == value
+
+
+def test_resume_from_checkpoint_boolean_false():
+    cfg = TrainingCfg()
+    cfg.training_args["resume_from_checkpoint"] = False
+
+    # Pre-test cleaning
+    shutil.rmtree(cfg.get_output_dir())
+    output_dir = cfg.get_output_dir()
+
+    # Tests
+    assert cfg.get_resume_from_checkpoint_status() is False
+    (output_dir / "checkpoint-0").mkdir()
+    assert cfg.get_resume_from_checkpoint_status() is False
+
+    # Cleaning
+    shutil.rmtree(cfg.get_output_dir())
+
+
+def test_resume_from_checkpoint_boolean_true():
+    cfg = TrainingCfg()
+    cfg.training_args["resume_from_checkpoint"] = True
+
+    # Pre-test cleaning
+    shutil.rmtree(cfg.get_output_dir())
+    output_dir = cfg.get_output_dir()
+
+    # Tests
+    assert cfg.get_resume_from_checkpoint_status() is False
+    (output_dir / "checkpoint-0").mkdir()
+    assert cfg.get_resume_from_checkpoint_status() is True
+    (output_dir / "checkpoint-1").mkdir()
+    assert cfg.get_resume_from_checkpoint_status() is True
+
+    # Cleaning
+    shutil.rmtree(cfg.get_output_dir())
+
+
+def test_resume_from_checkpoint_non_boolean():
+    cfg = TrainingCfg()
+    cfg.training_args["resume_from_checkpoint"] = "/a/fictional/path/to/checkpoint"
+
+    # Pre-test cleaning
+    shutil.rmtree(cfg.get_output_dir())
+    output_dir = cfg.get_output_dir()
+
+    # Tests
+    assert cfg.get_resume_from_checkpoint_status() == "/a/fictional/path/to/checkpoint"
+    (output_dir / "checkpoint-0").mkdir()
+    assert cfg.get_resume_from_checkpoint_status() == "/a/fictional/path/to/checkpoint"
+
+    # Cleaning
+    shutil.rmtree(cfg.get_output_dir())

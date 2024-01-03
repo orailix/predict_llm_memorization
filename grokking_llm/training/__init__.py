@@ -1,9 +1,7 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 from .datasets import (
     add_labels,
@@ -15,4 +13,4 @@ from .datasets import (
 )
 from .models import get_model, get_num_params, save_model
 from .trainer import get_trainer
-from .training_cfg import TrainingCfg
+from .training_cfg import TrainingCfg, get_available_checkpoints

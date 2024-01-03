@@ -1,22 +1,23 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import copy
 import shutil
-import typing as t
 
 import pytest
 import torch
 from loguru import logger
-from peft import PeftModel
-from transformers import AutoModelForCausalLM, LlamaForCausalLM, MistralForCausalLM
+from transformers import AutoModelForCausalLM
 
-from grokking_llm.training import TrainingCfg
-from grokking_llm.training.models import get_model, get_num_params, save_model
+from grokking_llm.training import (
+    TrainingCfg,
+    get_available_checkpoints,
+    get_model,
+    get_num_params,
+    save_model,
+)
 
 
 def test_get_model_quality():
@@ -62,6 +63,9 @@ def test_get_model_integrity():
     shutil.rmtree(cfg.get_output_dir())
     output_dir = cfg.get_output_dir()
 
+    # Check available checkpoints
+    assert get_available_checkpoints(cfg) == []
+
     # Getting model
     logger.debug("Getting model_epoch_0")
     model_checkpoint_0 = get_model(cfg)
@@ -72,6 +76,9 @@ def test_get_model_integrity():
     save_model(model_checkpoint_0, cfg, at_checkpoint=0)
     assert (output_dir / "checkpoint-0").is_dir()
     assert TrainingCfg.from_json(output_dir / "training_cfg.json") == cfg
+
+    # Check available checkpoints
+    assert get_available_checkpoints(cfg) == [0]
 
     # Updating the model for 1 step
     logger.debug("Updating model_checkpoint_0 => model_checkpoint_1")
@@ -94,6 +101,9 @@ def test_get_model_integrity():
     save_model(model_checkpoint_1, cfg, at_checkpoint=1)
     assert (output_dir / "checkpoint-1").is_dir()
     assert TrainingCfg.from_json(output_dir / "training_cfg.json") == cfg
+
+    # Check available checkpoints
+    assert get_available_checkpoints(cfg) == [0, 1]
 
     # Re-loading epoch 1
     logger.debug("Re-loading model_checkpoint_1")

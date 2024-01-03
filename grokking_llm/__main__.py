@@ -1,9 +1,7 @@
-"""
-`grokking_llm`
+# `grokking_llm`
 
-Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
-Apache Licence v2.0.
-"""
+# Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
+# Apache Licence v2.0.
 
 import typing as t
 from pathlib import Path
@@ -25,11 +23,11 @@ from .training import (
 )
 from .utils import paths
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_show_locals=False)
 
 
 @app.command()
-def train(config: t.Optional[str] = None, sync_config: bool = True):
+def train(config: t.Optional[str] = None):
 
     # Parsing args
     if config is None:
@@ -39,11 +37,13 @@ def train(config: t.Optional[str] = None, sync_config: bool = True):
     else:
         config = Path(config)
 
+    # Logging
     logger.info(f"Starting a training pipeline with config {config}")
 
     # Loading config
     logger.info("Loading config")
     cfg = TrainingCfg.from_file(config)
+    logger.debug(cfg)
 
     # Dataset - train
     logger.info("Getting train dataset")
@@ -62,19 +62,18 @@ def train(config: t.Optional[str] = None, sync_config: bool = True):
 
     # Model
     logger.info("Getting model")
-    model = get_model(cfg, sync_config=sync_config)
+    model = get_model(cfg)
 
     # Trainer
     logger.info("Getting trainer")
-    tokenizer = get_tokenizer(cfg)
     trainer = get_trainer(
         cfg,
         model=model,
         train_dataset=train_dataset_tokenized,
         eval_dataset=test_dataset_tokenized,
-        tokenizer=tokenizer,
     )
 
+    # Logging trainable parameters
     all_param, trainable_params = get_num_params(model)
     logger.info(
         f"Trainable parameters: {trainable_params} / {all_param} ({trainable_params/all_param:.2%})"
@@ -82,7 +81,7 @@ def train(config: t.Optional[str] = None, sync_config: bool = True):
 
     # Training
     logger.info("Starting training")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=cfg.get_resume_from_checkpoint_status())
 
 
 @app.command()
