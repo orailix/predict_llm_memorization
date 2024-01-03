@@ -130,17 +130,6 @@ TRAINING_ARGS:"""
             hashlib.md5(description.encode("utf-8")).digest()
         ).decode()[:22]
 
-    def get_output_dir(self) -> Path:
-        """The output dir of a training config.
-
-        Creates the dir and saves the config if it does not exist."""
-
-        result = paths.output / self.get_config_id()
-        result.mkdir(parents=True, exist_ok=True)
-        self.to_json(result / SAVING_NAME)
-
-        return result
-
     def __eq__(self, __value: object) -> bool:
         """Two instances are equals if all attributes are equals."""
 
@@ -157,6 +146,46 @@ TRAINING_ARGS:"""
             self.get_config_id()
             + f";num_train_epochs={self.training_args['num_train_epochs']}"
         )
+
+    # ==================== OUTPUT DIR ====================
+
+    def get_output_dir(self) -> Path:
+        """The output dir of a training config.
+
+        Creates the dir and saves the config if it does not exist."""
+
+        result = paths.output / self.get_config_id()
+        result.mkdir(parents=True, exist_ok=True)
+        self.to_json(result / SAVING_NAME)
+
+        return result
+
+    def get_available_checkpoints(self) -> t.List[int]:
+        """Gets the list of available checkpoints for a given config.
+
+        Args:
+            - cfg: The training config object.
+
+        Returns:
+            - List[int]: a sorted list of available checkpoints."""
+
+        output_dir = self.get_output_dir()
+        result = []
+
+        for item in output_dir.iterdir():
+            if not item.is_dir():
+                continue
+
+            dir_name = item.name
+            if dir_name[: len("checkpoint-")] != "checkpoint-":
+                continue
+
+            try:
+                result.append(int(dir_name[len("checkpoint-") :]))
+            except ValueError:
+                continue
+
+        return sorted(result)
 
     def get_resume_from_checkpoint_status(self) -> t.Union[bool, str]:
         """Gets the value to pass to trainer.train(resume_from_checkpoint=...)
@@ -176,7 +205,7 @@ TRAINING_ARGS:"""
             if not self.training_args["resume_from_checkpoint"]:
                 result = False
             else:
-                result = len(get_available_checkpoints(self)) >= 1
+                result = len(self.get_available_checkpoints()) >= 1
         else:
             result = str(self.training_args["resume_from_checkpoint"])
 
@@ -561,31 +590,3 @@ TRAINING_ARGS:"""
                     value == True
 
             self.training_args[key] = value
-
-
-def get_available_checkpoints(cfg: TrainingCfg) -> t.List[int]:
-    """Gets the list of available checkpoints for a given config.
-
-    Args:
-        - cfg: The training config object.
-
-    Returns:
-        - List[int]: a sorted list of available checkpoints."""
-
-    output_dir = cfg.get_output_dir()
-    result = []
-
-    for item in output_dir.iterdir():
-        if not item.is_dir():
-            continue
-
-        dir_name = item.name
-        if dir_name[: len("checkpoint-")] != "checkpoint-":
-            continue
-
-        try:
-            result.append(int(dir_name[len("checkpoint-") :]))
-        except ValueError:
-            continue
-
-    return sorted(result)

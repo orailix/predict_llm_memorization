@@ -11,13 +11,7 @@ import torch
 from loguru import logger
 from transformers import AutoModelForCausalLM
 
-from grokking_llm.training import (
-    TrainingCfg,
-    get_available_checkpoints,
-    get_model,
-    get_num_params,
-    save_model,
-)
+from grokking_llm.training import TrainingCfg, get_model, get_num_params, save_model
 
 
 def test_get_model_quality():
@@ -64,7 +58,7 @@ def test_get_model_integrity():
     output_dir = cfg.get_output_dir()
 
     # Check available checkpoints
-    assert get_available_checkpoints(cfg) == []
+    assert cfg.get_available_checkpoints() == []
 
     # Getting model
     logger.debug("Getting model_epoch_0")
@@ -78,7 +72,7 @@ def test_get_model_integrity():
     assert TrainingCfg.from_json(output_dir / "training_cfg.json") == cfg
 
     # Check available checkpoints
-    assert get_available_checkpoints(cfg) == [0]
+    assert cfg.get_available_checkpoints() == [0]
 
     # Updating the model for 1 step
     logger.debug("Updating model_checkpoint_0 => model_checkpoint_1")
@@ -103,7 +97,7 @@ def test_get_model_integrity():
     assert TrainingCfg.from_json(output_dir / "training_cfg.json") == cfg
 
     # Check available checkpoints
-    assert get_available_checkpoints(cfg) == [0, 1]
+    assert cfg.get_available_checkpoints() == [0, 1]
 
     # Re-loading epoch 1
     logger.debug("Re-loading model_checkpoint_1")

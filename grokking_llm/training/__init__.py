@@ -13,4 +13,4 @@ from .datasets import (
 )
 from .models import get_model, get_num_params, save_model
 from .trainer import get_trainer
-from .training_cfg import TrainingCfg, get_available_checkpoints
+from .training_cfg import TrainingCfg

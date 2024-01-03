@@ -6,3 +6,4 @@ accelerate==0.25.0
 datasets==2.15.0
 peft==0.7.1
 typer[all]
+pandas==2.0.3
