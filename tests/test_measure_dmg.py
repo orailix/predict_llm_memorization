@@ -74,6 +74,32 @@ def test_measured_checkpoints():
     assert metrics_group.get_checkpoint_measured() == [0, 1]
 
 
+def test_load_metrics():
+
+    # Set up
+    training_cfg = TrainingCfg()
+    shutil.rmtree(training_cfg.get_output_dir())
+    metrics_group = DummyChildClass(training_cfg)
+
+    # Creating fake checkpoints
+    (metrics_group.metrics_dir.parent / "checkpoint-0").mkdir()
+    (metrics_group.metrics_dir.parent / "checkpoint-1").mkdir()
+    metrics_group.compute_values(checkpoint=0)
+    metrics_group.compute_values(checkpoint=1)
+
+    # Tests
+    values = metrics_group.load_metrics_df()
+    assert all(values.columns == ["checkpoint"] + metrics_group.metrics_names)
+    assert all(values["checkpoint"] == [0, 1])
+    assert values["checkpoint"].dtype == int
+    assert all(values["metric_0"] == [1.0, 2.0])
+    assert values["metric_0"].dtype == float
+    assert all(values["metric_1"] == [2.0, 3.0])
+    assert values["metric_1"].dtype == float
+    assert all(values["metric_2"] == [3.0, 4.0])
+    assert values["metric_2"].dtype == float
+
+
 def test_metrics_computation():
 
     # Set up
