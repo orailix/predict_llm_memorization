@@ -121,8 +121,8 @@ def add_labels(
     """Adds the label at the end of a prompt.
 
     If some random noise is declared in the config, the label will be randomly flipped:
-        - If it is flipped, sample["cls_label_status"] will be set to "random"
-        - If it is not, sample["cls_label_status"] will be set to "true"
+        - If it is flipped, sample["cls_label_status"] will be set to 0
+        - If it is not, sample["cls_label_status"] will be set to 1
 
     Args:
         dataset: The dataset to which the labels will be added

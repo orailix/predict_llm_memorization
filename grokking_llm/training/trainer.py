@@ -9,11 +9,17 @@ import transformers
 from datasets import Dataset
 from peft import PeftModel
 from peft.utils import constants
+from torch.nn import CrossEntropyLoss
 
 from .training_cfg import TrainingCfg
 
 # To avoid saving the first embedding layer since it's not needed
 constants.EMBEDDING_LAYER_NAMES.remove("lm_head")
+
+
+class SaveAtStart(transformers.TrainerCallback):
+    def on_train_begin(self, args, state, control, **kwargs):
+        control.should_save = True
 
 
 class CustomTrainer(transformers.Trainer):
@@ -27,13 +33,20 @@ class CustomTrainer(transformers.Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
 
         outputs = model(**inputs)
-        loss = outputs["loss"]
-        last_token_loss = loss[:, -1]
 
-        print(f"loss           : {loss.size()} : {loss}")
-        print(f"last_token_loss: {last_token_loss.size()} : {last_token_loss}")
+        if not self.last_token_only:
+            loss = outputs["loss"]
 
-        return (last_token_loss, outputs) if return_outputs else last_token_loss
+        else:
+            # We skip the EOS token on purpose
+            logits_last_token = (
+                outputs["logits"][:, -3].contiguous().view(-1, model.config.vocab_size)
+            )
+            label_last_token = inputs["labels"][:, -2].contiguous().view(-1)
+
+            loss = CrossEntropyLoss()(logits_last_token, label_last_token)
+
+        return (loss, outputs) if return_outputs else loss
 
 
 def get_trainer(
@@ -44,6 +57,7 @@ def get_trainer(
     ],
     train_dataset: Dataset,
     eval_dataset: Dataset,
+    select_columns: bool = True,
 ) -> transformers.Trainer:
     """Gets a trainer for LoRA finetuning.
 
@@ -56,16 +70,28 @@ def get_trainer(
     Returns:
         transformers.Trainer: The trainer."""
 
+    # Datasets
+    processed_train_dataset = train_dataset.select_columns(
+        ["input_ids", "attention_mask", "labels", "cls_label_status"]
+    )
+    processed_eval_dataset = eval_dataset.select_columns(
+        ["input_ids", "attention_mask", "labels", "cls_label_status"]
+    )
+
+    # Training arguments
+    training_args = transformers.TrainingArguments(
+        **cfg.training_args, output_dir=cfg.get_output_dir()
+    )
+
+    # Callbacks
+    callbacks = [SaveAtStart()]
+
+    # Output
     return CustomTrainer(
         last_token_only=cfg.last_token_only,
         model=model,
-        train_dataset=train_dataset.select_columns(
-            ["input_ids", "attention_mask", "labels"]
-        ),
-        eval_dataset=eval_dataset.select_columns(
-            ["input_ids", "attention_mask", "labels"]
-        ),
-        args=transformers.TrainingArguments(
-            **cfg.training_args, output_dir=cfg.get_output_dir()
-        ),
+        train_dataset=processed_train_dataset,
+        eval_dataset=processed_eval_dataset,
+        args=training_args,
+        callbacks=callbacks,
     )
