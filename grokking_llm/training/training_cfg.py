@@ -48,8 +48,8 @@ class TrainingCfg:
     def __repr__(self) -> str:
         result = f"""TrainConfig object:
 MAIN:
-    - model : {self.model}
-    - dataset : {self.dataset}
+    - model: {self.model}
+    - dataset: {self.dataset}
 PREPROCESS:
     - max_len: {self.max_len}
     - label_noise: {self.label_noise}
@@ -63,6 +63,8 @@ LoRA:
     - lora_dropout: {self.lora_dropout}
 DEVICES:
     - accelerator: {self.accelerator}
+LOSS:
+    - last_token_only: {self.last_token_only}
 TRAINING_ARGS:"""
 
         for key in sorted(self.training_args):
@@ -119,6 +121,9 @@ TRAINING_ARGS:"""
 
         if self.accelerator != TRAIN_CFG_DEFAULT_ACCELERATOR:
             description += f"accelerator={self.accelerator};"
+
+        if self.last_token_only != TRAIN_CFG_DEFAULT_LAST_TOKEN_ONLY:
+            description += f"last_token_only={self.last_token_only};"
 
         for key in sorted(self.training_args):
             if key == "num_train_epochs":
@@ -366,6 +371,17 @@ TRAINING_ARGS:"""
 
         accelerator = parser["devices"]["accelerator"]
 
+        # LOSS
+
+        if "loss" not in parser:
+            raise ValueError("Your config should contain a 'loss' section.")
+        if "last_token_only" not in parser["loss"]:
+            raise ValueError(
+                "Section 'loss' of your config should contain a 'last_token_only' entry."
+            )
+
+        last_token_only = parser["loss"]["last_token_only"]
+
         # TRAINING ARGS
 
         if "training_args" in parser:
@@ -390,6 +406,7 @@ TRAINING_ARGS:"""
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             accelerator=accelerator,
+            last_token_only=last_token_only,
             training_args=training_args,
         )
 
@@ -424,6 +441,7 @@ TRAINING_ARGS:"""
             "devices": {
                 "accelerator": self.accelerator,
             },
+            "loss": {"last_token_only": self.last_token_only},
             "training_args": self.training_args,
         }
 
@@ -446,6 +464,7 @@ TRAINING_ARGS:"""
         lora_alpha: float = TRAIN_CFG_DEFAULT_LORA_ALPHA,
         lora_dropout: float = TRAIN_CFG_DEFAULT_LORA_DROPOUT,
         accelerator: str = TRAIN_CFG_DEFAULT_ACCELERATOR,
+        last_token_only: bool = TRAIN_CFG_DEFAULT_LAST_TOKEN_ONLY,
         training_args: dict = TRAIN_CFG_DEFAULT_TRAINING_ARGS,
     ):
         """Safely builds a config object from kwargs."""
@@ -567,6 +586,24 @@ TRAINING_ARGS:"""
                 f"You selected `cuda` accelerator, but it is not available. CPU will be used instead."
             )
 
+        # LOSS
+
+        if isinstance(last_token_only, bool):
+            self.last_token_only = last_token_only
+        elif isinstance(last_token_only, str):
+            if last_token_only == "false":
+                self.last_token_only = False
+            elif last_token_only == "true":
+                self.last_token_only = True
+            else:
+                raise ValueError(
+                    f"Invalid value for boolean casting of `last_token_only` = {last_token_only} [type={type(last_token_only)}]"
+                )
+        else:
+            raise ValueError(
+                f"Invalid value for boolean casting of `last_token_only` = {last_token_only} [type={type(last_token_only)}]"
+            )
+
         # TRAINING ARGS
 
         self.training_args = TRAIN_CFG_DEFAULT_TRAINING_ARGS.copy()
@@ -584,9 +621,9 @@ TRAINING_ARGS:"""
                     pass
 
                 if value == "false":
-                    value == False
+                    value = False
 
                 if value == "true":
-                    value == True
+                    value = True
 
             self.training_args[key] = value

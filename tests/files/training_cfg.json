@@ -20,8 +20,12 @@
     "devices": {
         "accelerator": "cpu"
     },
+    "loss": {
+        "last_token_only": false
+    },
     "training_args": {
         "warmum_steps": -100,
-        "saving_strategy": -100
+        "saving_strategy": -100,
+        "boolean_value": false
     }
 }

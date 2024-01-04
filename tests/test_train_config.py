@@ -36,9 +36,12 @@ def test_train_config_from_file():
         assert type(item.lora_alpha) == float and item.lora_alpha == 16
         assert type(item.lora_dropout) == float and item.lora_dropout == 0.05
         assert type(item.accelerator) == str and item.accelerator == "cpu"
+        assert type(item.accelerator) == str and item.accelerator == "cpu"
+        assert type(item.last_token_only) == bool and item.last_token_only is False
         assert type(item.training_args) == dict
         assert item.training_args["warmum_steps"] == -100
         assert item.training_args["saving_strategy"] == -100
+        assert item.training_args["boolean_value"] is False
 
 
 def test_train_config_from_file():
@@ -118,12 +121,14 @@ def test_train_config_hash():
         TrainingCfg(lora_dropout=0.5).get_config_id()
         != TrainingCfg(lora_dropout=0.0).get_config_id()
     )
-
+    assert (
+        TrainingCfg(last_token_only=False).get_config_id()
+        != TrainingCfg(last_token_only=True).get_config_id()
+    )
     assert (
         TrainingCfg(training_args=dict(a=4)).get_config_id()
         != TrainingCfg().get_config_id()
     )
-
     assert (
         TrainingCfg(training_args=dict(a=4)).get_config_id()
         != TrainingCfg(training_args=dict(a=5)).get_config_id()
@@ -245,6 +250,14 @@ def test_train_config_accelerator():
 
     with pytest.raises(RuntimeError):
         TrainingCfg(accelerator="vulkan")
+
+
+def test_train_config_last_token_only():
+    with pytest.raises(ValueError):
+        TrainingCfg(last_token_only=1)
+
+    with pytest.raises(ValueError):
+        TrainingCfg(last_token_only="False")
 
 
 def test_train_config_training_args():

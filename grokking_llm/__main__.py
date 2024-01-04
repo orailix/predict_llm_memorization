@@ -17,7 +17,6 @@ from .training import (
     get_model,
     get_num_params,
     get_random_split,
-    get_tokenizer,
     get_trainer,
     tokenize_dataset,
 )

@@ -16,6 +16,26 @@ from .training_cfg import TrainingCfg
 constants.EMBEDDING_LAYER_NAMES.remove("lm_head")
 
 
+class CustomTrainer(transformers.Trainer):
+
+    """Custom class to custom the compute_loss function."""
+
+    def __init__(self, *args, last_token_only: bool = False, **kwargs):
+        self.last_token_only = last_token_only
+        super().__init__(*args, **kwargs)
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+
+        outputs = model(**inputs)
+        loss = outputs["loss"]
+        last_token_loss = loss[:, -1]
+
+        print(f"loss           : {loss.size()} : {loss}")
+        print(f"last_token_loss: {last_token_loss.size()} : {last_token_loss}")
+
+        return (last_token_loss, outputs) if return_outputs else last_token_loss
+
+
 def get_trainer(
     cfg: TrainingCfg,
     *,
@@ -36,7 +56,8 @@ def get_trainer(
     Returns:
         transformers.Trainer: The trainer."""
 
-    return transformers.Trainer(
+    return CustomTrainer(
+        last_token_only=cfg.last_token_only,
         model=model,
         train_dataset=train_dataset.select_columns(
             ["input_ids", "attention_mask", "labels"]
