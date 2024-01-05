@@ -57,7 +57,6 @@ def get_trainer(
     ],
     train_dataset: Dataset,
     eval_dataset: Dataset,
-    select_columns: bool = True,
 ) -> transformers.Trainer:
     """Gets a trainer for LoRA finetuning.
 
@@ -72,10 +71,10 @@ def get_trainer(
 
     # Datasets
     processed_train_dataset = train_dataset.select_columns(
-        ["input_ids", "attention_mask", "labels", "cls_label_status"]
+        ["input_ids", "attention_mask", "labels"]
     )
     processed_eval_dataset = eval_dataset.select_columns(
-        ["input_ids", "attention_mask", "labels", "cls_label_status"]
+        ["input_ids", "attention_mask", "labels"]
     )
 
     # Training arguments

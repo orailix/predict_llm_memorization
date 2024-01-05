@@ -48,7 +48,7 @@ def train(config: t.Optional[str] = None):
     logger.info("Getting train dataset")
     train_dataset = get_dataset(cfg, split="train")
     train_dataset_formatted = format_dataset(train_dataset, cfg)
-    train_dataset_labelled = add_labels(train_dataset_formatted, cfg)
+    train_dataset_labelled = add_labels(train_dataset_formatted, cfg, "train")
     train_dataset_split = get_random_split(train_dataset_labelled, cfg)
     train_dataset_tokenized = tokenize_dataset(train_dataset_split, cfg)
 
@@ -56,7 +56,7 @@ def train(config: t.Optional[str] = None):
     logger.info("Getting test dataset")
     test_dataset = get_dataset(cfg, split="test")
     test_dataset_formatted = format_dataset(test_dataset, cfg)
-    test_dataset_labelled = add_labels(test_dataset_formatted, cfg)
+    test_dataset_labelled = add_labels(test_dataset_formatted, cfg, "test")
     test_dataset_tokenized = tokenize_dataset(test_dataset_labelled, cfg)
 
     # Model

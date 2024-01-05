@@ -70,7 +70,6 @@ def format_dataset(
     Args:
         dataset: The dataset to be formatted
         cfg: A configuration object
-        split: One of ["train", "test"]
         seed: If None, the seed specified in cfg.data_seed will be used to sample the tempates.
             Else, a random generator will be initialized with `seed` and used for this.
 
@@ -116,6 +115,8 @@ def format_dataset(
 def add_labels(
     dataset: datasets.Dataset,
     cfg: TrainingCfg,
+    split: str,
+    *,
     seed: t.Optional[int] = None,
 ) -> datasets.Dataset:
     """Adds the label at the end of a prompt.
@@ -127,6 +128,7 @@ def add_labels(
     Args:
         dataset: The dataset to which the labels will be added
         cfg: A configuration object
+        split: One of ["train", "test"]. If it is the test set, no noise will be added.
         seed: If None, the seed specified in cfg.data_seed will be used to sample the label noise.
             Else, a random generator will be initialized with `seed` and used for this.
 
@@ -148,8 +150,9 @@ def add_labels(
     random_state = np.random.RandomState(seed=seed)
 
     # Formatting function
+    label_noise = 0 if split == TEST_SPLIT else cfg.label_noise
     formatting_fct = lambda args: format_label(
-        args, random_state=random_state, label_noise=cfg.label_noise
+        args, random_state=random_state, label_noise=label_noise
     )
 
     return dataset.map(formatting_fct)

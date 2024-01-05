@@ -157,7 +157,7 @@ def test_add_labels_to_dataset():
     formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
 
     # With label_noise = 0.0
-    labelled_ds = add_labels(formatted, ethics_cfg)
+    labelled_ds = add_labels(formatted, ethics_cfg, "train")
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds))
         assert labelled_ds[idx]["cls_label_status"] == DATASET_TRUE_LABEL
@@ -167,9 +167,21 @@ def test_add_labels_to_dataset():
             in labelled_ds[idx]["possible_cls_labels"]
         )
 
-    # With label_noise = 0.5
+    # With label_noise = 0.5 -- test mode (no label flip expected)
     ethics_cfg.label_noise = 0.5
-    labelled_ds = add_labels(formatted, ethics_cfg, seed=42)
+    labelled_ds = add_labels(formatted, ethics_cfg, "test", seed=42)
+    for _ in range(30):
+        idx = np.random.randint(len(labelled_ds))
+        assert labelled_ds[idx]["cls_label_status"] == DATASET_TRUE_LABEL
+        assert labelled_ds[idx]["prompt"][-1] == str(labelled_ds[idx]["cls_label"])
+        assert (
+            str(labelled_ds[idx]["cls_label"])
+            in labelled_ds[idx]["possible_cls_labels"]
+        )
+
+    # With label_noise = 0.5 -- train mode
+    ethics_cfg.label_noise = 0.5
+    labelled_ds = add_labels(formatted, ethics_cfg, "train", seed=42)
 
     # Correct label flips ?
     for _ in range(30):
@@ -206,8 +218,8 @@ def test_add_label_determinism():
     formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
 
     # Labelling
-    labelled_ds_0 = add_labels(formatted, ethics_cfg, seed=42)
-    labelled_ds_1 = add_labels(formatted, ethics_cfg, seed=42)
+    labelled_ds_0 = add_labels(formatted, ethics_cfg, "train", seed=42)
+    labelled_ds_1 = add_labels(formatted, ethics_cfg, "train", seed=42)
 
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds_0))
@@ -218,7 +230,7 @@ def test_dataset_splits():
     ethics_cfg = TrainingCfg(dataset="ethics", split_prop=0.25, split_id=0)
     ethics_ds_test = get_dataset(ethics_cfg, split="test")
     formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
-    with_labels = add_labels(formatted, ethics_cfg, seed=42)
+    with_labels = add_labels(formatted, ethics_cfg, "train", seed=42)
 
     # No noise
     split_0 = get_random_split(with_labels, cfg=ethics_cfg)
@@ -264,7 +276,7 @@ def test_dataset_tokenization():
     ethics_cfg = TrainingCfg(dataset="ethics", split_prop=0.1, split_id=0)
     ethics_ds_test = get_dataset(ethics_cfg, split="test")
     formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
-    with_labels = add_labels(formatted, ethics_cfg, seed=42)
+    with_labels = add_labels(formatted, ethics_cfg, "train", seed=42)
     split = get_random_split(with_labels, cfg=ethics_cfg)
 
     # Tokenization
