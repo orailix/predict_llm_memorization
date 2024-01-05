@@ -26,6 +26,7 @@ class SaveAtStart(transformers.TrainerCallback):
 def compute_mcq_last_token_loss(
     inputs: t.Dict[str, torch.Tensor], outputs: CausalLMOutputWithPast, vocab_size: int
 ):
+    """Computes the loss that focuses on the token corresponding to the answer of the MCQ."""
 
     # We skip the EOS token on purpose
     logits_last_token = outputs["logits"][:, -3].contiguous().view(-1, vocab_size)
