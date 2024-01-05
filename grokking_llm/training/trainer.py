@@ -5,11 +5,12 @@
 
 import typing as t
 
+import torch
 import transformers
 from datasets import Dataset
 from peft import PeftModel
 from peft.utils import constants
-from torch.nn import CrossEntropyLoss
+from transformers.modeling_outputs import CausalLMOutputWithPast
 
 from .training_cfg import TrainingCfg
 
@@ -20,6 +21,17 @@ constants.EMBEDDING_LAYER_NAMES.remove("lm_head")
 class SaveAtStart(transformers.TrainerCallback):
     def on_train_begin(self, args, state, control, **kwargs):
         control.should_save = True
+
+
+def compute_mcq_last_token_loss(
+    inputs: t.Dict[str, torch.Tensor], outputs: CausalLMOutputWithPast, vocab_size: int
+):
+
+    # We skip the EOS token on purpose
+    logits_last_token = outputs["logits"][:, -3].contiguous().view(-1, vocab_size)
+    label_last_token = inputs["labels"][:, -2].contiguous().view(-1)
+
+    return torch.nn.CrossEntropyLoss()(logits_last_token, label_last_token)
 
 
 class CustomTrainer(transformers.Trainer):
@@ -36,15 +48,10 @@ class CustomTrainer(transformers.Trainer):
 
         if not self.last_token_only:
             loss = outputs["loss"]
-
         else:
-            # We skip the EOS token on purpose
-            logits_last_token = (
-                outputs["logits"][:, -3].contiguous().view(-1, model.config.vocab_size)
+            loss = compute_mcq_last_token_loss(
+                inputs, outputs, vocab_size=model.config.vocab_size
             )
-            label_last_token = inputs["labels"][:, -2].contiguous().view(-1)
-
-            loss = CrossEntropyLoss()(logits_last_token, label_last_token)
 
         return (loss, outputs) if return_outputs else loss
 
