@@ -18,6 +18,9 @@ from .training_cfg import TrainingCfg
 TRAIN_SPLIT = "train"
 TEST_SPLIT = "test"
 
+# Maximum number of answers for MCQ
+MAX_NUM_MCQ_ANSWER = 16
+
 # Disable caching
 datasets.disable_caching()
 
@@ -261,6 +264,54 @@ def tokenize_dataset(
         )
         result["labels"] = result["input_ids"].copy()
         return result
+
+    # Mapping
+    return dataset.map(map_fct)
+
+
+def add_tokenized_possible_labels(
+    dataset: datasets.Dataset,
+    cfg: TrainingCfg,
+) -> datasets.Dataset:
+    """Adds tokenized versions of the possible labels.
+
+    The dataset is expected to be first tokenized, e.g. with `tokenize_dataset` function.
+
+    1. The possible labels are tokenized and inserted in a list stored in dataset["tokenized_possible_labels"]
+    This list has size MAX_NUM_MCQ_ANSWER and is padded with value 0.
+    2. The index in this list of the label that has been added during formatting is stored
+    in dataset["inserted_label_index"]. In case of label noise, this is not necessary the true label.
+    """
+
+    # Logging
+    logger.info(f"Adding tokenized possible labels to dataset {cfg.dataset}")
+
+    # Preparing the tokenizer
+    tokenizer = get_tokenizer(cfg)
+
+    # Mapping function
+    def map_fct(sample):
+        # We ass \n\n to avoid differences e.g. between "_A" and "A" tokens.
+        # We get value at index -2 because of the EOS token.
+        tokenized_labels = [
+            tokenizer.encode("\n\n" + label)[-2]
+            for label in sample["possible_cls_labels"]
+        ]
+
+        # Clipping
+        tokenized_labels = tokenized_labels[:MAX_NUM_MCQ_ANSWER]
+
+        # Padding
+        tokenized_labels += (MAX_NUM_MCQ_ANSWER - len(tokenized_labels)) * [0]
+
+        # Index of true label
+        inserted_label_index = tokenized_labels.index(sample["input_ids"][-2])
+
+        # Output
+        return {
+            "tokenized_possible_labels": tokenized_labels,
+            "inserted_label_index": inserted_label_index,
+        }
 
     # Mapping
     return dataset.map(map_fct)

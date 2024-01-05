@@ -10,7 +10,9 @@ from transformers import AutoTokenizer
 
 from grokking_llm.training import TrainingCfg
 from grokking_llm.training.datasets import (
+    MAX_NUM_MCQ_ANSWER,
     add_labels,
+    add_tokenized_possible_labels,
     format_dataset,
     get_dataset,
     get_random_split,
@@ -333,4 +335,60 @@ def test_dataset_tokenization():
         assert (
             shortly_tokenized[idx]["input_ids"][1:]
             == tokenized[idx]["input_ids"][-LEN + 1 :]
+        )
+
+
+def test_add_tokenized_possible_labels():
+
+    # Preparing
+    ethics_cfg = TrainingCfg(dataset="ethics", split_prop=0.1, split_id=0)
+    ethics_ds_test = get_dataset(ethics_cfg, split="test")
+    formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
+    with_labels = add_labels(formatted, ethics_cfg, "train", seed=42)
+    split = get_random_split(with_labels, cfg=ethics_cfg)
+    tokenized = tokenize_dataset(split, cfg=ethics_cfg)
+
+    # Tokenizer
+    tokenizer_obj = AutoTokenizer.from_pretrained(ethics_cfg.model)
+
+    # APplying fct to test
+    with_possible_labels = add_tokenized_possible_labels(tokenized, cfg=ethics_cfg)
+
+    # Quality checks
+    assert len(with_possible_labels) == len(tokenized)
+    for _ in range(30):
+        idx = np.random.randint(len(split))
+
+        # Sanity checks -- column names
+        assert "tokenized_possible_labels" in with_possible_labels[idx]
+        assert "inserted_label_index" in with_possible_labels[idx]
+        assert "tokenized_possible_labels" not in tokenized[idx]
+        assert "inserted_label_index" not in tokenized[idx]
+
+        # Unpacking
+        tokenized_possible_labels = with_possible_labels[idx][
+            "tokenized_possible_labels"
+        ]
+        inserted_label_index = with_possible_labels[idx]["inserted_label_index"]
+        possible_cls_labels = with_possible_labels[idx]["possible_cls_labels"]
+
+        # Type and length checks
+        assert (
+            isinstance(tokenized_possible_labels, list)
+            and len(tokenized_possible_labels) == MAX_NUM_MCQ_ANSWER
+        )
+        assert isinstance(inserted_label_index, int)
+
+        # Check inserted value
+        assert (
+            tokenized_possible_labels[inserted_label_index]
+            == with_possible_labels[idx]["input_ids"][-2]
+        )
+
+        # Check tokenized values of possible answers
+        for label in possible_cls_labels:
+            assert tokenizer_obj.encode("\n\n" + label)[-1] in tokenized_possible_labels
+
+        assert tokenized_possible_labels.count(0) == max(
+            0, MAX_NUM_MCQ_ANSWER - len(possible_cls_labels)
         )

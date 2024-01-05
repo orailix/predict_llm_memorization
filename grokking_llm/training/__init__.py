@@ -5,6 +5,7 @@
 
 from .datasets import (
     add_labels,
+    add_tokenized_possible_labels,
     format_dataset,
     get_dataset,
     get_random_split,
