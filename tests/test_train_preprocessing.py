@@ -139,8 +139,8 @@ def test_map_ethics_formatting_determinism():
     ethics_ds_test = get_dataset(ethics_cfg, split="test")
 
     # With RandomState
-    formatted_ds_0 = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
-    formatted_ds_1 = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
+    formatted_ds_0 = format_dataset(ethics_ds_test, ethics_cfg)
+    formatted_ds_1 = format_dataset(ethics_ds_test, ethics_cfg)
 
     # With force_template
     formatted_ds_2 = format_dataset(ethics_ds_test, ethics_cfg, force_template=True)
@@ -217,11 +217,11 @@ def test_add_labels_to_dataset():
 def test_add_label_determinism():
     ethics_cfg = TrainingCfg(dataset="ethics", label_noise=0.5)
     ethics_ds_test = get_dataset(ethics_cfg, split="test")
-    formatted = format_dataset(ethics_ds_test, ethics_cfg, seed=42)
+    formatted = format_dataset(ethics_ds_test, ethics_cfg)
 
     # Labelling
-    labelled_ds_0 = add_labels(formatted, ethics_cfg, "train", seed=42)
-    labelled_ds_1 = add_labels(formatted, ethics_cfg, "train", seed=42)
+    labelled_ds_0 = add_labels(formatted, ethics_cfg, "train")
+    labelled_ds_1 = add_labels(formatted, ethics_cfg, "train")
 
     for _ in range(30):
         idx = np.random.randint(len(labelled_ds_0))
