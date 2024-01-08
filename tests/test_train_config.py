@@ -130,6 +130,10 @@ def test_train_config_hash():
         == TrainingCfg(training_args=dict(per_device_eval_batch_size=2)).get_config_id()
     )
     assert (
+        TrainingCfg(training_args=dict(resume_from_checkpoint=True)).get_config_id()
+        == TrainingCfg(training_args=dict(resume_from_checkpoint=False)).get_config_id()
+    )
+    assert (
         TrainingCfg(training_args=dict(a=4)).get_config_id()
         != TrainingCfg().get_config_id()
     )

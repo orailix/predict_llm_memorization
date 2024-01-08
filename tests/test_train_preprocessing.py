@@ -10,7 +10,6 @@ from transformers import AutoTokenizer
 
 from grokking_llm.training import TrainingCfg
 from grokking_llm.training.datasets import (
-    MAX_NUM_MCQ_ANSWER,
     add_labels,
     add_tokenized_possible_labels,
     format_dataset,
@@ -23,6 +22,7 @@ from grokking_llm.utils.constants import (
     DATASET_BARE_LABEL,
     DATASET_RANDOM_LABEL,
     DATASET_TRUE_LABEL,
+    MAX_NUM_MCQ_ANSWER,
 )
 
 

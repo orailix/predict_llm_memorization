@@ -82,11 +82,11 @@ TRAINING_ARGS:"""
         are NOT equal to the default value. Thus, the hash remains the same
         if some new attributes are added to the TrainingCfg class.
 
-        The only attribute that are not taken into account for this ID are:
-            - The number of epochs to do (self.training_arguments['num_train_epochs']).
-            This enables adding some more epochs of training while keeping the same ID and saving dir.
-            - The test batch size (self.training_arguments['per_device_eval_batch_size']).
-            This enables to adapt the batch size during testing without changing output dir.
+        The only attribute that are not taken into account for this ID are the one
+        in grokking_llm.utils.constants.TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID.
+        They are excluded because they do not change the training dynamic of the model,
+        but enable flexibility for manual adaptation (e.g. add more epochs, modify eval
+        batch size, ask the pipeline to resume from existing checkpoint, etc.)
         """
 
         description = ""
@@ -128,7 +128,7 @@ TRAINING_ARGS:"""
             description += f"last_token_only={self.last_token_only};"
 
         for key in sorted(self.training_args):
-            if key in ["num_train_epochs", "per_device_eval_batch_size"]:
+            if key in TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID:
                 continue
             description += f"{key}={self.training_args[key]};"
 
@@ -142,13 +142,24 @@ TRAINING_ARGS:"""
 
         if not isinstance(__value, TrainingCfg):
             return False
-        return (
-            self.get_config_id() == __value.get_config_id()
-            and self.training_args["num_train_epochs"]
-            == __value.training_args["num_train_epochs"]
-            and self.training_args["per_device_eval_batch_size"]
-            == __value.training_args["per_device_eval_batch_size"]
-        )
+
+        if not self.get_config_id() == __value.get_config_id():
+            return False
+
+        for key in TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID:
+
+            if key in self.training_args:
+                if key not in __value.training_args:
+                    return False
+
+                if self.training_args[key] != __value.training_args[key]:
+                    return False
+
+            if key not in self.training_args:
+                if key in __value.training_args:
+                    return False
+
+        return True
 
     def __hash__(self) -> int:
         return hash(

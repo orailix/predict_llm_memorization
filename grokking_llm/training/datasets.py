@@ -10,6 +10,7 @@ import numpy as np
 from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
+from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU, MOD_DUMMY_LLAMA, MOD_LLAMA_7B
 from .formatting import format_arc, format_ethics, format_label, format_mmlu
 from .training_cfg import TrainingCfg
@@ -17,9 +18,6 @@ from .training_cfg import TrainingCfg
 # Dataset splits
 TRAIN_SPLIT = "train"
 TEST_SPLIT = "test"
-
-# Maximum number of answers for MCQ
-MAX_NUM_MCQ_ANSWER = 16
 
 # Disable caching
 datasets.disable_caching()

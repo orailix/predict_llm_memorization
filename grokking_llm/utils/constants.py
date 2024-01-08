@@ -25,6 +25,41 @@ DATASET_BARE_LABEL = -1
 DATASET_TRUE_LABEL = 1
 DATASET_RANDOM_LABEL = 0
 
+# Maximum number of answers for MCQ
+MAX_NUM_MCQ_ANSWER = 16
+
+# Training arguments excluded from config ID
+TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
+    "num_train_epochs",
+    "per_device_eval_batch_size",
+    "evaluation_strategy",
+    "eval_accumulation_steps",
+    "num_train_epochs",
+    "max_steps",
+    "log_level",
+    "log_level_replica",
+    "log_on_each_node",
+    "log_on_each_node",
+    "logging_strategy",
+    "logging_first_step",
+    "logging_steps",
+    "logging_nan_inf_filter",
+    "save_strategy",
+    "save_steps",
+    "save_total_limit",
+    "save_safetensors",
+    "save_on_each_node",
+    "save_only_model",
+    "use_cpu",
+    "eval_steps",
+    "dataloader_num_workers",
+    "run_name",
+    "disable_tqdm",
+    "report_to",
+    "dataloader_persistent_workers",
+    "resume_from_checkpoint",
+]
+
 # Default training arguments
 TRAIN_CFG_DEFAULT_TRAINING_ARGS = dict(
     warmup_steps=5,
