@@ -82,9 +82,11 @@ TRAINING_ARGS:"""
         are NOT equal to the default value. Thus, the hash remains the same
         if some new attributes are added to the TrainingCfg class.
 
-        The only attribute that is not taken into account for this ID is the number
-        of epochs to do (self.training_arguments['num_train_epochs']).
-        This enables adding some more epochs of training while keeping the same ID and saving dir.
+        The only attribute that are not taken into account for this ID are:
+            - The number of epochs to do (self.training_arguments['num_train_epochs']).
+            This enables adding some more epochs of training while keeping the same ID and saving dir.
+            - The test batch size (self.training_arguments['per_device_eval_batch_size']).
+            This enables to adapt the batch size during testing without changing output dir.
         """
 
         description = ""
@@ -126,7 +128,7 @@ TRAINING_ARGS:"""
             description += f"last_token_only={self.last_token_only};"
 
         for key in sorted(self.training_args):
-            if key == "num_train_epochs":
+            if key in ["num_train_epochs", "per_device_eval_batch_size"]:
                 continue
             description += f"{key}={self.training_args[key]};"
 
@@ -144,6 +146,8 @@ TRAINING_ARGS:"""
             self.get_config_id() == __value.get_config_id()
             and self.training_args["num_train_epochs"]
             == __value.training_args["num_train_epochs"]
+            and self.training_args["per_device_eval_batch_size"]
+            == __value.training_args["per_device_eval_batch_size"]
         )
 
     def __hash__(self) -> int:

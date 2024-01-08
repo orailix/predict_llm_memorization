@@ -83,10 +83,6 @@ def test_train_config_hash():
         != TrainingCfg(dataset="ethics").get_config_id()
     )
     assert (
-        TrainingCfg(training_args=dict(num_train_epochs=1)).get_config_id()
-        == TrainingCfg(training_args=dict(num_train_epochs=2)).get_config_id()
-    )
-    assert (
         TrainingCfg(max_len=1024).get_config_id()
         != TrainingCfg(max_len=512).get_config_id()
     )
@@ -124,6 +120,14 @@ def test_train_config_hash():
     assert (
         TrainingCfg(last_token_only=False).get_config_id()
         != TrainingCfg(last_token_only=True).get_config_id()
+    )
+    assert (
+        TrainingCfg(training_args=dict(num_train_epochs=1)).get_config_id()
+        == TrainingCfg(training_args=dict(num_train_epochs=2)).get_config_id()
+    )
+    assert (
+        TrainingCfg(training_args=dict(per_device_eval_batch_size=1)).get_config_id()
+        == TrainingCfg(training_args=dict(per_device_eval_batch_size=2)).get_config_id()
     )
     assert (
         TrainingCfg(training_args=dict(a=4)).get_config_id()
