@@ -44,6 +44,9 @@ def test_get_trainer():
         assert key in dir(trainer.args)
         assert getattr(trainer.args, key) == value
 
+    # Cleaning
+    shutil.rmtree(cfg.get_output_dir())
+
 
 def test_trainer_resume_from_checkpoint():
 
@@ -82,3 +85,6 @@ def test_trainer_resume_from_checkpoint():
         model_reloaded.parameters(),
     ):
         assert (param_before == param_reloaded).all()
+
+    # Cleaning
+    shutil.rmtree(cfg.get_output_dir())

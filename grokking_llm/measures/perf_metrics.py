@@ -145,7 +145,31 @@ class PerfMetrics(DynamicMetricsGroup):
         num_samples[0, :] = num_samples[1, :] + num_samples[2, :]
 
         # Averaging
-        values /= num_samples
+        for dl in range(4):
+
+            # Metric = loss_all
+            if num_samples[dl, 0] == 0:
+                values[dl, 0] = 1000  # Loss
+            else:
+                values[dl, 0] /= num_samples[dl, 0]
+
+            # Metric = lass_asw
+            if num_samples[dl, 1] == 0:
+                values[dl, 1] = 1000  # Loss
+            else:
+                values[dl, 1] /= num_samples[dl, 1]
+
+            # Metric = accuracy
+            if num_samples[dl, 2] == 0:
+                values[dl, 2] = 0  # Accuracy
+            else:
+                values[dl, 2] /= num_samples[dl, 2]
+
+            # Metric = brier score
+            if num_samples[dl, 3] == 0:
+                values[dl, 3] = 2  # Brier score
+            else:
+                values[dl, 3] /= num_samples[dl, 3]
 
         # Output
         return [values[dl, metric] for dl in range(4) for metric in range(4)]
