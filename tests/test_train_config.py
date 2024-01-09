@@ -143,6 +143,35 @@ def test_train_config_hash():
     )
 
 
+def test_eq_training_config():
+    assert TrainingCfg() != "hello"
+    assert TrainingCfg(model="mistral") != TrainingCfg(model="llama")
+    assert (
+        TrainingCfg(training_args=dict(dataloader_persistent_workers=5))
+        != TrainingCfg()
+    )
+    assert TrainingCfg(
+        training_args=dict(dataloader_persistent_workers=5)
+    ) != TrainingCfg(training_args=dict(dataloader_persistent_workers=4))
+    assert TrainingCfg() != TrainingCfg(
+        training_args=dict(dataloader_persistent_workers=4)
+    )
+
+
+def test_hash():
+    assert hash(TrainingCfg()) != hash("hello")
+    assert hash(TrainingCfg(model="mistral")) != hash(TrainingCfg(model="llama"))
+    assert hash(
+        TrainingCfg(training_args=dict(dataloader_persistent_workers=5))
+    ) != hash(TrainingCfg())
+    assert hash(
+        TrainingCfg(training_args=dict(dataloader_persistent_workers=5))
+    ) != hash(TrainingCfg(training_args=dict(dataloader_persistent_workers=4)))
+    assert hash(TrainingCfg()) != hash(
+        TrainingCfg(training_args=dict(dataloader_persistent_workers=4))
+    )
+
+
 def test_train_config_output_dir():
     training_cfg_0 = TrainingCfg(
         model="mistral", training_args=dict(num_train_epochs=1)

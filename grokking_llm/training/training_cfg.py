@@ -82,8 +82,9 @@ TRAINING_ARGS:"""
         are NOT equal to the default value. Thus, the hash remains the same
         if some new attributes are added to the TrainingCfg class.
 
-        The only attribute that are not taken into account for this ID are the one
-        in grokking_llm.utils.constants.TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID.
+        The attributes that are not taken into account for this ID are:
+        - self.accelerator
+        - the ones in grokking_llm.utils.constants.TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID.
         They are excluded because they do not change the training dynamic of the model,
         but enable flexibility for manual adaptation (e.g. add more epochs, modify eval
         batch size, ask the pipeline to resume from existing checkpoint, etc.)
@@ -120,9 +121,6 @@ TRAINING_ARGS:"""
 
         if self.lora_dropout != TRAIN_CFG_DEFAULT_LORA_DROPOUT:
             description += f"lora_dropout={self.lora_dropout};"
-
-        if self.accelerator != TRAIN_CFG_DEFAULT_ACCELERATOR:
-            description += f"accelerator={self.accelerator};"
 
         if self.last_token_only != TRAIN_CFG_DEFAULT_LAST_TOKEN_ONLY:
             description += f"last_token_only={self.last_token_only};"
@@ -162,10 +160,11 @@ TRAINING_ARGS:"""
         return True
 
     def __hash__(self) -> int:
-        return hash(
-            self.get_config_id()
-            + f";num_train_epochs={self.training_args['num_train_epochs']}"
-        )
+        to_hash = self.get_config_id() + f";accelerator={self.accelerator}"
+        for key, value in self.training_args.items():
+            to_hash += f";{key}={value}"
+
+        return hash(to_hash)
 
     # ==================== OUTPUT DIR ====================
 
@@ -535,7 +534,7 @@ TRAINING_ARGS:"""
         try:
             self.data_seed = int(data_seed)
         except ValueError:
-            raise ValueError(f"`label_noise`={data_seed} should be an int.")
+            raise ValueError(f"`data_seed`={data_seed} should be an int.")
 
         # RANDOM SPLIT CONFIG
 
