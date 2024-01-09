@@ -8,23 +8,22 @@ import typing as t
 import torch
 import transformers
 from datasets import Dataset
+from loguru import logger
 from peft import PeftModel
 from peft.utils import constants
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
+from .models import save_model
 from .training_cfg import TrainingCfg
 
 # To avoid saving the first embedding layer since it's not needed
 constants.EMBEDDING_LAYER_NAMES.remove("lm_head")
 
 
-class SaveAtStart(transformers.TrainerCallback):
-    def on_train_begin(self, args, state, control, **kwargs):
-        control.should_save = True
-
-
 def compute_mcq_last_token_loss(
-    inputs: t.Dict[str, torch.Tensor], outputs: CausalLMOutputWithPast, vocab_size: int
+    inputs: t.Dict[str, torch.Tensor],
+    outputs: t.Union[CausalLMOutputWithPast, t.Dict[str, torch.Tensor]],
+    vocab_size: int,
 ):
     """Computes the loss that focuses on the token corresponding to the answer of the MCQ."""
 
@@ -65,7 +64,7 @@ def get_trainer(
     ],
     train_dataset: Dataset,
     eval_dataset: Dataset,
-) -> transformers.Trainer:
+) -> CustomTrainer:
     """Gets a trainer for LoRA finetuning.
 
     Args:
@@ -90,15 +89,19 @@ def get_trainer(
         **cfg.training_args, output_dir=cfg.get_output_dir()
     )
 
-    # Callbacks
-    callbacks = [SaveAtStart()]
-
-    # Output
-    return CustomTrainer(
+    # Creating the Trainer
+    trainer = CustomTrainer(
         last_token_only=cfg.last_token_only,
         model=model,
         train_dataset=processed_train_dataset,
         eval_dataset=processed_eval_dataset,
         args=training_args,
-        callbacks=callbacks,
     )
+
+    # Saving model if needed
+    if cfg.get_resume_from_checkpoint_status() is False:
+        logger.info(f"Saving model at checkpoint 0")
+        save_model(trainer.model, cfg, at_checkpoint=0)
+
+    # Output
+    return trainer

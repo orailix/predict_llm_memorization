@@ -6,6 +6,7 @@
 import collections
 
 import numpy as np
+import pytest
 from transformers import AutoTokenizer
 
 from grokking_llm.training import TrainingCfg
@@ -15,6 +16,7 @@ from grokking_llm.training.datasets import (
     format_dataset,
     get_dataset,
     get_random_split,
+    get_tokenizer,
     tokenize_dataset,
 )
 from grokking_llm.training.formatting import format_arc, format_ethics, format_mmlu
@@ -40,6 +42,11 @@ def test_datasets_creation():
     get_dataset(mmlu_cfg, split="test")
     get_dataset(arc_cfg, split="train")
     get_dataset(arc_cfg, split="test")
+
+    # Wrong split
+    with pytest.raises(ValueError):
+        get_dataset(ethics_cfg, split="hello")
+
     assert True
 
 
@@ -272,6 +279,11 @@ def test_dataset_splits():
             are_the_same = False
             break
     assert not are_the_same
+
+
+def test_get_tokenizer():
+    get_tokenizer(TrainingCfg(dataset="ethics"))
+    get_tokenizer(TrainingCfg(model="dummy_llama"))
 
 
 def test_dataset_tokenization():
