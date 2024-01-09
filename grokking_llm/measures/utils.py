@@ -45,7 +45,12 @@ def get_dataloaders_for_measures(
     )
 
     # all / trl / rdl
-    trl_selector = np.array(train_dataset_complete["cls_label_status"]) == 1
+    trl_selector = [
+        i for i, x in enumerate(train_dataset_complete["cls_label_status"]) if x == 1
+    ]
+    rdl_selector = [
+        i for i, x in enumerate(train_dataset_complete["cls_label_status"]) if x == 0
+    ]
     train_all = train_dataset_complete.select_columns(
         [
             "input_ids",
@@ -56,7 +61,7 @@ def get_dataloaders_for_measures(
         ]
     )
     train_trl = train_all.select(trl_selector)
-    train_rdl = train_all.select(1 - trl_selector)
+    train_rdl = train_all.select(rdl_selector)
 
     # DATASET -- TEST
     test_dataset = get_dataset(training_cfg, split="test")

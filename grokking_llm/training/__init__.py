@@ -12,6 +12,7 @@ from .datasets import (
     get_tokenizer,
     tokenize_dataset,
 )
+from .main import run_main_train
 from .models import get_model, get_num_params, save_model
 from .trainer import get_trainer
 from .training_cfg import TrainingCfg

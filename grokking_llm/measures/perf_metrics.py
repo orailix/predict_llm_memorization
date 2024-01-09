@@ -7,10 +7,11 @@ import typing as t
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from ..training import get_model
 from ..training.trainer import compute_mcq_last_token_loss
+from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils import get_dataloaders_for_measures
 
@@ -42,7 +43,7 @@ class PerfMetrics(DynamicMetricsGroup):
         result = []
         for prefix in "train_all", "train_trl", "train_rdl", "test":
             for suffix in "loss_all", "loss_asw", "accuracy", "brier_sc":
-                result += f"{prefix}_{suffix}"
+                result.append(f"{prefix}_{suffix}")
 
         return result
 
@@ -60,6 +61,7 @@ class PerfMetrics(DynamicMetricsGroup):
         # Dim 1 => train_all, train_trl, train_rdl, test
         # Dim 2 => loss_all, loss_asw, accuracy, brier_sc
         values = np.zeros((4, 4), dtype=float)
+        num_samples = np.zeros((4, 4), dtype=int)
 
         # Iterating over dataloaders
         for idx, data_loader in zip(
@@ -67,7 +69,7 @@ class PerfMetrics(DynamicMetricsGroup):
             [train_trl_dl, train_rdl_dl, test_all_dl],
         ):
 
-            for inputs in data_loader:
+            for inputs in tqdm(data_loader):
 
                 # Unpacking and pushing to device
                 input_ids = inputs["input_ids"].to(model.device)
@@ -87,17 +89,27 @@ class PerfMetrics(DynamicMetricsGroup):
                         labels=labels,
                     )
 
+                # Pulling outputs to CPU
+                outputs_cpu = {
+                    "loss": outputs["loss"].to("cpu"),
+                    "logits": outputs["logits"].to("cpu"),
+                }
+
+                # Freeing GPU memory
+                del outputs
+                del input_ids
+                del attention_mask
+                del labels
+                torch.cuda.empty_cache()
+
                 # Losses
-                values[idx, 0] += outputs["loss"] * bs
-                values[idx, 1] += (
-                    compute_mcq_last_token_loss(
-                        inputs, outputs, model.config.vocab_size
-                    )
-                    * bs
+                loss_all = outputs_cpu["loss"]
+                loss_asw = compute_mcq_last_token_loss(
+                    inputs, outputs_cpu, model.config.vocab_size
                 )
 
                 # Logits of possible answers
-                logits = outputs["logits"]  # Shape (bs, 1024, vocab_size)
+                logits = outputs_cpu["logits"]  # Shape (bs, 1024, vocab_size)
                 logits_for_mcq_answer = logits[:, -3]  # Shape (bs, vocab_size)
                 batch_indices = torch.arange(bs)[:, None]  # Shape (bs, 1)
                 index_selector = tokenized_possible_labels.int()  # Shape (bs, 16)
@@ -113,7 +125,27 @@ class PerfMetrics(DynamicMetricsGroup):
                     mcq_logits.argmax(axis=1) == inserted_label_index
                 ).sum() / bs
 
+                # Brier score
+                y_true_onehot = torch.nn.functional.one_hot(
+                    inserted_label_index, num_classes=MAX_NUM_MCQ_ANSWER
+                )
+                y_pred_probas = torch.softmax(mcq_logits, axis=1)
+                brier_sc = ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean()
 
-def brier_multi(y_true, logits):
-    probas = torch.softmax(logits, axis=1)
-    return ((y_true - probas) ** 2).sum(axis=1).mean()
+                # Saving
+                values[idx, 0] += loss_all * bs
+                values[idx, 1] += loss_asw * bs
+                values[idx, 2] += accuracy * bs
+                values[idx, 3] += brier_sc * bs
+
+                num_samples[idx, :] += bs
+
+        # train_all
+        values[0, :] = values[1, :] + values[2, :]
+        num_samples[0, :] = num_samples[1, :] + num_samples[2, :]
+
+        # Averaging
+        values /= num_samples
+
+        # Output
+        return [values[dl, metric] for dl in range(4) for metric in range(4)]
