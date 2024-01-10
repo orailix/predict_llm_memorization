@@ -77,14 +77,9 @@ class WeightsMetrics(DynamicMetricsGroup):
         tot_num_params = 0
 
         logger.debug(f"Computing the norm of each parameter of the adapter")
-        for key_0, key_now in tqdm(
-            list(
-                zip(
-                    sorted(tensors_checkpoint_0.keys()),
-                    sorted(tensors_checkpoint_now.keys()),
-                )
-            )
-        ):
+        keys_0 = sorted([k for k in tensors_checkpoint_0.keys() if "lora" in k])
+        keys_now = sorted([k for k in tensors_checkpoint_now.keys() if "lora" in k])
+        for key_0, key_now in tqdm(list(zip(keys_0, keys_now))):
 
             # Sanity check
             if key_0 != key_now:

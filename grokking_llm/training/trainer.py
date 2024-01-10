@@ -11,7 +11,6 @@ from datasets import Dataset
 from loguru import logger
 from peft import PeftModel
 from peft.utils import constants
-from transformers.modeling_outputs import CausalLMOutputWithPast
 
 from .models import save_model
 from .training_cfg import TrainingCfg
@@ -21,15 +20,15 @@ constants.EMBEDDING_LAYER_NAMES.remove("lm_head")
 
 
 def compute_mcq_last_token_loss(
-    inputs: t.Dict[str, torch.Tensor],
-    outputs: t.Union[CausalLMOutputWithPast, t.Dict[str, torch.Tensor]],
+    inputs_labels: torch.Tensor,
+    outputs_logits: torch.Tensor,
     vocab_size: int,
 ):
     """Computes the loss that focuses on the token corresponding to the answer of the MCQ."""
 
     # We skip the EOS token on purpose
-    logits_last_token = outputs["logits"][:, -3].contiguous().view(-1, vocab_size)
-    label_last_token = inputs["labels"][:, -2].contiguous().view(-1)
+    logits_last_token = outputs_logits[:, -3].contiguous().view(-1, vocab_size)
+    label_last_token = inputs_labels[:, -2].contiguous().view(-1)
 
     return torch.nn.CrossEntropyLoss()(logits_last_token, label_last_token)
 
@@ -62,8 +61,8 @@ def get_trainer(
     model: t.Union[
         transformers.MistralForCausalLM, transformers.LlamaForCausalLM, PeftModel
     ],
-    train_dataset: Dataset,
-    eval_dataset: Dataset,
+    train_dataset: Dataset = None,
+    eval_dataset: Dataset = None,
 ) -> CustomTrainer:
     """Gets a trainer for LoRA finetuning.
 
@@ -77,11 +76,15 @@ def get_trainer(
         transformers.Trainer: The trainer."""
 
     # Datasets
-    processed_train_dataset = train_dataset.select_columns(
-        ["input_ids", "attention_mask", "labels"]
+    processed_train_dataset = (
+        train_dataset.select_columns(["input_ids", "attention_mask", "labels"])
+        if train_dataset is not None
+        else None
     )
-    processed_eval_dataset = eval_dataset.select_columns(
-        ["input_ids", "attention_mask", "labels"]
+    processed_eval_dataset = (
+        eval_dataset.select_columns(["input_ids", "attention_mask", "labels"])
+        if eval_dataset is not None
+        else None
     )
 
     # Training arguments

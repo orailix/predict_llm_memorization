@@ -30,7 +30,7 @@ def run_main_measure(
     # Parsing inputs -- name
     if name not in NAMES_TO_METRICS:
         raise ValueError(
-            f"Got `name`={name}, but it should be in {list(NAMES_TO_METRICS)}"
+            f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)}"
         )
 
     metrics_class = NAMES_TO_METRICS[name]

@@ -9,6 +9,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from grokking_llm.training import get_trainer
+
 from ..training import get_model
 from ..training.trainer import compute_mcq_last_token_loss
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
@@ -39,7 +41,6 @@ class PerfMetrics(DynamicMetricsGroup):
 
     @property
     def metrics_names(self) -> t.List[str]:
-
         result = []
         for prefix in "train_all", "train_trl", "train_rdl", "test":
             for suffix in "loss_all", "loss_asw", "accuracy", "brier_sc":
@@ -48,14 +49,24 @@ class PerfMetrics(DynamicMetricsGroup):
         return result
 
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-
-        # Loading model and tokenizer
+        # Loading model
         model = get_model(self.training_cfg, at_checkpoint=checkpoint)
+        trainer = get_trainer(
+            self.training_cfg,
+            model=model,
+        )
 
         # Dataloaders
         train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
             self.training_cfg
         )
+
+        # Accelerator
+        model = trainer.accelerator.prepare_model(model, evaluation_mode=True)
+        train_trl_dl, train_rdl_dl, test_all_dl = trainer.accelerator.prepare(
+            train_trl_dl, train_rdl_dl, test_all_dl
+        )
+        model.eval()
 
         # Storing the values
         # Dim 1 => train_all, train_trl, train_rdl, test
@@ -69,12 +80,14 @@ class PerfMetrics(DynamicMetricsGroup):
             [train_trl_dl, train_rdl_dl, test_all_dl],
         ):
 
-            for inputs in tqdm(data_loader):
+            if len(data_loader) == 0:
+                continue
 
+            for inputs in tqdm(data_loader):
                 # Unpacking and pushing to device
-                input_ids = inputs["input_ids"].to(model.device)
-                attention_mask = inputs["attention_mask"].to(model.device)
-                labels = inputs["labels"].to(model.device)
+                input_ids = inputs["input_ids"]
+                attention_mask = inputs["attention_mask"]
+                labels = inputs["labels"]
                 tokenized_possible_labels = inputs["tokenized_possible_labels"]
                 inserted_label_index = inputs["inserted_label_index"]
 
@@ -89,27 +102,14 @@ class PerfMetrics(DynamicMetricsGroup):
                         labels=labels,
                     )
 
-                # Pulling outputs to CPU
-                outputs_cpu = {
-                    "loss": outputs["loss"].to("cpu"),
-                    "logits": outputs["logits"].to("cpu"),
-                }
-
-                # Freeing GPU memory
-                del outputs
-                del input_ids
-                del attention_mask
-                del labels
-                torch.cuda.empty_cache()
-
                 # Losses
-                loss_all = outputs_cpu["loss"]
+                loss_all = outputs["loss"]
                 loss_asw = compute_mcq_last_token_loss(
-                    inputs, outputs_cpu, model.config.vocab_size
+                    labels, outputs["logits"], model.config.vocab_size
                 )
 
                 # Logits of possible answers
-                logits = outputs_cpu["logits"]  # Shape (bs, 1024, vocab_size)
+                logits = outputs["logits"]  # Shape (bs, 1024, vocab_size)
                 logits_for_mcq_answer = logits[:, -3]  # Shape (bs, vocab_size)
                 batch_indices = torch.arange(bs)[:, None]  # Shape (bs, 1)
                 index_selector = tokenized_possible_labels.int()  # Shape (bs, 16)
@@ -123,14 +123,16 @@ class PerfMetrics(DynamicMetricsGroup):
                 # Accuracy
                 accuracy = (
                     mcq_logits.argmax(axis=1) == inserted_label_index
-                ).sum() / bs
+                ).sum().cpu() / bs
 
                 # Brier score
                 y_true_onehot = torch.nn.functional.one_hot(
                     inserted_label_index, num_classes=MAX_NUM_MCQ_ANSWER
                 )
                 y_pred_probas = torch.softmax(mcq_logits, axis=1)
-                brier_sc = ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean()
+                brier_sc = (
+                    ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean().cpu()
+                )
 
                 # Saving
                 values[idx, 0] += loss_all * bs
@@ -146,7 +148,6 @@ class PerfMetrics(DynamicMetricsGroup):
 
         # Averaging
         for dl in range(4):
-
             # Metric = loss_all
             if num_samples[dl, 0] == 0:
                 values[dl, 0] = 1000  # Loss

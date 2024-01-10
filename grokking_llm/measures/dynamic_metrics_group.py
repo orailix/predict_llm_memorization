@@ -3,10 +3,12 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import gc
 import typing as t
 from abc import ABC, abstractmethod, abstractproperty
 
 import pandas as pd
+import torch
 from loguru import logger
 
 from grokking_llm.training import TrainingCfg
@@ -151,6 +153,9 @@ class DynamicMetricsGroup(ABC):
 
         for checkpoint in self.training_cfg.get_available_checkpoints():
             self.compute_values(checkpoint, recompute_if_exists=recompute_if_exists)
+
+            torch.cuda.empty_cache()
+            gc.collect()
 
     # ==================== METRICS DF ====================
 
