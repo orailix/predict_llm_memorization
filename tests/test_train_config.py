@@ -281,14 +281,6 @@ def test_train_config_lora_dropout():
         TrainingCfg(lora_dropout=1.1)
 
 
-def test_train_config_accelerator():
-    with pytest.raises(RuntimeError):
-        TrainingCfg(accelerator="hello")
-
-    with pytest.raises(RuntimeError):
-        TrainingCfg(accelerator="vulkan")
-
-
 def test_train_config_last_token_only():
     with pytest.raises(ValueError):
         TrainingCfg(last_token_only=1)

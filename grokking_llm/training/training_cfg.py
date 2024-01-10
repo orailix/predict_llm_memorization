@@ -590,9 +590,8 @@ TRAINING_ARGS:"""
             torch.rand(1).to(d)
         except RuntimeError as e:
             logger.warning(
-                f"Your configuration is not compatible with the following device: {self.accelerator}"
+                f"Your configuration is not compatible with the following device: {self.accelerator}. This is likely to cause errors in yoru pipeline."
             )
-            raise e
 
         # Special test for device=="cuda"
         if self.accelerator == "cuda" and not torch.cuda.is_available():
