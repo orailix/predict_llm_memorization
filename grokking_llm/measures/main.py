@@ -37,15 +37,7 @@ def run_main_measure(
     logger.info(f"Starting a measure pipeline with metric group '{name}'")
 
     # Parsing inputs -- training_cfg
-    if config is None:
-        config = paths.training_cfg_path
-    elif (paths.configs / config).exists():
-        config = paths.configs / config
-    else:
-        config = Path(config)
-
-    logger.info(f"Running measures on config {config}")
-    training_cfg = TrainingCfg.from_file(config)
+    training_cfg = TrainingCfg.autoconfig(config)
     logger.debug(f"Config ID: {training_cfg.get_config_id()}")
 
     # Parsing inputs -- checkpoint

@@ -358,3 +358,42 @@ def test_resume_from_checkpoint_non_boolean():
 
     # Cleaning
     shutil.rmtree(cfg.get_output_dir())
+
+
+def test_autoconfig():
+
+    # Cleaning
+    for child in paths.output.iterdir():
+        if child.is_dir():
+            shutil.rmtree(child)
+
+    # Autoconfig -- path
+    assert TrainingCfg.autoconfig(training_cfg_path) == TrainingCfg.from_file(
+        training_cfg_path
+    )
+    assert TrainingCfg.autoconfig(str(training_cfg_path)) == TrainingCfg.from_file(
+        training_cfg_path
+    )
+    assert TrainingCfg.autoconfig("training") == TrainingCfg.from_file(
+        paths.configs / "training.cfg"
+    )
+    assert TrainingCfg.autoconfig("training.cfg") == TrainingCfg.from_file(
+        paths.configs / "training.cfg"
+    )
+
+    # Creating output dir for a config
+    TrainingCfg(model="mistral", split_prop=0.3).get_output_dir()
+    TrainingCfg(model="mistral", split_prop=0.31).get_output_dir()
+    TrainingCfg(model="mistral", split_prop=0.314).get_output_dir()
+    cfg = TrainingCfg(model="mistral", split_prop=0.3141)
+    cfg.get_output_dir()
+    cfg_id = cfg.get_config_id()
+    assert TrainingCfg.autoconfig(cfg_id[:4]) == cfg
+    assert TrainingCfg.autoconfig(cfg_id[:6]) == cfg
+    assert TrainingCfg.autoconfig(cfg_id[:8]) == cfg
+    assert TrainingCfg.autoconfig(cfg_id[:8]) == cfg
+    assert TrainingCfg.autoconfig(cfg_id) == cfg
+
+    with pytest.raises(ValueError):
+        TrainingCfg.autoconfig(cfg_id[:3])
+        TrainingCfg.autoconfig(str(np.random.randint(1e6)))

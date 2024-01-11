@@ -25,19 +25,8 @@ def run_main_train(config: t.Optional[str] = None):
     """Main training function."""
 
     # Parsing args
-    if config is None:
-        config = paths.training_cfg_path
-    elif (paths.configs / config).exists():
-        config = paths.configs / config
-    else:
-        config = Path(config)
-
-    # Logging
-    logger.info(f"Starting a training pipeline with config {config}")
-
-    # Loading config
     logger.info("Loading config")
-    cfg = TrainingCfg.from_file(config)
+    cfg = TrainingCfg.autoconfig(config)
     logger.debug(cfg)
 
     # Dataset - train

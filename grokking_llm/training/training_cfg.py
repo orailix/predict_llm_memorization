@@ -290,6 +290,69 @@ TRAINING_ARGS:"""
 
         return cls.from_parser(json_content)
 
+    @classmethod
+    def autoconfig(cls, name: t.Union[str, Path]):
+        """Automatif build of a config object.
+
+        The method will sequentially try these option and return the result
+        of the first one to succeede. If no option work, raise ValueError.
+
+        1. If `name` is the path to a valid `.cfg` or `.json` file, builds
+        the result from it.
+        2. If `grokking_llm.utils.paths.configs / name` is a valid file,
+        builds the result from it.
+        3. If `grokking_llm.utils.paths.configs / f'{name}.cfg'` is a valid
+        file, builds the result from it.
+        4. If `grokking_llm.utils.paths.configs / f'{name}.json'` is a valid
+        file, builds the result from it.
+        5. If `name` is a at least 4 character length, will look at every dir
+        in `grokking_llm.paths.outputs`, and build the output from the config
+        of the first dir for which `name` is a prefix of it's config_id
+
+        Args:
+            - name: A string describing the config to build.
+        """
+
+        if isinstance(name, Path):
+            logger.info(f"Autoconfig `name`: {name} is a valid path, building from it.")
+            return cls.from_file(name)
+
+        if Path(name).exists():
+            logger.info(f"Autoconfig `name`: {name} is a valid path, building from it.")
+            return cls.from_file(name)
+
+        if (paths.configs / name).exists():
+            logger.info(
+                f"Autoconfig `name`: {name} is a config in `utils.paths.configs`, building from it."
+            )
+            return cls.from_file(paths.configs / f"{name}")
+
+        if (paths.configs / f"{name}.cfg").exists():
+            logger.info(
+                f"Autoconfig `name`: {name}.cfg is a config in `utils.paths.configs`, building from it."
+            )
+            return cls.from_file(paths.configs / f"{name}.cfg")
+
+        if (paths.configs / f"{name}.json").exists():
+            logger.info(
+                f"Autoconfig `name`: {name}.json is a config in `utils.paths.configs`, building from it."
+            )
+            return cls.from_file(paths.configs / f"{name}.json")
+
+        if len(name) >= 4:
+
+            for child in paths.output.iterdir():
+                if not child.is_dir():
+                    continue
+
+                if child.name[: len(name)] == name:
+                    logger.info(
+                        f"Autoconfig `name`: {name} is the prefix of confi_id {child.name} in `paths.outputs`, building from it."
+                    )
+                    return cls.from_file(child / "training_cfg.json")
+
+        raise ValueError(f"Autoconfig `name`: {name} cannot be matched to any config.")
+
     # ==================== PARSER ====================
 
     @classmethod
