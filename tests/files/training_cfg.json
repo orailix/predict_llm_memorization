@@ -10,7 +10,8 @@
     },
     "random_split": {
         "split_id": 0,
-        "split_prop": 1.0
+        "split_prop": 1.0,
+        "split_test": false
     },
     "lora": {
         "lora_r": 8,

@@ -57,6 +57,7 @@ PREPROCESS:
 RANDOM SPLIT:
     - split_id: {self.split_id}
     - split_prop: {self.split_prop}
+    - split_test: {self.split_test}
 LoRA:
     - lora_r: {self.lora_r}
     - lora_alpha: {self.lora_alpha}
@@ -112,6 +113,9 @@ TRAINING_ARGS:"""
 
         if self.split_prop != TRAIN_CFG_DEFAULT_SPLIT_PROP:
             description += f"split_prop={self.split_prop};"
+
+        if self.split_test != TRAIN_CFG_DEFAULT_SPLIT_TEST:
+            description += f"split_test={self.split_test};"
 
         if self.lora_r != TRAIN_CFG_DEFAULT_LORA_R:
             description += f"lora_r={self.lora_r};"
@@ -412,9 +416,14 @@ TRAINING_ARGS:"""
             raise ValueError(
                 "Section 'random_split' of your config should contain a 'split_prop' entry."
             )
+        if "split_test" not in parser["random_split"]:
+            raise ValueError(
+                "Section 'random_split' of your config should contain a 'split_test' entry."
+            )
 
         split_id = parser["random_split"]["split_id"]
         split_prop = parser["random_split"]["split_prop"]
+        split_test = parser["random_split"]["split_test"]
 
         # LORA CONFIG
 
@@ -479,6 +488,7 @@ TRAINING_ARGS:"""
             data_seed=data_seed,
             split_id=split_id,
             split_prop=split_prop,
+            split_test=split_test,
             lora_r=lora_r,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
@@ -509,6 +519,7 @@ TRAINING_ARGS:"""
             "random_split": {
                 "split_id": self.split_id,
                 "split_prop": self.split_prop,
+                "split_test": self.split_test,
             },
             "lora": {
                 "lora_r": self.lora_r,
@@ -537,6 +548,7 @@ TRAINING_ARGS:"""
         data_seed: int = TRAIN_CFG_DEFAULT_DATA_SEED,
         split_id: int = TRAIN_CFG_DEFAULT_SPLIT_ID,
         split_prop: float = TRAIN_CFG_DEFAULT_SPLIT_PROP,
+        split_test: t.Union[str, bool] = TRAIN_CFG_DEFAULT_SPLIT_TEST,
         lora_r: int = TRAIN_CFG_DEFAULT_LORA_R,
         lora_alpha: float = TRAIN_CFG_DEFAULT_LORA_ALPHA,
         lora_dropout: float = TRAIN_CFG_DEFAULT_LORA_DROPOUT,
@@ -613,6 +625,17 @@ TRAINING_ARGS:"""
         except ValueError:
             raise ValueError(
                 f"`split_prop`={split_prop} should be a float between 0.0 and 1.0."
+            )
+
+        if isinstance(split_test, bool):
+            self.split_test = split_test
+        elif split_test == "true":
+            self.split_test = True
+        elif split_test == "false":
+            self.split_test = False
+        else:
+            raise ValueError(
+                f"`split_test`={split_test} but it should be 'true' or 'false'."
             )
 
         # LORA CONFIG

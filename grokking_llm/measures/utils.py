@@ -67,6 +67,8 @@ def get_dataloaders_for_measures(
     test_dataset = get_dataset(training_cfg, split="test")
     test_dataset_formatted = format_dataset(test_dataset, training_cfg)
     test_dataset_labelled = add_labels(test_dataset_formatted, training_cfg, "test")
+    if training_cfg.split_test:
+        test_dataset_labelled = get_random_split(test_dataset_labelled, training_cfg)
     test_dataset_tokenized = tokenize_dataset(test_dataset_labelled, training_cfg)
     test_dataset_complete = add_tokenized_possible_labels(
         test_dataset_tokenized, training_cfg

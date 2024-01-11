@@ -42,6 +42,8 @@ def run_main_train(config: t.Optional[str] = None):
     test_dataset = get_dataset(cfg, split="test")
     test_dataset_formatted = format_dataset(test_dataset, cfg)
     test_dataset_labelled = add_labels(test_dataset_formatted, cfg, "test")
+    if cfg.split_test:
+        test_dataset_labelled = get_random_split(test_dataset_labelled, cfg)
     test_dataset_tokenized = tokenize_dataset(test_dataset_labelled, cfg)
 
     # Model

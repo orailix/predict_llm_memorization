@@ -30,7 +30,9 @@ def compute_mcq_last_token_loss(
     logits_last_token = outputs_logits[:, -3].contiguous().view(-1, vocab_size)
     label_last_token = inputs_labels[:, -2].contiguous().view(-1)
 
-    return torch.nn.CrossEntropyLoss()(logits_last_token, label_last_token)
+    loss_fct = torch.nn.CrossEntropyLoss()
+
+    return loss_fct(logits_last_token, label_last_token)
 
 
 class CustomTrainer(transformers.Trainer):
@@ -49,7 +51,7 @@ class CustomTrainer(transformers.Trainer):
             loss = outputs["loss"]
         else:
             loss = compute_mcq_last_token_loss(
-                inputs, outputs, vocab_size=model.config.vocab_size
+                inputs["labels"], outputs["logits"], vocab_size=model.config.vocab_size
             )
 
         return (loss, outputs) if return_outputs else loss

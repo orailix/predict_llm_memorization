@@ -32,6 +32,7 @@ def test_train_config_from_file():
         assert type(item.data_seed) == int and item.data_seed == 0
         assert type(item.split_id) == int and item.split_id == 0
         assert type(item.split_prop) == float and item.split_prop == 1.0
+        assert type(item.split_test) == bool and item.split_test == False
         assert type(item.lora_r) == int and item.lora_r == 8
         assert type(item.lora_alpha) == float and item.lora_alpha == 16
         assert type(item.lora_dropout) == float and item.lora_dropout == 0.05
@@ -105,6 +106,14 @@ def test_train_config_hash():
     assert (
         TrainingCfg(split_prop=0.0).get_config_id()
         == TrainingCfg(split_prop=0.0).get_config_id()
+    )
+    assert (
+        TrainingCfg(split_test=True).get_config_id()
+        == TrainingCfg(split_test="true").get_config_id()
+    )
+    assert (
+        TrainingCfg(split_test=True).get_config_id()
+        != TrainingCfg(split_test="false").get_config_id()
     )
     assert (
         TrainingCfg(lora_r=1).get_config_id() != TrainingCfg(lora_r=2).get_config_id()
@@ -261,6 +270,14 @@ def test_train_config_split_prop():
 
     with pytest.raises(ValueError):
         TrainingCfg(split_prop=1.1)
+
+
+def test_train_config_split_test():
+    with pytest.raises(ValueError):
+        TrainingCfg(split_test=1.0)
+
+    with pytest.raises(ValueError):
+        TrainingCfg(split_test="hello")
 
 
 def test_train_config_lora_r():
