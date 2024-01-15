@@ -8,7 +8,7 @@ import typing as t
 
 import pytest
 
-from grokking_llm.measures import DynamicMetricsGroup, get_dataloaders_for_measures
+from grokking_llm.measures import get_dataloaders_for_measures
 from grokking_llm.training import (
     TrainingCfg,
     format_dataset,
