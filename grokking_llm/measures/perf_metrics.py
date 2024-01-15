@@ -7,9 +7,8 @@ import typing as t
 
 import numpy as np
 import torch
+from accelerate import Accelerator
 from tqdm import tqdm
-
-from grokking_llm.training import get_trainer
 
 from ..training import get_model
 from ..training.trainer import compute_mcq_last_token_loss
@@ -51,10 +50,6 @@ class PerfMetrics(DynamicMetricsGroup):
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
         # Loading model
         model = get_model(self.training_cfg, at_checkpoint=checkpoint)
-        trainer = get_trainer(
-            self.training_cfg,
-            model=model,
-        )
 
         # Dataloaders
         train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
@@ -62,8 +57,9 @@ class PerfMetrics(DynamicMetricsGroup):
         )
 
         # Accelerator
-        model = trainer.accelerator.prepare_model(model, evaluation_mode=True)
-        train_trl_dl, train_rdl_dl, test_all_dl = trainer.accelerator.prepare(
+        accelerator = Accelerator(mixed_precision="fp16")
+        model = accelerator.prepare_model(model, evaluation_mode=True)
+        train_trl_dl, train_rdl_dl, test_all_dl = accelerator.prepare(
             train_trl_dl, train_rdl_dl, test_all_dl
         )
         model.eval()
