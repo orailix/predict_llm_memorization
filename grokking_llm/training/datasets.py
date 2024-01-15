@@ -18,6 +18,8 @@ from .training_cfg import TrainingCfg
 # Dataset splits
 TRAIN_SPLIT = "train"
 TEST_SPLIT = "test"
+TRAIN_SPLIT_HF = "train_hf"
+TEST_SPLIT_HF = "test_hf"
 
 # Disable caching
 datasets.disable_caching()
@@ -31,29 +33,65 @@ def get_dataset(
 
     Args:
         cfg: A configuration object
-        split: One of ["train", "test"]
+        split: One of ["train", "test", "train_hf", "test_hf"]
+
+        "train_hf" and "test_hf" refer to the train and test split as present in HuggingFace.
+        "train" and "test" are randomly selected (but always the same) within the "train_hf"
+        + "test_hf" splits, with "test" split size being 12.5% ot "train" split size.
 
     Returns:
         datasets.Dataset: The dataset.
     """
 
     # Sanity check
-    if split not in [TRAIN_SPLIT, TEST_SPLIT]:
-        raise ValueError(f"split={split} should be in {[[TRAIN_SPLIT, TEST_SPLIT]]}")
+    if split not in [TRAIN_SPLIT, TEST_SPLIT, TRAIN_SPLIT_HF, TEST_SPLIT_HF]:
+        raise ValueError(
+            f"split={split} should be in {[[TRAIN_SPLIT, TEST_SPLIT, TRAIN_SPLIT_HF, TEST_SPLIT_HF]]}"
+        )
 
-    # Loading the dataset
+    # Loading full dataset
     if cfg.dataset == DS_ARC:
         args = ("ARC-Challenge",)
-        split = "train" if split == TRAIN_SPLIT else "test"
+        split_train = "train"
+        split_test = "test"
     elif cfg.dataset == DS_MMLU:
         args = ("all",)
-        split = "auxiliary_train" if split == TRAIN_SPLIT else "test"
+        split_train = "auxiliary_train"
+        split_test = "test"
     elif cfg.dataset == DS_ETHICS:
         args = ()
-        split = "train" if split == TRAIN_SPLIT else "test"
+        split_train = "train"
+        split_test = "test"
 
+    ds_train = datasets.load_dataset(cfg.dataset, *args, split=split_train)
+    ds_train = ds_train.add_column("global_index", np.array(range(len(ds_train))))
+    ds_test = datasets.load_dataset(cfg.dataset, *args, split=split_test)
+    ds_test = ds_test.add_column(
+        "global_index", np.array(range(len(ds_train), len(ds_train) + len(ds_test)))
+    )
+
+    if split == TRAIN_SPLIT_HF:
+        result = ds_train
+    elif split == TEST_SPLIT_HF:
+        result = ds_test
+    else:
+        ds_full = datasets.concatenate_datasets([ds_train, ds_test])
+
+        # Selecting
+        full_length = len(ds_full)
+        test_selector = np.random.RandomState(0).choice(
+            range(full_length), int(5 / 49 * full_length), replace=False
+        )
+        test_selector_set = set(test_selector)
+        train_selector = [k for k in range(full_length) if k not in test_selector_set]
+
+        if split == TRAIN_SPLIT:
+            result = ds_full.select(train_selector)
+        elif split == TEST_SPLIT:
+            result = ds_full.select(test_selector)
+
+    # Logging
     logger.info(f"Loading dataset {cfg.dataset} split {split}")
-    result = datasets.load_dataset(cfg.dataset, *args, split=split)
 
     # Add a index column
     result = result.add_column("index", np.array(range(len(result))))
@@ -289,7 +327,7 @@ def add_tokenized_possible_labels(
 
     # Mapping function
     def map_fct(sample):
-        # We ass \n\n to avoid differences e.g. between "_A" and "A" tokens.
+        # We add \n\n to avoid differences e.g. between "_A" and "A" tokens.
         # We get value at index -2 because of the EOS token.
         tokenized_labels = [
             tokenizer.encode("\n\n" + label)[-2]

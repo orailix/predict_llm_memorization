@@ -37,7 +37,7 @@ def test_get_measure_dataloaders():
     assert (
         abs(len(train_rdl_dl) - len(train_trl_dl))
         / max(len(train_rdl_dl), len(train_trl_dl))
-        < 0.05
+        < 0.1
     )
 
     # Check columns

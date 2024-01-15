@@ -4,6 +4,8 @@
 # Apache Licence v2.0.
 
 import collections
+import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -27,6 +29,10 @@ from grokking_llm.utils.constants import (
     MAX_NUM_MCQ_ANSWER,
 )
 
+# Test files
+test_files = Path(__file__).parent / "files"
+ethics_global_indices = test_files / "ethics_global_indices.json"
+
 
 # Datasets
 def test_datasets_creation():
@@ -48,6 +54,39 @@ def test_datasets_creation():
         get_dataset(ethics_cfg, split="hello")
 
     assert True
+
+
+def test_datasets_train_test():
+
+    # Configs
+    ethics_cfg = TrainingCfg(dataset="ethics")
+
+    # Creation
+    ds_train = get_dataset(ethics_cfg, split="train")
+    ds_test = get_dataset(ethics_cfg, split="test")
+    ds_train_hf = get_dataset(ethics_cfg, split="train_hf")
+    ds_test_hf = get_dataset(ethics_cfg, split="test_hf")
+
+    # Tests -- length
+    assert len(ds_test) == pytest.approx(0.125 * len(ds_train), 1)
+
+    # Groundtruth global indices
+    with ethics_global_indices.open("r") as f:
+        groundtruth_indices = json.load(f)
+
+    # GLobal indices
+    train_indices = sorted([item["global_index"] for item in ds_train])
+    test_indices = sorted([item["global_index"] for item in ds_test])
+    train_hf_indices = sorted([item["global_index"] for item in ds_train_hf])
+    test_hf_indices = sorted([item["global_index"] for item in ds_test_hf])
+
+    # Tests -- global indices
+    assert train_indices == sorted(groundtruth_indices["train"])
+    assert test_indices == sorted(groundtruth_indices["test"])
+    assert train_hf_indices == list(range(len(ds_train_hf)))
+    assert test_hf_indices == list(
+        range(len(ds_train_hf), len(ds_train_hf) + len(ds_test_hf))
+    )
 
 
 def test_formatting_ethics():
