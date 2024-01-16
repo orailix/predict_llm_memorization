@@ -68,7 +68,7 @@ def test_datasets_train_test():
     ds_test_hf = get_dataset(ethics_cfg, split="test_hf")
 
     # Tests -- length
-    assert len(ds_test) == pytest.approx(0.125 * len(ds_train), 1)
+    assert abs(len(ds_test) - 0.125 * len(ds_train)) <= 1
 
     # Groundtruth global indices
     with ethics_global_indices.open("r") as f:

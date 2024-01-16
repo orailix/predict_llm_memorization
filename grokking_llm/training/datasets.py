@@ -80,7 +80,7 @@ def get_dataset(
         # Selecting
         full_length = len(ds_full)
         test_selector = np.random.RandomState(0).choice(
-            range(full_length), int(5 / 49 * full_length), replace=False
+            range(full_length), int(1 / 9 * full_length), replace=False
         )
         test_selector_set = set(test_selector)
         train_selector = [k for k in range(full_length) if k not in test_selector_set]
