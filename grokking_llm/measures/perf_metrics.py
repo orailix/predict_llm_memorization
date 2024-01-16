@@ -8,13 +8,14 @@ import typing as t
 import numpy as np
 import torch
 from accelerate import Accelerator
+from loguru import logger
 from tqdm import tqdm
 
 from ..training import get_model
 from ..training.trainer import compute_mcq_last_token_loss
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils import get_dataloaders_for_measures
+from .utils.dataloaders import get_dataloaders_for_measures
 
 
 class PerfMetrics(DynamicMetricsGroup):
@@ -71,10 +72,13 @@ class PerfMetrics(DynamicMetricsGroup):
         num_samples = np.zeros((4, 4), dtype=int)
 
         # Iterating over dataloaders
-        for idx, data_loader in zip(
+        for idx, data_loader, info in zip(
             range(1, 4),
             [train_trl_dl, train_rdl_dl, test_all_dl],
+            ["Train -- true labels", "Train -- random labels", "Test"],
         ):
+            # Logging
+            logger.info(f"Computing outputs of the model with dataloader: {info}")
 
             if len(data_loader) == 0:
                 continue

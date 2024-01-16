@@ -5,11 +5,10 @@
 
 import typing as t
 
-import numpy as np
 from torch.utils.data import DataLoader
 from transformers.data.data_collator import default_data_collator
 
-from ..training import (
+from ...training import (
     TrainingCfg,
     add_labels,
     add_tokenized_possible_labels,
