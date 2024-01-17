@@ -4,6 +4,7 @@
 # Apache Licence v2.0.
 
 from .dynamic_metrics_group import DynamicMetricsGroup
+from .general_metrics import GeneralMetrics
 from .main import run_main_measure
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
