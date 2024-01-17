@@ -5,14 +5,9 @@
 
 import typing as t
 
-import numpy as np
-from loguru import logger
-from safetensors import safe_open
-from tqdm import tqdm
-
 from grokking_llm.training import TrainingCfg
 
-from ..training import get_dataset
+from ..training import get_dataset, get_random_split
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -25,7 +20,9 @@ class GeneralMetrics(DynamicMetricsGroup):
 
     def __init__(self, training_cfg: TrainingCfg) -> None:
         super().__init__(training_cfg)
-        self.dataset_len = len(get_dataset(self.training_cfg, split="train"))
+        ds = get_dataset(self.training_cfg, split="train")
+        ds_split = get_random_split(ds, cfg=self.training_cfg)
+        self.dataset_len = len(ds_split)
 
     @property
     def metrics_group_name(self) -> str:

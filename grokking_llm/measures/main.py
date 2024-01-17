@@ -28,6 +28,7 @@ def run_main_measure(
     name: str,
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
+    force_recompute: bool = False,
 ):
     """Main function for measures."""
 
@@ -60,6 +61,8 @@ def run_main_measure(
     # Running measures
     metrics = metrics_class(training_cfg=training_cfg)
     if checkpoint == "all":
-        metrics.compute_all_values()
+        metrics.compute_all_values(recompute_if_exists=force_recompute)
     else:
-        metrics.compute_values(checkpoint=checkpoint)
+        metrics.compute_values(
+            checkpoint=checkpoint, recompute_if_exists=force_recompute
+        )

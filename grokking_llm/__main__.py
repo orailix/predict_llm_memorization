@@ -23,11 +23,13 @@ def measure(
     name: str,
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
+    force_recompute: bool = False,
 ):
     run_main_measure(
         name=name,
         config=config,
         checkpoint=checkpoint,
+        force_recompute=force_recompute,
     )
 
 
