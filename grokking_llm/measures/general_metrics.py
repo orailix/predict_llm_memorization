@@ -33,7 +33,6 @@ class GeneralMetrics(DynamicMetricsGroup):
         return ["epoch", "num_sample_processed"]
 
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-
         grad_acc = self.training_cfg.training_args["gradient_accumulation_steps"]
         bs = self.training_cfg.training_args["per_device_train_batch_size"]
 

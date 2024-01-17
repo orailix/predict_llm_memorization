@@ -17,16 +17,16 @@ from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils.dataloaders import get_dataloaders_for_measures
 from .utils.smi import smi_estimator
 
+LAYERS = [0, 7, 15, 23, 31]
+
 
 class SmiMetrics(DynamicMetricsGroup):
     """Class used to compute Sliced MUtual Information metrics on the models.
 
-    Performance metrics: for each layer (128 in total):
-        For dl in [train_all, train_trl, train_rdl, test]:
-            - [{dl}_smi_0]
-            - [{dl}_smi_1]
-            (...)
-            - [{dl}_smi_31]
+    Performance metrics: (20 in total):
+        For layers in [0, 7, 15, 23, 31]:
+            For dl in [train_all, train_trl, train_rdl, test]:
+                - [{dl}_smi_{layer}]
 
     Where [dl_smi_k] is the sliced mutual information between:
         - The Values of the attention bloc at layer 0 for token N-3
@@ -44,9 +44,10 @@ class SmiMetrics(DynamicMetricsGroup):
     def __init__(
         self, training_cfg: TrainingCfg, n_estimator: int = 2000, n_neighbors: int = 3
     ) -> None:
+        super().__init__(training_cfg)
         self.n_estimator = n_estimator
         self.n_neighbors = n_neighbors
-        super().__init__(training_cfg)
+        self._measure_in_progress = False
 
     @property
     def metrics_group_name(self) -> str:
@@ -57,96 +58,66 @@ class SmiMetrics(DynamicMetricsGroup):
         return [
             f"{dl}_smi_{layer}"
             for dl in ["train_all", "train_trl", "train_rdl", "test"]
-            for layer in range(32)
+            for layer in LAYERS
         ]
 
-    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-
-        # Loading model
-        model = get_model(self.training_cfg, at_checkpoint=checkpoint)
-
-        # Dataloaders
-        train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
-            self.training_cfg
-        )
-
-        # Accelerator
-        accelerator = Accelerator(mixed_precision="fp16")
-        model = accelerator.prepare_model(model, evaluation_mode=True)
-        train_trl_dl, train_rdl_dl, test_all_dl = accelerator.prepare(
-            train_trl_dl, train_rdl_dl, test_all_dl
-        )
-        model.eval()
+    def prepare_forward_measure(
+        self, checkpoint: int, len_trl: int, len_rdl: int, len_test: int
+    ) -> None:
+        if self._measure_in_progress:
+            raise RuntimeError("You tries to prepare twice for forward measure.")
+        self._measure_in_progress = True
+        self._checkpoint_in_progress = checkpoint
 
         # Features: 0=train_trl, 1=train_rdl, 2=test
         # features_per_dl[0][4] = list of features of the 4th layer for train_all
-        features_per_dl = [collections.defaultdict(list) for _ in range(3)]
-        labels_per_dl = [[] for _ in range(3)]
+        self._features_per_dl = [collections.defaultdict(list) for _ in range(3)]
+        self._labels_per_dl = [[] for _ in range(3)]
+        self._len_trl = len_trl
+        self._len_rdl = len_rdl
+        self._len_test = len_test
 
-        # Iterating over dataloaders
-        for dl_idx, data_loader, info in zip(
-            range(4),
-            [train_trl_dl, train_rdl_dl, test_all_dl],
-            ["Train -- true labels", "Train -- random labels", "Test"],
-        ):
-            # Logging
-            logger.info(f"Computing outputs of the model with dataloader: {info}")
+    def update_metrics(
+        self,
+        *,
+        dl_idx,
+        bs,
+        input_ids,
+        outputs,
+    ):
+        # Saving features
+        for layer in LAYERS:
+            self._features_per_dl[dl_idx - 1][layer].append(
+                outputs["past_key_values"][layer][0][:, :, -3, :].view(bs, -1).cpu()
+            )
 
-            if len(data_loader) == 0:
-                continue
+        # Saving labels
+        self._labels_per_dl[dl_idx - 1].append(input_ids[:, -2].cpu())
 
-            for inputs in tqdm(data_loader):
-
-                # Unpacking and pushing to device
-                input_ids = inputs["input_ids"]
-                attention_mask = inputs["attention_mask"]
-                labels = inputs["labels"]
-
-                # Batch size
-                bs = input_ids.size(0)
-
-                # Model forward pass
-                with torch.no_grad():
-                    outputs = model(
-                        input_ids=input_ids,
-                        attention_mask=attention_mask,
-                        labels=labels,
-                    )
-
-                # Saving features
-                for layer in range(32):
-                    features_per_dl[dl_idx][layer].append(
-                        outputs["past_key_values"][layer][0][:, :, -3, :]
-                        .view(bs, -1)
-                        .cpu()
-                    )
-
-                # Saving labels
-                labels_per_dl[dl_idx].append(input_ids[:, -2].cpu())
-
+    def finalize_metrics(self) -> None:
         # SMI containers
-        smi_values = np.zeros((4, 32))
+        smi_values = np.zeros((4, len(LAYERS)))
 
         # SMI -- TRL
-        if len(train_trl_dl) != 0:
+        if self._len_trl != 0:
             # Logging
             logger.info("Computing SMI for: Train -- true labels")
 
             # Tensors
             X_per_layer = {
                 layer: torch.cat(features_list, dim=0)
-                for layer, features_list in features_per_dl[0].items()
+                for layer, features_list in self._features_per_dl[0].items()
             }
-            y = torch.cat(labels_per_dl[0], dim=0)
+            y = torch.cat(self._labels_per_dl[0], dim=0)
 
             # Logging
-            logger.debug(f"X size: {X_per_layer[31].size()}")
+            logger.debug(f"X size: {X_per_layer[0].size()}")
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing for each layer
-            logger.info("Computing the SMI for each of the 32 layers")
+            logger.info("Computing the SMI for each layer")
             smi_per_layer = []
-            for layer in tqdm(range(32)):
+            for layer in tqdm(LAYERS):
                 smi_per_layer.append(
                     smi_estimator(
                         X_per_layer[layer],
@@ -161,25 +132,25 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.info(f"No Train -- true labels samples: SMI=0")
 
         # SMI -- RDL
-        if len(train_trl_dl) != 0:
+        if self._len_rdl != 0:
             # Logging
             logger.info("Computing SMI for: Train -- random labels")
 
             # Tensors
             X_per_layer = {
                 layer: torch.cat(features_list, dim=0)
-                for layer, features_list in features_per_dl[1].items()
+                for layer, features_list in self._features_per_dl[1].items()
             }
-            y = torch.cat(labels_per_dl[1], dim=0)
+            y = torch.cat(self._labels_per_dl[1], dim=0)
 
             # Logging
-            logger.debug(f"X size: {X_per_layer[31].size()}")
+            logger.debug(f"X size: {X_per_layer[0].size()}")
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing for each layer
-            logger.info("Computing the SMI for each of the 32 layers")
+            logger.info("Computing the SMI for each layer")
             smi_per_layer = []
-            for layer in tqdm(range(32)):
+            for layer in tqdm(LAYERS):
                 smi_per_layer.append(
                     smi_estimator(
                         X_per_layer[layer],
@@ -194,25 +165,25 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.info(f"No Train -- random labels samples: SMI=0")
 
         # SMI -- Test
-        if len(train_trl_dl) != 0:
+        if self._len_test != 0:
             # Logging
             logger.info("Computing SMI for: Test")
 
             # Tensors
             X_per_layer = {
                 layer: torch.cat(features_list, dim=0)
-                for layer, features_list in features_per_dl[2].items()
+                for layer, features_list in self._features_per_dl[2].items()
             }
-            y = torch.cat(labels_per_dl[2], dim=0)
+            y = torch.cat(self._labels_per_dl[2], dim=0)
 
             # Logging
-            logger.debug(f"X size: {X_per_layer[31].size()}")
+            logger.debug(f"X size: {X_per_layer[0].size()}")
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing for each layer
-            logger.info("Computing the SMI for each of the 32 layers")
+            logger.info("Computing the SMI for each layer")
             smi_per_layer = []
-            for layer in tqdm(range(32)):
+            for layer in tqdm(LAYERS):
                 smi_per_layer.append(
                     smi_estimator(
                         X_per_layer[layer],
@@ -227,37 +198,37 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.info(f"No Test samples: SMI=0")
 
         # SMI -- Trail all
-        if len(train_trl_dl) != 0:
+        if self._len_trl + self._len_rdl != 0:
             # Logging
             logger.info("Computing SMI for: Train -- all")
 
             # Tensors
             X_trl_per_layer = {
                 layer: torch.cat(features_list, dim=0)
-                for layer, features_list in features_per_dl[0].items()
+                for layer, features_list in self._features_per_dl[0].items()
             }
             X_rdl_per_layer = {
                 layer: torch.cat(features_list, dim=0)
-                for layer, features_list in features_per_dl[1].items()
+                for layer, features_list in self._features_per_dl[1].items()
             }
             X_per_layer = {
                 layer: torch.cat(
                     [X_trl_per_layer[layer], X_rdl_per_layer[layer]], dim=0
                 )
-                for layer in range(32)
+                for layer in LAYERS
             }
-            y_trl = torch.cat(labels_per_dl[0], dim=0)
-            y_rdl = torch.cat(labels_per_dl[1], dim=0)
+            y_trl = torch.cat(self._labels_per_dl[0], dim=0)
+            y_rdl = torch.cat(self._labels_per_dl[1], dim=0)
             y = torch.cat([y_trl, y_rdl], dim=0)
 
             # Logging
-            logger.debug(f"X size: {X_per_layer[31].size()}")
+            logger.debug(f"X size: {X_per_layer[0].size()}")
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing for each layer
-            logger.info("Computing the SMI for each of the 32 layers")
+            logger.info("Computing the SMI for each layer")
             smi_per_layer = []
-            for layer in tqdm(range(32)):
+            for layer in tqdm(LAYERS):
                 smi_per_layer.append(
                     smi_estimator(
                         X_per_layer[layer],
@@ -272,4 +243,26 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.info(f"No Train -- all samples: SMI=0")
 
         # Output
-        return [smi_values[dl_idx, layer] for dl_idx in range(4) for layer in range(32)]
+        self._metrics_values = [
+            smi_values[dl_idx, layer_idx]
+            for dl_idx in range(4)
+            for layer_idx in range(len(LAYERS))
+        ]
+
+        # Calling proper method
+        self.compute_values(checkpoint=self._checkpoint_in_progress)
+
+        # Remove lock
+        self._measure_in_progress = False
+        del self._checkpoint_in_progress
+        del self._features_per_dl
+        del self._labels_per_dl
+        del self._metrics_values
+
+    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
+        if not hasattr(self, "_metrics_values"):
+            raise ValueError(
+                "This type of metric should not be called directly but throuth the ForwardMetrics class."
+            )
+
+        return self._metrics_values

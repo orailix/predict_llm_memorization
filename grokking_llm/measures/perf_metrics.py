@@ -11,6 +11,8 @@ from accelerate import Accelerator
 from loguru import logger
 from tqdm import tqdm
 
+from grokking_llm.training import TrainingCfg
+
 from ..training import get_model
 from ..training.trainer import compute_mcq_last_token_loss
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
@@ -35,6 +37,10 @@ class PerfMetrics(DynamicMetricsGroup):
         - [brier_sc] The Brier score of the answer
     """
 
+    def __init__(self, training_cfg: TrainingCfg) -> None:
+        super().__init__(training_cfg)
+        self._measure_in_progress = False
+
     @property
     def metrics_group_name(self) -> str:
         return "perf_metrics"
@@ -48,129 +54,113 @@ class PerfMetrics(DynamicMetricsGroup):
 
         return result
 
-    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-        # Loading model
-        model = get_model(self.training_cfg, at_checkpoint=checkpoint)
-
-        # Dataloaders
-        train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
-            self.training_cfg
-        )
-
-        # Accelerator
-        accelerator = Accelerator(mixed_precision="fp16")
-        model = accelerator.prepare_model(model, evaluation_mode=True)
-        train_trl_dl, train_rdl_dl, test_all_dl = accelerator.prepare(
-            train_trl_dl, train_rdl_dl, test_all_dl
-        )
-        model.eval()
+    def prepare_forward_measure(self, checkpoint: int) -> None:
+        if self._measure_in_progress:
+            raise RuntimeError("You tries to prepare twice for forward measure.")
+        self._measure_in_progress = True
+        self._checkpoint_in_progress = checkpoint
 
         # Storing the values
         # Dim 1 => train_all, train_trl, train_rdl, test
         # Dim 2 => loss_all, loss_asw, accuracy, brier_sc
-        values = np.zeros((4, 4), dtype=float)
-        num_samples = np.zeros((4, 4), dtype=int)
+        self._values = np.zeros((4, 4), dtype=float)
+        self._num_samples = np.zeros((4, 4), dtype=int)
 
-        # Iterating over dataloaders
-        for idx, data_loader, info in zip(
-            range(1, 4),
-            [train_trl_dl, train_rdl_dl, test_all_dl],
-            ["Train -- true labels", "Train -- random labels", "Test"],
-        ):
-            # Logging
-            logger.info(f"Computing outputs of the model with dataloader: {info}")
+    def update_metrics(
+        self,
+        *,
+        dl_idx,
+        bs,
+        vocab_size,
+        labels,
+        tokenized_possible_labels,
+        inserted_label_index,
+        outputs,
+    ):
+        # Losses
+        loss_all = outputs["loss"]
+        loss_asw = compute_mcq_last_token_loss(labels, outputs["logits"], vocab_size)
 
-            if len(data_loader) == 0:
-                continue
+        # Logits of possible answers
+        logits = outputs["logits"]  # Shape (bs, 1024, vocab_size)
+        logits_for_mcq_answer = logits[:, -3]  # Shape (bs, vocab_size)
+        batch_indices = torch.arange(bs)[:, None]  # Shape (bs, 1)
+        index_selector = tokenized_possible_labels.int()  # Shape (bs, 16)
+        mcq_logits = logits_for_mcq_answer[
+            batch_indices, index_selector
+        ]  # Shape (bs, 16)
 
-            for inputs in tqdm(data_loader):
-                # Unpacking and pushing to device
-                input_ids = inputs["input_ids"]
-                attention_mask = inputs["attention_mask"]
-                labels = inputs["labels"]
-                tokenized_possible_labels = inputs["tokenized_possible_labels"]
-                inserted_label_index = inputs["inserted_label_index"]
+        # Setting the logit to -1000 for padding indices
+        mcq_logits[index_selector == 0] = -1000
 
-                # Batch size
-                bs = input_ids.size(0)
+        # Accuracy
+        accuracy = (mcq_logits.argmax(axis=1) == inserted_label_index).sum().cpu() / bs
 
-                # Model forward pass
-                with torch.no_grad():
-                    outputs = model(
-                        input_ids=input_ids,
-                        attention_mask=attention_mask,
-                        labels=labels,
-                    )
+        # Brier score
+        y_true_onehot = torch.nn.functional.one_hot(
+            inserted_label_index, num_classes=MAX_NUM_MCQ_ANSWER
+        )
+        y_pred_probas = torch.softmax(mcq_logits, axis=1)
+        brier_sc = ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean().cpu()
 
-                # Losses
-                loss_all = outputs["loss"]
-                loss_asw = compute_mcq_last_token_loss(
-                    labels, outputs["logits"], model.config.vocab_size
-                )
+        # Saving
+        self._values[dl_idx, 0] += loss_all * bs
+        self._values[dl_idx, 1] += loss_asw * bs
+        self._values[dl_idx, 2] += accuracy * bs
+        self._values[dl_idx, 3] += brier_sc * bs
 
-                # Logits of possible answers
-                logits = outputs["logits"]  # Shape (bs, 1024, vocab_size)
-                logits_for_mcq_answer = logits[:, -3]  # Shape (bs, vocab_size)
-                batch_indices = torch.arange(bs)[:, None]  # Shape (bs, 1)
-                index_selector = tokenized_possible_labels.int()  # Shape (bs, 16)
-                mcq_logits = logits_for_mcq_answer[
-                    batch_indices, index_selector
-                ]  # Shape (bs, 16)
+        self._num_samples[dl_idx, :] += bs
 
-                # Setting the logit to -1000 for padding indices
-                mcq_logits[index_selector == 0] = -1000
-
-                # Accuracy
-                accuracy = (
-                    mcq_logits.argmax(axis=1) == inserted_label_index
-                ).sum().cpu() / bs
-
-                # Brier score
-                y_true_onehot = torch.nn.functional.one_hot(
-                    inserted_label_index, num_classes=MAX_NUM_MCQ_ANSWER
-                )
-                y_pred_probas = torch.softmax(mcq_logits, axis=1)
-                brier_sc = (
-                    ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean().cpu()
-                )
-
-                # Saving
-                values[idx, 0] += loss_all * bs
-                values[idx, 1] += loss_asw * bs
-                values[idx, 2] += accuracy * bs
-                values[idx, 3] += brier_sc * bs
-
-                num_samples[idx, :] += bs
-
+    def finalize_metrics(self) -> None:
         # train_all
-        values[0, :] = values[1, :] + values[2, :]
-        num_samples[0, :] = num_samples[1, :] + num_samples[2, :]
+        self._values[0, :] = self._values[1, :] + self._values[2, :]
+        self._num_samples[0, :] = self._num_samples[1, :] + self._num_samples[2, :]
 
         # Averaging
         for dl in range(4):
             # Metric = loss_all
-            if num_samples[dl, 0] == 0:
-                values[dl, 0] = 1000  # Loss
+            if self._num_samples[dl, 0] == 0:
+                self._values[dl, 0] = 1000  # Loss
             else:
-                values[dl, 0] /= num_samples[dl, 0]
+                self._values[dl, 0] /= self._num_samples[dl, 0]
 
             # Metric = lass_asw
-            if num_samples[dl, 1] == 0:
-                values[dl, 1] = 1000  # Loss
+            if self._num_samples[dl, 1] == 0:
+                self._values[dl, 1] = 1000  # Loss
             else:
-                values[dl, 1] /= num_samples[dl, 1]
+                self._values[dl, 1] /= self._num_samples[dl, 1]
 
             # Metric = accuracy
-            if num_samples[dl, 2] == 0:
-                values[dl, 2] = 0  # Accuracy
+            if self._num_samples[dl, 2] == 0:
+                self._values[dl, 2] = 0  # Accuracy
             else:
-                values[dl, 2] /= num_samples[dl, 2]
+                self._values[dl, 2] /= self._num_samples[dl, 2]
 
             # Metric = brier score
-            if num_samples[dl, 3] == 0:
-                values[dl, 3] = 2  # Brier score
+            if self._num_samples[dl, 3] == 0:
+                self._values[dl, 3] = 2  # Brier score
             else:
-                values[dl, 3] /= num_samples[dl, 3]
+                self._values[dl, 3] /= self._num_samples[dl, 3]
 
         # Output
-        return [values[dl, metric] for dl in range(4) for metric in range(4)]
+        self._metrics_values = [
+            self._values[dl, metric] for dl in range(4) for metric in range(4)
+        ]
+
+        # Calling proper method
+        self.compute_values(checkpoint=self._checkpoint_in_progress)
+
+        # Remove lock
+        self._measure_in_progress = False
+        del self._checkpoint_in_progress
+        del self._values
+        del self._num_samples
+        del self._metrics_values
+
+    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
+        if not hasattr(self, "_metrics_values"):
+            raise ValueError(
+                "This type of metric should not be called directly but throuth the ForwardMetrics class."
+            )
+
+        return self._metrics_values

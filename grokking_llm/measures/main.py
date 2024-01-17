@@ -11,16 +11,14 @@ from loguru import logger
 from ..training import TrainingCfg
 from ..utils import paths
 from .dynamic_metrics_group import DynamicMetricsGroup
+from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
-from .perf_metrics import PerfMetrics
-from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
 
 NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
-    "perf": PerfMetrics,
     "weights": WeightsMetrics,
-    "smi": SmiMetrics,
     "general": GeneralMetrics,
+    "forward": ForwardMetrics,
 }
 
 

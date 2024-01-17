@@ -40,7 +40,6 @@ class DynamicMetricsGroup(ABC):
         pass
 
     def __init__(self, training_cfg: TrainingCfg) -> None:
-
         # Saving training configuration
         self.training_cfg = training_cfg
         self.config_input_id = training_cfg.get_config_id()
