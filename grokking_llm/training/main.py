@@ -4,11 +4,9 @@
 # Apache Licence v2.0.
 
 import typing as t
-from pathlib import Path
 
 from loguru import logger
 
-from ..utils import paths
 from .datasets import (
     add_labels,
     format_dataset,

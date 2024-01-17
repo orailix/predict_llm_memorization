@@ -5,15 +5,12 @@
 
 import typing as t
 
-import numpy as np
 import torch
 from accelerate import Accelerator
 from loguru import logger
 from tqdm import tqdm
 
-from grokking_llm.training import TrainingCfg
-
-from ..training import get_model
+from ..training import TrainingCfg, get_model
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics

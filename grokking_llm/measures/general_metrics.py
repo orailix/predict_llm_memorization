@@ -5,9 +5,7 @@
 
 import typing as t
 
-from grokking_llm.training import TrainingCfg
-
-from ..training import get_dataset, get_random_split
+from ..training import TrainingCfg, get_dataset, get_random_split
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 

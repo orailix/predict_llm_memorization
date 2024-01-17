@@ -4,12 +4,10 @@
 # Apache Licence v2.0.
 
 import typing as t
-from pathlib import Path
 
 from loguru import logger
 
 from ..training import TrainingCfg
-from ..utils import paths
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics

@@ -5,7 +5,6 @@
 
 import base64
 import copy
-import functools
 import hashlib
 import json
 import typing as t

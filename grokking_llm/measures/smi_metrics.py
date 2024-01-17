@@ -8,13 +8,11 @@ import typing as t
 
 import numpy as np
 import torch
-from accelerate import Accelerator
 from loguru import logger
 from tqdm import tqdm
 
-from ..training import TrainingCfg, get_model
+from ..training import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.dataloaders import get_dataloaders_for_measures
 from .utils.smi import smi_estimator
 
 LAYERS = [0, 7, 15, 23, 31]
