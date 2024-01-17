@@ -18,11 +18,7 @@ from .utils.dataloaders import get_dataloaders_for_measures
 
 
 class ForwardMetrics(DynamicMetricsGroup):
-    """Class used to compute basic performance metrics on the models.
-
-    TO BE COMPLETED
-
-    """
+    """Class used to centralize all forward_pass computations."""
 
     def __init__(self, training_cfg: TrainingCfg) -> None:
         super().__init__(training_cfg)
