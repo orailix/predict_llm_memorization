@@ -320,7 +320,7 @@ TRAINING_ARGS:"""
             logger.info(f"Autoconfig `name`: {name} is a valid path, building from it.")
             return cls.from_file(name)
 
-        if Path(name).exists():
+        if Path(name).is_file():
             logger.info(f"Autoconfig `name`: {name} is a valid path, building from it.")
             return cls.from_file(name)
 
