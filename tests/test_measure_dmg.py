@@ -116,17 +116,26 @@ def test_metrics_computation():
     (metrics_group.metrics_dir.parent / "checkpoint-1").mkdir()
     (metrics_group.metrics_dir.parent / "checkpoint-2").mkdir()
 
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == [0, 1, 2]
+
     # Computing for checkpoint 0
     metrics_group.compute_values(checkpoint=0)
     assert metrics_group.output_file.read_text() == (
         "checkpoint,metric_0,metric_1,metric_2\n" "0,1.0,2.0,3.0\n"
     )
 
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == [1, 2]
+
     # Computing for checkpoint 2
     metrics_group.compute_values(checkpoint=2)
     assert metrics_group.output_file.read_text() == (
         "checkpoint,metric_0,metric_1,metric_2\n" "0,1.0,2.0,3.0\n" "2,3.0,4.0,5.0\n"
     )
+
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == [1]
 
     # Computing for checkpoint 1
     metrics_group.compute_values(checkpoint=1)
@@ -137,6 +146,9 @@ def test_metrics_computation():
         "1,2.0,3.0,4.0\n"
     )
 
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == []
+
     # Overwritting for additionnal tests
     metrics_group.output_file.write_text(
         "checkpoint,metric_0,metric_1,metric_2\n"
@@ -144,6 +156,9 @@ def test_metrics_computation():
         "1,-1.0,-1.0,-1.0\n"
         "2,-1.0,-1.0,-1.0\n"
     )
+
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == []
 
     # Re-computing checkpoint 0 without forcing
     metrics_group.compute_values(checkpoint=0)
@@ -154,6 +169,9 @@ def test_metrics_computation():
         "2,-1.0,-1.0,-1.0\n"
     )
 
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == []
+
     # Re-computing with forcing
     metrics_group.compute_values(checkpoint=0, recompute_if_exists=True)
     assert metrics_group.output_file.read_text() == (
@@ -163,8 +181,15 @@ def test_metrics_computation():
         "0,1.0,2.0,3.0\n"
     )
 
-    # Re-computing all values with forcing
-    metrics_group.compute_all_values(recompute_if_exists=True)
+    # Checking checkpoints to measure
+    assert metrics_group.get_checkpoints_available_for_measure() == []
+
+    # Deleting output file
+    metrics_group.output_file.unlink()
+    assert metrics_group.get_checkpoints_available_for_measure() == [0, 1, 2]
+
+    # Re-computing all values
+    metrics_group.compute_all_values()
     assert metrics_group.output_file.read_text() == (
         "checkpoint,metric_0,metric_1,metric_2\n"
         "0,1.0,2.0,3.0\n"

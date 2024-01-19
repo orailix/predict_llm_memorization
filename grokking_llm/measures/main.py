@@ -44,6 +44,11 @@ def run_main_measure(
     # Parsing inputs -- checkpoint
     if checkpoint in ["all", "ALL", None]:
         checkpoint = "all"
+
+        if force_recompute:
+            raise ValueError(
+                "ckeckpoint='all' is incompatible with 'force_recompute=True'. If you want to force it, delete the metric output file and call this method again."
+            )
     else:
         try:
             checkpoint = int(checkpoint)
@@ -57,7 +62,7 @@ def run_main_measure(
     # Running measures
     metrics = metrics_class(training_cfg=training_cfg)
     if checkpoint == "all":
-        metrics.compute_all_values(recompute_if_exists=force_recompute)
+        metrics.compute_all_values()
     else:
         metrics.compute_values(
             checkpoint=checkpoint, recompute_if_exists=force_recompute

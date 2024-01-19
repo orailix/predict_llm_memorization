@@ -39,6 +39,17 @@ class DynamicMetricsGroup(ABC):
         """The list of names of the individual metrics in the group."""
         pass
 
+    def _init_output_file(self):
+        """Init the output file of a Dynamic Metric Group."""
+        logger.debug(f"Creating output file at {self.output_file}")
+        values = pd.DataFrame(columns=(["checkpoint"] + self.metrics_names))
+        values.set_index("checkpoint")
+        values.to_csv(
+            self.output_file,
+            index=False,
+            sep=SEP,
+        )
+
     def __init__(self, training_cfg: TrainingCfg) -> None:
         # Saving training configuration
         self.training_cfg = training_cfg
@@ -57,14 +68,7 @@ class DynamicMetricsGroup(ABC):
 
         # Creating output file
         if not self.output_file.is_file():
-            logger.debug(f"Creating output file at {self.output_file}")
-            values = pd.DataFrame(columns=(["checkpoint"] + self.metrics_names))
-            values.set_index("checkpoint")
-            values.to_csv(
-                self.output_file,
-                index=False,
-                sep=SEP,
-            )
+            self._init_output_file()
         else:
             logger.debug(f"Found existing output file at {self.output_file}")
 
@@ -130,7 +134,11 @@ class DynamicMetricsGroup(ABC):
         for item in metrics_values:
             line_to_write += f"{SEP}{item}"
 
-        # Overwriting ?
+        # Output file exists ?
+        if not self.output_file.exists():
+            self._init_output_file()
+
+        # Overwriting ? --> Deleting the checkpoint if we find it
         if overwrite_checkpoint:
             values = self.load_metrics_df()
             values[values["checkpoint"] != checkpoint].to_csv(
@@ -141,25 +149,40 @@ class DynamicMetricsGroup(ABC):
         with self.output_file.open("a") as f:
             f.write(row_to_add)
 
-    def compute_all_values(self, *, recompute_if_exists: bool = False) -> None:
+    def get_checkpoints_available_for_measure(self) -> t.List[int]:
+        """Returns the list of checkpoints available for this config but not measured."""
+
+        checkpoints_available = set(self.training_cfg.get_available_checkpoints())
+        checkpoints_measured = set(self.get_checkpoint_measured())
+        checkpoints_to_do = checkpoints_available.difference(checkpoints_measured)
+
+        return sorted(list(checkpoints_to_do))
+
+    def compute_all_values(self) -> None:
         """Computes and saves the individual metrics for all available checkpoints
         for which this has not been done.
 
-        Args:
-            - recompute_if_exists: If True, the values of the individual metrics
-            will be recomputed for every checkpoint even if they already exist
-            (and in this case the previous values will be overwritten)."""
+        This method is not compatible with a "recompute_if_exits" argument, because after
+        each computation of the metric we re-check on disk which checkpoints are to be measured.
+        """
 
-        for checkpoint in self.training_cfg.get_available_checkpoints():
-            self.compute_values(checkpoint, recompute_if_exists=recompute_if_exists)
+        while len(self.get_checkpoints_available_for_measure()) > 0:
 
-            torch.cuda.empty_cache()
-            gc.collect()
+            for checkpoint in self.get_checkpoints_available_for_measure():
+                self.compute_values(checkpoint)
+
+                # RAM and VRAM freeing
+                torch.cuda.empty_cache()
+                gc.collect()
 
     # ==================== METRICS DF ====================
 
     def load_metrics_df(self) -> pd.DataFrame:
         """Loads the dataframe representing the individual metrics values"""
+
+        # Output file exists ?
+        if not self.output_file.exists():
+            self._init_output_file()
 
         result = pd.read_csv(self.output_file, dtype=float)
         result["checkpoint"] = result["checkpoint"].astype(int)
@@ -169,6 +192,10 @@ class DynamicMetricsGroup(ABC):
 
     def get_checkpoint_measured(self) -> t.List[int]:
         """Returns the list of checkpoint for which the computation of the metrics has been done."""
+
+        # Output file exists ?
+        if not self.output_file.exists():
+            self._init_output_file()
 
         # Reading lines
         lines = self.output_file.read_text().split("\n")
