@@ -4,6 +4,7 @@
 # Apache Licence v2.0.
 
 import typing as t
+from pathlib import Path
 
 import torch
 import transformers
@@ -55,6 +56,26 @@ class CustomTrainer(transformers.Trainer):
             )
 
         return (loss, outputs) if return_outputs else loss
+
+    def _save_checkpoint(self, model, trial, metrics=None):
+        super()._save_checkpoint(model, trial, metrics=metrics)
+
+        # Deleting the optimizer of the non-last checkpoint
+        run_dir = self._get_output_dir(trial=trial)
+        current_step = self.state.global_step
+        current_folder = f"checkpoint-{current_step}"
+
+        for child in Path(run_dir).iterdir():
+            if (
+                child.is_dir()
+                and "checkpoint-" in child.name
+                and child.name != current_folder
+            ):
+                if (child / "optimizer.pt").is_file():
+                    (child / "optimizer.pt").unlink()
+
+                if (child / "scheduler.pt").is_file():
+                    (child / "scheduler.pt").unlink()
 
 
 def get_trainer(
