@@ -14,10 +14,9 @@ from grokking_llm.utils import paths
 from grokking_llm.utils.constants import TRAIN_CFG_DEFAULT_TRAINING_ARGS
 
 # Test files
-test_files = Path(__file__).parent / "files"
-training_cfg_path = test_files / "training.cfg"
-training_cfg_json_path = test_files / "training_cfg.json"
-training_cfg_export_path = test_files / "training_cfg_export.json"
+training_cfg_path = paths.configs / "training.cfg"
+training_cfg_json_path = paths.configs / "training_cfg.json"
+training_cfg_export_path = paths.configs / "training_cfg_export.json"
 
 
 def test_train_config_from_file():
@@ -408,9 +407,15 @@ def test_autoconfig():
     assert TrainingCfg.autoconfig(cfg_id[:4]) == cfg
     assert TrainingCfg.autoconfig(cfg_id[:6]) == cfg
     assert TrainingCfg.autoconfig(cfg_id[:8]) == cfg
-    assert TrainingCfg.autoconfig(cfg_id[:8]) == cfg
     assert TrainingCfg.autoconfig(cfg_id) == cfg
 
     with pytest.raises(ValueError):
         TrainingCfg.autoconfig(cfg_id[:3])
+
+    with pytest.raises(ValueError):
         TrainingCfg.autoconfig(str(np.random.randint(1e6)))
+
+    # Cleaning
+    for child in paths.output.iterdir():
+        if child.is_dir():
+            shutil.rmtree(child)

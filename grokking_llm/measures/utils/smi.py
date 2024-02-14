@@ -13,6 +13,7 @@ def smi_estimator(
     n_estimator: int = 100,
     n_neighbors: int = 3,
     random_state: int = 0,
+    use_max: bool = False,
 ) -> float:
     """
 
@@ -53,7 +54,10 @@ def smi_estimator(
     smi_per_direction = mutual_info_classif(
         projected_features, y, n_neighbors=n_neighbors, random_state=random_state
     )
-    smi = sum(smi_per_direction) / len(smi_per_direction)
+    if not use_max:
+        smi = sum(smi_per_direction) / len(smi_per_direction)
+    else:
+        smi = max(smi_per_direction)
 
     # Output
     return smi

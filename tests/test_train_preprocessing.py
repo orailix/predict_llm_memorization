@@ -22,6 +22,7 @@ from grokking_llm.training.datasets import (
     tokenize_dataset,
 )
 from grokking_llm.training.formatting import format_arc, format_ethics, format_mmlu
+from grokking_llm.utils import paths
 from grokking_llm.utils.constants import (
     DATASET_BARE_LABEL,
     DATASET_RANDOM_LABEL,
@@ -30,8 +31,7 @@ from grokking_llm.utils.constants import (
 )
 
 # Test files
-test_files = Path(__file__).parent / "files"
-ethics_global_indices = test_files / "ethics_global_indices.json"
+ethics_global_indices = paths.configs / "ethics_global_indices.json"
 
 
 # Datasets
