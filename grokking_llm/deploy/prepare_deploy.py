@@ -10,7 +10,8 @@ from pathlib import Path
 from loguru import logger
 
 from ..training import TrainingCfg
-from .deployment_cfg import DeploymentCfg, ParsedSection
+from .deployment_cfg import DeploymentCfg
+from .utils import ParsedSection
 
 MAX_LEN = 1e4
 
@@ -42,6 +43,9 @@ def run_prepare_deploy(config: t.Union[str, Path]) -> None:
         possible_training_cfg = zip_combinations(training_cfg, parsed_sections_list)
 
     # Cleaning
+    deployment_cfg.stack_all.reset()
+    deployment_cfg.stack_todo.reset()
+    deployment_cfg.stack_done.reset()
     for child in deployment_cfg.export_dir.iterdir():
         if (
             child.is_file()
@@ -52,7 +56,9 @@ def run_prepare_deploy(config: t.Union[str, Path]) -> None:
 
     # Dump
     for cfg_idx, cfg in enumerate(possible_training_cfg):
-        cfg.to_json(deployment_cfg.export_dir / f"training_cfg_{cfg_idx}.json")
+        export_path = deployment_cfg.export_dir / f"training_cfg_{cfg_idx}.json"
+        cfg.to_json(export_path)
+        deployment_cfg.stack_all.push(export_path)
 
 
 def product_combinations(
@@ -88,6 +94,10 @@ def product_combinations(
                 tmp.append(new_config)
 
         result = tmp
+
+        # Check result len
+        if len(result) > MAX_LEN:
+            raise ValueError("Too many combination for this product of arguments!")
 
     # Output
     return result

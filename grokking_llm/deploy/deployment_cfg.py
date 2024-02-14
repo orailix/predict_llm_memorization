@@ -10,26 +10,11 @@ import hashlib
 import typing as t
 from pathlib import Path
 
+from filelock import FileLock
 from loguru import logger
 
 from ..utils import paths
-
-
-@dataclasses.dataclass
-class ParsedSection:
-    """Class representing a parsed section from a deployment config.
-
-    The name of the section will refer to attributes of TrainingCfg. Example:
-        - `lora_dropout`
-        - `training_args.weight_decay`
-
-    Attributes:
-        name (str): The name of the section
-        values (list): A list of values it should take
-    """
-
-    name: str
-    values: list
+from .utils import DiskStack, ParsedSection
 
 
 class DeploymentCfg:
@@ -38,12 +23,20 @@ class DeploymentCfg:
     # ==================== BUILDS ====================
 
     def __init__(self, parsed_config: configparser.ConfigParser):
+        # Config
         self.cfg = parsed_config
+
+        # ID and export dir
         self.id = self.get_deployment_id()
         self.export_dir = paths.deployment_configs / self.id
         self.export_dir.mkdir(exist_ok=True)
         with (self.export_dir / "deployment.cfg").open("w") as f:
             self.cfg.write(f)
+
+        # Stacks
+        self.stack_all = DiskStack(self.export_dir / "stack_all")
+        self.stack_todo = DiskStack(self.export_dir / "stack_todo")
+        self.stack_done = DiskStack(self.export_dir / "stack_done")
 
     def get_deployment_id(self):
         desc = ""

@@ -5,19 +5,16 @@
 
 import collections
 import shutil
-from pathlib import Path
 
-import numpy as np
 import pytest
 
-from grokking_llm.deploy import DeploymentCfg, ParsedSection
+from grokking_llm.deploy import DeploymentCfg
 from grokking_llm.deploy.prepare_deploy import (
     product_combinations,
     run_prepare_deploy,
     zip_combinations,
 )
 from grokking_llm.training import TrainingCfg
-from grokking_llm.utils import paths
 
 
 def test_product():
@@ -86,6 +83,15 @@ def test_prepare_product():
 
     # Deployment cfg
     deployment_cfg = DeploymentCfg.autoconfig("deployment_2")
+
+    # Checking stack_all
+    stack_content = []
+    while not deployment_cfg.stack_all.empty():
+        stack_content.append(deployment_cfg.stack_all.pop())
+
+    assert len(stack_content) == 11**3
+
+    # Counting exports
     count_export = 0
     checked_import = False
     for child in deployment_cfg.export_dir.iterdir():
@@ -95,6 +101,8 @@ def test_prepare_product():
             and "training_cfg_" in child.stem
         ):
             count_export += 1
+
+            assert str(child) in stack_content
 
             if not checked_import:
                 TrainingCfg.from_file(child)
@@ -115,6 +123,15 @@ def test_prepare_zip():
 
     # Deployment cfg
     deployment_cfg = DeploymentCfg.autoconfig("deployment_3")
+
+    # Checking stack_all
+    stack_content = []
+    while not deployment_cfg.stack_all.empty():
+        stack_content.append(deployment_cfg.stack_all.pop())
+
+    assert len(stack_content) == 11
+
+    # Counting exports
     count_export = 0
     checked_import = False
     for child in deployment_cfg.export_dir.iterdir():
@@ -124,6 +141,8 @@ def test_prepare_zip():
             and "training_cfg_" in child.stem
         ):
             count_export += 1
+
+            assert str(child) in stack_content
 
             if not checked_import:
                 TrainingCfg.from_file(child)
