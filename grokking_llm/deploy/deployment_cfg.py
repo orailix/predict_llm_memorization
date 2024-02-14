@@ -193,6 +193,7 @@ def process_range_section(sec: configparser.SectionProxy) -> ParsedSection:
     while not end_condition(start):
         result.values.append(start)
         start += step
+        start = round(start, 12)
 
     # Output
     return result
