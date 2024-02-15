@@ -41,6 +41,11 @@ class DeploymentCfg:
         self.stack_done_cpu = DiskStack(self.export_dir / "stack_done_cpu")
 
     def get_deployment_id(self):
+        return base64.urlsafe_b64encode(
+            hashlib.md5(self.__repr__().encode("utf-8")).digest()
+        ).decode()[:22]
+
+    def __repr__(self) -> str:
         desc = ""
         for section_name in sorted(self.cfg.sections()):
             desc += f"[{section_name}]\n"
@@ -49,9 +54,7 @@ class DeploymentCfg:
                 value = convert_str_to_int_or_float(value)
                 desc += f"{key} = {value}\n"
 
-        return base64.urlsafe_b64encode(
-            hashlib.md5(desc.encode("utf-8")).digest()
-        ).decode()[:22]
+        return desc
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, DeploymentCfg):

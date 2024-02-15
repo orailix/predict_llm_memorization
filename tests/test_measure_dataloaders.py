@@ -48,6 +48,7 @@ def test_get_measure_dataloaders():
             "labels",
             "tokenized_possible_labels",
             "inserted_label_index",
+            "global_index",
         ]
     )
     assert sorted(list(next(iter(train_rdl_dl)))) == sorted(
@@ -57,6 +58,7 @@ def test_get_measure_dataloaders():
             "labels",
             "tokenized_possible_labels",
             "inserted_label_index",
+            "global_index",
         ]
     )
     assert sorted(list(next(iter(test_all_dl)))) == sorted(
@@ -66,5 +68,6 @@ def test_get_measure_dataloaders():
             "labels",
             "tokenized_possible_labels",
             "inserted_label_index",
+            "global_index",
         ]
     )

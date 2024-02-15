@@ -84,7 +84,7 @@ def format_arc(
         "cls_label": str(sample["answerKey"]),
         "possible_cls_labels": sample["choices"]["label"],
         "cls_label_status": DATASET_BARE_LABEL,
-        "index": sample["index"],
+        "global_index": sample["global_index"],
     }
 
 
@@ -111,7 +111,7 @@ def format_mmlu(
             "label": ["0", "1", "2", "3"],
         },
         "answerKey": str(sample["answer"]),
-        "index": sample["index"],
+        "global_index": sample["global_index"],
     }
 
     return format_arc(
@@ -154,7 +154,7 @@ def format_ethics(
         "cls_label": str(sample["label"]),
         "possible_cls_labels": ["0", "1"],
         "cls_label_status": DATASET_BARE_LABEL,
-        "index": sample["index"],
+        "global_index": sample["global_index"],
     }
 
 
@@ -177,7 +177,7 @@ def format_label(
             "cls_label": str(sample["cls_label"]),
             "possible_cls_labels": sample["possible_cls_labels"],
             "cls_label_status": DATASET_TRUE_LABEL,
-            "index": sample["index"],
+            "global_index": sample["global_index"],
         }
     else:
         generator = random_state if random_state is not None else np.random
@@ -189,7 +189,7 @@ def format_label(
                 "cls_label": str(sample["possible_cls_labels"][new_label_idx]),
                 "possible_cls_labels": sample["possible_cls_labels"],
                 "cls_label_status": DATASET_RANDOM_LABEL,
-                "index": sample["index"],
+                "global_index": sample["global_index"],
             }
         else:  # True label
             return {
@@ -197,5 +197,5 @@ def format_label(
                 "cls_label": str(sample["cls_label"]),
                 "possible_cls_labels": sample["possible_cls_labels"],
                 "cls_label_status": DATASET_TRUE_LABEL,
-                "index": sample["index"],
+                "global_index": sample["global_index"],
             }

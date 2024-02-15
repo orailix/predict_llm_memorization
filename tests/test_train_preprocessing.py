@@ -104,8 +104,8 @@ def test_formatting_ethics():
         assert type(formatted["possible_cls_labels"]) == list
         assert "cls_label_status" in formatted
         assert formatted["cls_label_status"] == DATASET_BARE_LABEL
-        assert "index" in formatted
-        assert type(formatted["index"]) == int
+        assert "global_index" in formatted
+        assert type(formatted["global_index"]) == int
 
         # Test determinism
         formatted = format_ethics(sample, random_state=np.random.RandomState(seed=42))
@@ -131,8 +131,8 @@ def test_formatting_mmlu():
         assert type(formatted["possible_cls_labels"]) == list
         assert "cls_label_status" in formatted
         assert formatted["cls_label_status"] == DATASET_BARE_LABEL
-        assert "index" in formatted
-        assert type(formatted["index"]) == int
+        assert "global_index" in formatted
+        assert type(formatted["global_index"]) == int
 
         # Test determinism
         formatted = format_mmlu(sample, random_state=np.random.RandomState(seed=42))
@@ -158,8 +158,8 @@ def test_formatting_arc():
         assert type(formatted["possible_cls_labels"]) == list
         assert "cls_label_status" in formatted
         assert formatted["cls_label_status"] == DATASET_BARE_LABEL
-        assert "index" in formatted
-        assert type(formatted["index"]) == int
+        assert "global_index" in formatted
+        assert type(formatted["global_index"]) == int
 
         # Test determinism
         formatted = format_arc(sample, random_state=np.random.RandomState(seed=42))
@@ -296,13 +296,13 @@ def test_dataset_splits():
 
     # Quality
     unique_samples = set()
+    with_labels_indices = set(with_labels["global_index"])
     for item in split_0:
         assert (
-            type(item["index"]) == int
-            and item["index"] >= 0
-            and item["index"] < len(with_labels)
+            type(item["global_index"]) == int
+            and item["global_index"] in with_labels_indices
         )
-        unique_samples.add(item["index"])
+        unique_samples.add(item["global_index"])
 
     assert len(unique_samples) == len(split_0)
 

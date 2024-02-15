@@ -57,6 +57,7 @@ def get_dataloaders_for_measures(
             "labels",
             "tokenized_possible_labels",
             "inserted_label_index",
+            "global_index",
         ]
     )
     train_trl = train_all.select(trl_selector)
@@ -81,6 +82,7 @@ def get_dataloaders_for_measures(
             "labels",
             "tokenized_possible_labels",
             "inserted_label_index",
+            "global_index",
         ]
     )
 

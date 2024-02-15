@@ -93,8 +93,6 @@ def get_dataset(
     # Logging
     logger.info(f"Loading dataset {cfg.dataset} split {split}")
 
-    # Add a index column
-    result = result.add_column("index", np.array(range(len(result))))
     return result
 
 
