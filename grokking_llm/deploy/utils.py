@@ -61,16 +61,42 @@ class DiskStack:
         with self.lock.acquire():
             self.path.write_text(self.path.read_text() + f"{item}\n")
 
+    def push_chunk(self, items: t.Iterable[str]) -> None:
+        to_push = ""
+        for item in items:
+            if not isinstance(item, str):
+                item = str(item)
+
+            if "\n" in item:
+                raise ValueError("You cannot push items with '\\n' is a DiskStack.")
+
+            to_push += f"{item}\n"
+
+        with self.lock.acquire():
+            self.path.write_text(self.path.read_text() + to_push)
+
     def pop(self) -> str:
         with self.lock.acquire():
             content = self.path.read_text()
             items = [item for item in content.split("\n") if item != ""]
+
             if len(items) == 0:
                 raise ValueError("Empty stack.")
-            else:
-                last_element = items[-1]
-                self.path.write_text("\n".join(items[:-1]))
-                return last_element
+
+            last_element = items[-1]
+            self.path.write_text("\n".join(items[:-1]))
+            return last_element
+
+    def pop_all(self) -> t.List[str]:
+        with self.lock.acquire():
+            content = self.path.read_text()
+            items = [item for item in content.split("\n") if item != ""]
+
+            if len(items) == 0:
+                raise ValueError("Empty stack.")
+
+            self.path.write_text("")
+            return items[-1::-1]
 
     def empty(self):
         return len(self) == 0

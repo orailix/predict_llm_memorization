@@ -4,5 +4,5 @@
 # Apache Licence v2.0.
 
 from .deployment_cfg import DeploymentCfg
-from .prepare_deploy import run_prepare_deploy
+from .prepare import run_deploy_prepare
 from .utils import DiskStack, ParsedSection

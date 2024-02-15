@@ -65,6 +65,32 @@ def test_disk_stack():
     assert len(stack) == 0
     assert stack.empty()
 
+    # Adding a chunk
+    stack.push("bonjour")
+    stack.push_chunk(["le", "monde"])
+    assert stack.size() == 3
+    assert len(stack) == 3
+    assert not stack.empty()
+
+    # Adding an illegal chunk
+    with pytest.raises(ValueError):
+        stack.push_chunk(["bonjour\n", "le", "monde"])
+    assert stack.size() == 3
+    assert len(stack) == 3
+    assert not stack.empty()
+
+    # Adding poping one element
+    assert stack.pop() == "monde"
+    assert stack.size() == 2
+    assert len(stack) == 2
+    assert not stack.empty()
+
+    # Poping all
+    assert stack.pop_all() == ["le", "bonjour"]
+    assert stack.size() == 0
+    assert len(stack) == 0
+    assert stack.empty()
+
     # Cleaning
     stack.path.unlink()
     stack.lock_path.unlink()

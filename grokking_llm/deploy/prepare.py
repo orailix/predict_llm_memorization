@@ -16,7 +16,7 @@ from .utils import ParsedSection
 MAX_LEN = 1e4
 
 
-def run_prepare_deploy(config: t.Union[str, Path]) -> None:
+def run_deploy_prepare(config: t.Union[str, Path]) -> None:
     """Initiates a deployment configuration.
 
     - Builds a DeploymentCfg from the `name` that is provided
@@ -44,8 +44,10 @@ def run_prepare_deploy(config: t.Union[str, Path]) -> None:
 
     # Cleaning
     deployment_cfg.stack_all.reset()
-    deployment_cfg.stack_todo.reset()
-    deployment_cfg.stack_done.reset()
+    deployment_cfg.stack_todo_gpu.reset()
+    deployment_cfg.stack_todo_cpu.reset()
+    deployment_cfg.stack_done_gpu.reset()
+    deployment_cfg.stack_done_cpu.reset()
     for child in deployment_cfg.export_dir.iterdir():
         if (
             child.is_file()
@@ -55,10 +57,16 @@ def run_prepare_deploy(config: t.Union[str, Path]) -> None:
             child.unlink()
 
     # Dump
+    to_push = []
     for cfg_idx, cfg in enumerate(possible_training_cfg):
         export_path = deployment_cfg.export_dir / f"training_cfg_{cfg_idx}.json"
         cfg.to_json(export_path)
-        deployment_cfg.stack_all.push(export_path)
+        to_push.append(export_path)
+
+    # Push to stacks
+    deployment_cfg.stack_all.push_chunk(to_push)
+    deployment_cfg.stack_todo_gpu.push_chunk(to_push)
+    deployment_cfg.stack_todo_cpu.push_chunk(to_push)
 
 
 def product_combinations(

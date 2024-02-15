@@ -9,9 +9,9 @@ import shutil
 import pytest
 
 from grokking_llm.deploy import DeploymentCfg
-from grokking_llm.deploy.prepare_deploy import (
+from grokking_llm.deploy.prepare import (
     product_combinations,
-    run_prepare_deploy,
+    run_deploy_prepare,
     zip_combinations,
 )
 from grokking_llm.training import TrainingCfg
@@ -79,17 +79,19 @@ def test_prepare_product():
     shutil.rmtree(DeploymentCfg.autoconfig("deployment_2").export_dir)
 
     # Running
-    run_prepare_deploy("deployment_2")
+    run_deploy_prepare("deployment_2")
 
     # Deployment cfg
     deployment_cfg = DeploymentCfg.autoconfig("deployment_2")
 
-    # Checking stack_all
-    stack_content = []
-    while not deployment_cfg.stack_all.empty():
-        stack_content.append(deployment_cfg.stack_all.pop())
-
-    assert len(stack_content) == 11**3
+    # Checking stacks
+    stack_content_all = deployment_cfg.stack_all.pop_all()
+    stack_content_todo_gpu = deployment_cfg.stack_todo_gpu.pop_all()
+    stack_content_todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
+    assert stack_content_all == stack_content_todo_cpu == stack_content_todo_gpu
+    assert len(stack_content_all) == 11**3
+    assert deployment_cfg.stack_done_gpu.empty()
+    assert deployment_cfg.stack_done_cpu.empty()
 
     # Counting exports
     count_export = 0
@@ -102,7 +104,7 @@ def test_prepare_product():
         ):
             count_export += 1
 
-            assert str(child) in stack_content
+            assert str(child) in stack_content_all
 
             if not checked_import:
                 TrainingCfg.from_file(child)
@@ -119,17 +121,19 @@ def test_prepare_zip():
     shutil.rmtree(DeploymentCfg.autoconfig("deployment_3").export_dir)
 
     # Running
-    run_prepare_deploy("deployment_3")
+    run_deploy_prepare("deployment_3")
 
     # Deployment cfg
     deployment_cfg = DeploymentCfg.autoconfig("deployment_3")
 
-    # Checking stack_all
-    stack_content = []
-    while not deployment_cfg.stack_all.empty():
-        stack_content.append(deployment_cfg.stack_all.pop())
-
-    assert len(stack_content) == 11
+    # Checking stacks
+    stack_content_all = deployment_cfg.stack_all.pop_all()
+    stack_content_todo_gpu = deployment_cfg.stack_todo_gpu.pop_all()
+    stack_content_todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
+    assert stack_content_all == stack_content_todo_cpu == stack_content_todo_gpu
+    assert len(stack_content_all) == 11
+    assert deployment_cfg.stack_done_gpu.empty()
+    assert deployment_cfg.stack_done_cpu.empty()
 
     # Counting exports
     count_export = 0
@@ -142,7 +146,7 @@ def test_prepare_zip():
         ):
             count_export += 1
 
-            assert str(child) in stack_content
+            assert str(child) in stack_content_all
 
             if not checked_import:
                 TrainingCfg.from_file(child)
@@ -156,7 +160,7 @@ def test_prepare_zip():
 
 def test_prepare_unfeasible_list():
     with pytest.raises(ValueError):
-        run_prepare_deploy("deployment_4")
+        run_deploy_prepare("deployment_4")
 
     # Cleaning
     shutil.rmtree(DeploymentCfg.autoconfig("deployment_4").export_dir)

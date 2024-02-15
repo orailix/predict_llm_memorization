@@ -35,8 +35,10 @@ class DeploymentCfg:
 
         # Stacks
         self.stack_all = DiskStack(self.export_dir / "stack_all")
-        self.stack_todo = DiskStack(self.export_dir / "stack_todo")
-        self.stack_done = DiskStack(self.export_dir / "stack_done")
+        self.stack_todo_gpu = DiskStack(self.export_dir / "stack_todo_gpu")
+        self.stack_todo_cpu = DiskStack(self.export_dir / "stack_todo_cpu")
+        self.stack_done_gpu = DiskStack(self.export_dir / "stack_done_gpu")
+        self.stack_done_cpu = DiskStack(self.export_dir / "stack_done_cpu")
 
     def get_deployment_id(self):
         desc = ""
