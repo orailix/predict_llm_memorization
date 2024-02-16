@@ -3,6 +3,7 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import numpy as np
 import torch
 from sklearn.feature_selection import mutual_info_classif
 
@@ -10,10 +11,10 @@ from sklearn.feature_selection import mutual_info_classif
 def smi_estimator(
     X: torch.Tensor,
     y: torch.Tensor,
+    smi_quantile: float = 0.99,
     n_estimator: int = 100,
     n_neighbors: int = 3,
     random_state: int = 0,
-    use_max: bool = False,
 ) -> float:
     """
 
@@ -22,8 +23,13 @@ def smi_estimator(
     - A mean of 4.5e-3
     - A standard deviation of 5.5e-3
 
-    Thus, with n=2000 and model it with a normal law we obtain a margin of about:
-    (1.96 x 5.5e-3)/sqrt(2000) = 2.4e-4   (≈5% of the mean)
+    We observe that it cannot be modelled as a normal distribution. However, we observed that:
+    - With 2000 estimators, the mean SMI varied of about 3% across simulations
+    - With 2000 estimators, tne median SMI varied of about 14% across simulations
+    - With 2000 estimators, tne maximal SMI varied of about 7% across simulations
+    - With 2000 estimators, tne 99% quantile SMI varied of about 3% across simulations
+
+    Thus, using 2000 estimators provides sufficient stability to estimate the mean SMI and the 99% quantile.
 
 
     Implements eq. 6 in https://arxiv.org/abs/2110.05279v2 for categorical data.
@@ -54,10 +60,8 @@ def smi_estimator(
     smi_per_direction = mutual_info_classif(
         projected_features, y, n_neighbors=n_neighbors, random_state=random_state
     )
-    if not use_max:
-        smi = sum(smi_per_direction) / len(smi_per_direction)
-    else:
-        smi = max(smi_per_direction)
+    smi_mean = sum(smi_per_direction) / len(smi_per_direction)
+    smi_max = np.quantile(smi_per_direction, smi_quantile)
 
     # Output
-    return smi
+    return (smi_mean, smi_max)

@@ -3,28 +3,30 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
-import collections
+import os
 import typing as t
 
 import numpy as np
-import torch
+from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
 
 from ..training import TrainingCfg
+from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
+from .forward_metrics import ForwardMetrics
+from .utils.forward_values import ForwardValues
 from .utils.smi import smi_estimator
-
-LAYERS = [0, 7, 15, 23, 31]
 
 
 class SmiMetrics(DynamicMetricsGroup):
     """Class used to compute Sliced MUtual Information metrics on the models.
 
     Performance metrics: (20 in total):
-        For layers in [0, 7, 15, 23, 31]:
-            For dl in [train_all, train_trl, train_rdl, test]:
-                - [{dl}_smi_{layer}]
+        For type in ["mean", "max"]:
+            For layers in [0, 7, 15, 23, 31]:
+                For dl in [train_all, train_trl, train_rdl, test]:
+                    - [{dl}_smi_{type}_{layer}]
 
     Where [dl_smi_k] is the sliced mutual information between:
         - The Values of the attention bloc at layer 0 for token N-3
@@ -54,213 +56,106 @@ class SmiMetrics(DynamicMetricsGroup):
     @property
     def metrics_names(self) -> t.List[str]:
         return [
-            f"{dl}_smi_{layer}"
+            f"{dl}_smi_mean_{layer}"
             for dl in ["train_all", "train_trl", "train_rdl", "test"]
-            for layer in LAYERS
+            for layer in SMI_LAYERS
+        ] + [
+            f"{dl}_smi_max_{layer}"
+            for dl in ["train_all", "train_trl", "train_rdl", "test"]
+            for layer in SMI_LAYERS
         ]
-
-    def prepare_forward_measure(
-        self, checkpoint: int, len_trl: int, len_rdl: int, len_test: int
-    ) -> None:
-        if self._measure_in_progress:
-            raise RuntimeError("You tries to prepare twice for forward measure.")
-        self._measure_in_progress = True
-        self._checkpoint_in_progress = checkpoint
-
-        # Features: 0=train_trl, 1=train_rdl, 2=test
-        # features_per_dl[0][4] = list of features of the 4th layer for train_all
-        self._features_per_dl = [collections.defaultdict(list) for _ in range(3)]
-        self._labels_per_dl = [[] for _ in range(3)]
-        self._len_trl = len_trl
-        self._len_rdl = len_rdl
-        self._len_test = len_test
-
-    def update_metrics(
-        self,
-        *,
-        dl_idx,
-        bs,
-        input_ids,
-        outputs,
-    ):
-        # Saving features
-        for layer in LAYERS:
-            self._features_per_dl[dl_idx - 1][layer].append(
-                outputs["past_key_values"][layer][0][:, :, -3, :].view(bs, -1).cpu()
-            )
-
-        # Saving labels
-        self._labels_per_dl[dl_idx - 1].append(input_ids[:, -2].cpu())
-
-    def finalize_metrics(self) -> None:
-        # SMI containers
-        smi_values = np.zeros((4, len(LAYERS)))
-
-        # SMI -- TRL
-        if self._len_trl != 0:
-            # Logging
-            logger.info("Computing SMI for: Train -- true labels")
-
-            # Tensors
-            X_per_layer = {
-                layer: torch.cat(features_list, dim=0)
-                for layer, features_list in self._features_per_dl[0].items()
-            }
-            y = torch.cat(self._labels_per_dl[0], dim=0)
-
-            # Logging
-            logger.debug(f"X size: {X_per_layer[0].size()}")
-            logger.debug(f"y size: {y.size()}")
-
-            # Multiprocessing for each layer
-            logger.info("Computing the SMI for each layer")
-            smi_per_layer = []
-            for layer in tqdm(LAYERS):
-                smi_per_layer.append(
-                    smi_estimator(
-                        X_per_layer[layer],
-                        y,
-                        n_estimator=self.n_estimator,
-                        n_neighbors=self.n_neighbors,
-                    )
-                )
-
-            smi_values[1, :] = smi_per_layer
-        else:
-            logger.info(f"No Train -- true labels samples: SMI=0")
-
-        # SMI -- RDL
-        if self._len_rdl != 0:
-            # Logging
-            logger.info("Computing SMI for: Train -- random labels")
-
-            # Tensors
-            X_per_layer = {
-                layer: torch.cat(features_list, dim=0)
-                for layer, features_list in self._features_per_dl[1].items()
-            }
-            y = torch.cat(self._labels_per_dl[1], dim=0)
-
-            # Logging
-            logger.debug(f"X size: {X_per_layer[0].size()}")
-            logger.debug(f"y size: {y.size()}")
-
-            # Multiprocessing for each layer
-            logger.info("Computing the SMI for each layer")
-            smi_per_layer = []
-            for layer in tqdm(LAYERS):
-                smi_per_layer.append(
-                    smi_estimator(
-                        X_per_layer[layer],
-                        y,
-                        n_estimator=self.n_estimator,
-                        n_neighbors=self.n_neighbors,
-                    )
-                )
-
-            smi_values[2, :] = smi_per_layer
-        else:
-            logger.info(f"No Train -- random labels samples: SMI=0")
-
-        # SMI -- Test
-        if self._len_test != 0:
-            # Logging
-            logger.info("Computing SMI for: Test")
-
-            # Tensors
-            X_per_layer = {
-                layer: torch.cat(features_list, dim=0)
-                for layer, features_list in self._features_per_dl[2].items()
-            }
-            y = torch.cat(self._labels_per_dl[2], dim=0)
-
-            # Logging
-            logger.debug(f"X size: {X_per_layer[0].size()}")
-            logger.debug(f"y size: {y.size()}")
-
-            # Multiprocessing for each layer
-            logger.info("Computing the SMI for each layer")
-            smi_per_layer = []
-            for layer in tqdm(LAYERS):
-                smi_per_layer.append(
-                    smi_estimator(
-                        X_per_layer[layer],
-                        y,
-                        n_estimator=self.n_estimator,
-                        n_neighbors=self.n_neighbors,
-                    )
-                )
-
-            smi_values[3, :] = smi_per_layer
-        else:
-            logger.info(f"No Test samples: SMI=0")
-
-        # SMI -- Trail all
-        if self._len_trl + self._len_rdl != 0:
-            # Logging
-            logger.info("Computing SMI for: Train -- all")
-
-            # Tensors
-            X_trl_per_layer = {
-                layer: torch.cat(features_list, dim=0)
-                for layer, features_list in self._features_per_dl[0].items()
-            }
-            X_rdl_per_layer = {
-                layer: torch.cat(features_list, dim=0)
-                for layer, features_list in self._features_per_dl[1].items()
-            }
-            X_per_layer = {
-                layer: torch.cat(
-                    [X_trl_per_layer[layer], X_rdl_per_layer[layer]], dim=0
-                )
-                for layer in LAYERS
-            }
-            y_trl = torch.cat(self._labels_per_dl[0], dim=0)
-            y_rdl = torch.cat(self._labels_per_dl[1], dim=0)
-            y = torch.cat([y_trl, y_rdl], dim=0)
-
-            # Logging
-            logger.debug(f"X size: {X_per_layer[0].size()}")
-            logger.debug(f"y size: {y.size()}")
-
-            # Multiprocessing for each layer
-            logger.info("Computing the SMI for each layer")
-            smi_per_layer = []
-            for layer in tqdm(LAYERS):
-                smi_per_layer.append(
-                    smi_estimator(
-                        X_per_layer[layer],
-                        y,
-                        n_estimator=self.n_estimator,
-                        n_neighbors=self.n_neighbors,
-                    )
-                )
-
-            smi_values[0, :] = smi_per_layer
-        else:
-            logger.info(f"No Train -- all samples: SMI=0")
-
-        # Output
-        self._metrics_values = [
-            smi_values[dl_idx, layer_idx]
-            for dl_idx in range(4)
-            for layer_idx in range(len(LAYERS))
-        ]
-
-        # Calling proper method
-        self.compute_values(checkpoint=self._checkpoint_in_progress)
-
-        # Remove lock
-        self._measure_in_progress = False
-        del self._checkpoint_in_progress
-        del self._features_per_dl
-        del self._labels_per_dl
-        del self._metrics_values
 
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-        if not hasattr(self, "_metrics_values"):
-            raise ValueError(
-                "This type of metric should not be called directly but throuth the ForwardMetrics class."
+
+        # ==================== Looking for ForwardValues ====================
+
+        forward_export_dir = (
+            self.training_cfg.get_output_dir()
+            / f"checkpoint-{checkpoint}"
+            / "forward_values"
+        )
+        logger.info(f"Looking for forward values at {forward_export_dir}")
+
+        # Missing files ?
+        trl_path = forward_export_dir / "train_trl.safetensors"
+        rdl_path = forward_export_dir / "train_rdl.safetensors"
+        test_path = forward_export_dir / "test.safetensors"
+        for path in trl_path, rdl_path, test_path:
+            if not path.is_file():
+                logger.info(f"Forward values not found: {path}")
+                logger.info(f"Calling ForwardMetrics on this checkpoint.")
+                ForwardMetrics(self.training_cfg).compute_values(checkpoint)
+
+        # Loading
+        forward_values_trl = ForwardValues.load(trl_path)
+        forward_values_rdl = ForwardValues.load(rdl_path)
+        forward_values_test = ForwardValues.load(test_path)
+        forward_values_all = ForwardValues.concat(
+            forward_values_trl, forward_values_rdl, new_name="train_all"
+        )
+
+        # ==================== SMI values ====================
+
+        # Storing the values
+        # Dim 1 => train_all, train_trl, train_rdl, test
+        # Dim 2 => layer #1, layer #2, etc
+        smi_mean = np.zeros((4, len(SMI_LAYERS)), dtype=float)
+        smi_max = np.zeros((4, len(SMI_LAYERS)), dtype=float)
+
+        # Iterating over forward values
+        for idx, forward_values in enumerate(
+            [
+                forward_values_all,
+                forward_values_trl,
+                forward_values_rdl,
+                forward_values_test,
+            ]
+        ):
+
+            # Logging
+            logger.info(f"Computing SMI for {forward_values.name}")
+
+            # Is there samples ?
+            if forward_values.num_samples == 0:
+                logger.info("No sample! SMI=0")
+                continue
+
+            # Tensors
+            X_per_layer = forward_values.mcq_states_per_layer
+            y = forward_values.mcq_labels
+
+            # Logging
+            logger.debug(f"X size: {X_per_layer[0].size()}")
+            logger.debug(f"y size: {y.size()}")
+
+            # Multiprocessing each layer
+            n_jobs = min(len(SMI_LAYERS), os.cpu_count())
+            logger.info(
+                f"Computing the SMI for each layer using a pool of {n_jobs} processes."
             )
 
-        return self._metrics_values
+            def process_layer(x):
+                return smi_estimator(
+                    x, y, n_estimator=self.n_estimator, n_neighbors=self.n_neighbors
+                )
+
+            smi_per_layer = Parallel(n_jobs=n_jobs)(
+                delayed(process_layer)(forward_values.mcq_states_per_layer[layer])
+                for layer in forward_values.mcq_states_per_layer
+            )
+
+            for layer_idx in range(len(SMI_LAYERS)):
+                smi_mean[idx, layer_idx] = smi_per_layer[layer_idx][0]
+                smi_max[idx, layer_idx] = smi_per_layer[layer_idx][1]
+
+        # ==================== Output ====================
+
+        return [
+            smi_mean[dl_idx, layer_idx]
+            for dl_idx in range(4)
+            for layer_idx in range(len(SMI_LAYERS))
+        ] + [
+            smi_max[dl_idx, layer_idx]
+            for dl_idx in range(4)
+            for layer_idx in range(len(SMI_LAYERS))
+        ]

@@ -79,3 +79,6 @@ TRAIN_CFG_DEFAULT_TRAINING_ARGS = dict(
     resume_from_checkpoint=True,
     num_train_epochs=1,
 )
+
+# MEASURED LAYERS SMI
+SMI_LAYERS = [0, 1, 2, 3, 7, 15, 23, 28, 29, 30, 31]

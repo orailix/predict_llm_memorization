@@ -9,4 +9,6 @@ from .main import run_main_measure
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
 from .utils.dataloaders import get_dataloaders_for_measures
+from .utils.forward_values import ForwardValues
+from .utils.smi import smi_estimator
 from .weights_metrics import WeightsMetrics

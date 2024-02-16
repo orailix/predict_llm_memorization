@@ -24,6 +24,7 @@ def compute_mcq_last_token_loss(
     inputs_labels: torch.Tensor,
     outputs_logits: torch.Tensor,
     vocab_size: int,
+    reduction: str = "mean",
 ):
     """Computes the loss that focuses on the token corresponding to the answer of the MCQ."""
 
@@ -31,7 +32,7 @@ def compute_mcq_last_token_loss(
     logits_last_token = outputs_logits[:, -3].contiguous().view(-1, vocab_size)
     label_last_token = inputs_labels[:, -2].contiguous().view(-1)
 
-    loss_fct = torch.nn.CrossEntropyLoss()
+    loss_fct = torch.nn.CrossEntropyLoss(reduction=reduction)
 
     return loss_fct(logits_last_token, label_last_token)
 

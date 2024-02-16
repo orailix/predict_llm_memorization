@@ -31,7 +31,7 @@ from grokking_llm.utils.constants import (
 )
 
 # Test files
-ethics_global_indices = paths.configs / "ethics_global_indices.json"
+ethics_global_index = paths.configs / "ethics_global_index.json"
 
 
 # Datasets
@@ -71,7 +71,7 @@ def test_datasets_train_test():
     assert abs(len(ds_test) - 0.125 * len(ds_train)) <= 1
 
     # Groundtruth global indices
-    with ethics_global_indices.open("r") as f:
+    with ethics_global_index.open("r") as f:
         groundtruth_indices = json.load(f)
 
     # GLobal indices

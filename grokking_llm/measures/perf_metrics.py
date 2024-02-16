@@ -7,11 +7,13 @@ import typing as t
 
 import numpy as np
 import torch
+from loguru import logger
 
 from ..training import TrainingCfg
-from ..training.trainer import compute_mcq_last_token_loss
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
+from .forward_metrics import ForwardMetrics
+from .utils.forward_values import ForwardValues
 
 
 class PerfMetrics(DynamicMetricsGroup):
@@ -33,7 +35,7 @@ class PerfMetrics(DynamicMetricsGroup):
 
     def __init__(self, training_cfg: TrainingCfg) -> None:
         super().__init__(training_cfg)
-        self._measure_in_progress = False
+        self.forward_metrics = ForwardMetrics(training_cfg)
 
     @property
     def metrics_group_name(self) -> str:
@@ -48,113 +50,82 @@ class PerfMetrics(DynamicMetricsGroup):
 
         return result
 
-    def prepare_forward_measure(self, checkpoint: int) -> None:
-        if self._measure_in_progress:
-            raise RuntimeError("You tries to prepare twice for forward measure.")
-        self._measure_in_progress = True
-        self._checkpoint_in_progress = checkpoint
+    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
+
+        # ==================== Looking for ForwardValues ====================
+
+        forward_export_dir = (
+            self.training_cfg.get_output_dir()
+            / f"checkpoint-{checkpoint}"
+            / "forward_values"
+        )
+        logger.info(f"Looking for forward values at {forward_export_dir}")
+
+        # Missing files ?
+        trl_path = forward_export_dir / "train_trl.safetensors"
+        rdl_path = forward_export_dir / "train_rdl.safetensors"
+        test_path = forward_export_dir / "test.safetensors"
+        for path in trl_path, rdl_path, test_path:
+            if not path.is_file():
+                logger.info(f"Forward values not found: {path}")
+                logger.info(f"Calling ForwardMetrics on this checkpoint.")
+                ForwardMetrics(self.training_cfg).compute_values(checkpoint)
+
+        forward_values_trl = ForwardValues.load(trl_path)
+        forward_values_rdl = ForwardValues.load(rdl_path)
+        forward_values_test = ForwardValues.load(test_path)
+        forward_values_all = ForwardValues.concat(
+            forward_values_trl, forward_values_rdl, new_name="train_all"
+        )
+
+        # ==================== Metrics values ====================
 
         # Storing the values
         # Dim 1 => train_all, train_trl, train_rdl, test
         # Dim 2 => loss_all, loss_asw, accuracy, brier_sc
-        self._values = np.zeros((4, 4), dtype=float)
-        self._num_samples = np.zeros((4, 4), dtype=int)
+        values = np.zeros((4, 4), dtype=float)
 
-    def update_metrics(
-        self,
-        *,
-        dl_idx,
-        bs,
-        vocab_size,
-        labels,
-        tokenized_possible_labels,
-        inserted_label_index,
-        outputs,
-    ):
-        # Losses
-        loss_all = outputs["loss"]
-        loss_asw = compute_mcq_last_token_loss(labels, outputs["logits"], vocab_size)
+        # Iterating over forward values
+        for idx, forward_values in enumerate(
+            [
+                forward_values_all,
+                forward_values_trl,
+                forward_values_rdl,
+                forward_values_test,
+            ]
+        ):
 
-        # Logits of possible answers
-        logits = outputs["logits"]  # Shape (bs, 1024, vocab_size)
-        logits_for_mcq_answer = logits[:, -3]  # Shape (bs, vocab_size)
-        batch_indices = torch.arange(bs)[:, None]  # Shape (bs, 1)
-        index_selector = tokenized_possible_labels.int()  # Shape (bs, 16)
-        mcq_logits = logits_for_mcq_answer[
-            batch_indices, index_selector
-        ]  # Shape (bs, 16)
+            if forward_values.num_samples == 0:
+                # Loss all/ asw: 1000
+                # Accuracy: 0
+                # Brier score: 2
+                values[idx, 0] = values[idx, 1] = 1000
+                values[idx, 2] = 0
+                values[idx, 3] = 2
 
-        # Setting the logit to -1000 for padding indices
-        mcq_logits[index_selector == 0] = -1000
+                break
 
-        # Accuracy
-        accuracy = (mcq_logits.argmax(axis=1) == inserted_label_index).sum().cpu() / bs
+            # Losses
+            values[idx, 0] = forward_values.loss_all.mean()
+            values[idx, 1] = forward_values.loss_asw.mean()
 
-        # Brier score
-        y_true_onehot = torch.nn.functional.one_hot(
-            inserted_label_index, num_classes=MAX_NUM_MCQ_ANSWER
-        )
-        y_pred_probas = torch.softmax(mcq_logits, axis=1)
-        brier_sc = ((y_true_onehot - y_pred_probas) ** 2).sum(axis=1).mean().cpu()
+            # Accuracies
+            values[idx, 2] = (
+                forward_values.mcq_predicted_proba.argmax(axis=1)
+                == forward_values.inserted_label_index
+            ).sum() / forward_values.num_samples
 
-        # Saving
-        self._values[dl_idx, 0] += loss_all * bs
-        self._values[dl_idx, 1] += loss_asw * bs
-        self._values[dl_idx, 2] += accuracy * bs
-        self._values[dl_idx, 3] += brier_sc * bs
-
-        self._num_samples[dl_idx, :] += bs
-
-    def finalize_metrics(self) -> None:
-        # train_all
-        self._values[0, :] = self._values[1, :] + self._values[2, :]
-        self._num_samples[0, :] = self._num_samples[1, :] + self._num_samples[2, :]
-
-        # Averaging
-        for dl in range(4):
-            # Metric = loss_all
-            if self._num_samples[dl, 0] == 0:
-                self._values[dl, 0] = 1000  # Loss
-            else:
-                self._values[dl, 0] /= self._num_samples[dl, 0]
-
-            # Metric = lass_asw
-            if self._num_samples[dl, 1] == 0:
-                self._values[dl, 1] = 1000  # Loss
-            else:
-                self._values[dl, 1] /= self._num_samples[dl, 1]
-
-            # Metric = accuracy
-            if self._num_samples[dl, 2] == 0:
-                self._values[dl, 2] = 0  # Accuracy
-            else:
-                self._values[dl, 2] /= self._num_samples[dl, 2]
-
-            # Metric = brier score
-            if self._num_samples[dl, 3] == 0:
-                self._values[dl, 3] = 2  # Brier score
-            else:
-                self._values[dl, 3] /= self._num_samples[dl, 3]
-
-        # Output
-        self._metrics_values = [
-            self._values[dl, metric] for dl in range(4) for metric in range(4)
-        ]
-
-        # Calling proper method
-        self.compute_values(checkpoint=self._checkpoint_in_progress)
-
-        # Remove lock
-        self._measure_in_progress = False
-        del self._checkpoint_in_progress
-        del self._values
-        del self._num_samples
-        del self._metrics_values
-
-    def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
-        if not hasattr(self, "_metrics_values"):
-            raise ValueError(
-                "This type of metric should not be called directly but throuth the ForwardMetrics class."
+            # Brier
+            y_true_onehot = torch.nn.functional.one_hot(
+                forward_values.inserted_label_index,
+                num_classes=MAX_NUM_MCQ_ANSWER,
+            )
+            values[idx, 3] = (
+                ((y_true_onehot - forward_values.mcq_predicted_proba) ** 2)
+                .sum(axis=1)
+                .mean()
             )
 
-        return self._metrics_values
+        # ==================== Output ====================
+
+        return [values[dl, metric] for dl in range(4) for metric in range(4)]
