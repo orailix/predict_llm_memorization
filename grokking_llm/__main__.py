@@ -54,10 +54,17 @@ def deploy_gpu(
 
 @app.command()
 def deploy_cpu(
-    gpu: t.Optional[int] = None,
     config: t.Optional[str] = None,
+    checkpoint: t.Optional[str] = None,
+    njobs: t.Optional[int] = None,
+    force_recompute: bool = False,
 ):
-    raise NotImplementedError
+    run_deploy_cpu(
+        config=config,
+        checkpoint=checkpoint,
+        force_recompute=force_recompute,
+        njobs=njobs,
+    )
 
 
 if __name__ == "__main__":

@@ -44,8 +44,12 @@ class ForwardMetrics(DynamicMetricsGroup):
             self.training_cfg
         )
 
-        # Accelerator
-        accelerator = Accelerator(mixed_precision="fp16")
+        # Accelerator init
+        try:
+            accelerator = Accelerator(mixed_precision="fp16")
+        except ValueError:
+            # In case the accelerator has already been implemented, we cannot change the mixed precision
+            accelerator = Accelerator()
         model = accelerator.prepare_model(model, evaluation_mode=True)
         train_trl_dl, train_rdl_dl, test_all_dl = accelerator.prepare(
             train_trl_dl, train_rdl_dl, test_all_dl

@@ -7,6 +7,8 @@ import os
 import typing as t
 from pathlib import Path
 
+import torch
+from accelerate import Accelerator
 from loguru import logger
 
 from ..measures import run_main_measure
@@ -30,32 +32,54 @@ def run_deploy_gpu(
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
 
+    # Init accelerator state
+    Accelerator(mixed_precision="fp16")
+
     # Deploy
     while not deployment_cfg.stack_todo_gpu.empty():
 
-        # Getting training cfg
-        training_cfg_path = deployment_cfg.stack_todo_gpu.pop()
-        logger.info(
-            f"The following training cfg is assigned to GPU {gpu}: {training_cfg_path}"
-        )
+        try:
 
-        # Training
-        logger.info(f"Starting training on GPU {gpu}: {training_cfg_path}")
-        run_main_train(training_cfg_path)
-        logger.info(f"Finished training on GPU {gpu}: {training_cfg_path}")
+            # Getting training cfg
+            training_cfg_path = deployment_cfg.stack_todo_gpu.pop()
+            logger.info(
+                f"The following training cfg is assigned to GPU {gpu}: {training_cfg_path}"
+            )
 
-        # General measures
-        logger.info(f"Starting general measure on GPU {gpu}: {training_cfg_path}")
-        run_main_measure("general", training_cfg_path)
-        logger.info(f"Finished general measure on GPU {gpu}: {training_cfg_path}")
+            # Training
+            logger.info(f"Starting training on GPU {gpu}: {training_cfg_path}")
+            run_main_train(training_cfg_path)
+            logger.info(f"Finished training on GPU {gpu}: {training_cfg_path}")
 
-        # Forward
-        logger.info(f"Starting forward measure on GPU {gpu}: {training_cfg_path}")
-        run_main_measure("forward", training_cfg_path)
-        logger.info(f"Finished forward measure on GPU {gpu}: {training_cfg_path}")
+            # Free cuda
+            torch.cuda.empty_cache()
 
-        # Exiting
-        deployment_cfg.stack_done_gpu.push(training_cfg_path)
-        logger.info(
-            f"GPU {gpu} has successfully processed training cfg: {training_cfg_path}"
-        )
+            # General measures
+            logger.info(f"Starting general measure on GPU {gpu}: {training_cfg_path}")
+            run_main_measure("general", training_cfg_path)
+            logger.info(f"Finished general measure on GPU {gpu}: {training_cfg_path}")
+
+            # Forward
+            logger.info(f"Starting forward measure on GPU {gpu}: {training_cfg_path}")
+            run_main_measure("forward", training_cfg_path)
+            logger.info(f"Finished forward measure on GPU {gpu}: {training_cfg_path}")
+
+            # Exiting
+            deployment_cfg.stack_done_gpu.push(training_cfg_path)
+            logger.info(
+                f"GPU {gpu} has successfully processed training cfg: {training_cfg_path}"
+            )
+
+        except KeyboardInterrupt as e:
+            logger.info(
+                "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
+            )
+            deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+            raise e
+
+        except Exception as e:
+            logger.info(
+                "Error detected, pushing the current config to the TODO_GPU stack..."
+            )
+            deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+            raise e

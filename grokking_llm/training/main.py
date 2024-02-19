@@ -5,6 +5,7 @@
 
 import typing as t
 
+import torch
 from loguru import logger
 
 from .datasets import (
@@ -66,3 +67,7 @@ def run_main_train(config: t.Optional[str] = None):
     # Training
     logger.info("Starting training")
     trainer.train(resume_from_checkpoint=cfg.get_resume_from_checkpoint_status())
+
+    # Cleaning
+    del model
+    torch.cuda.empty_cache()
