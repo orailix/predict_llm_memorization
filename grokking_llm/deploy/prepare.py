@@ -128,6 +128,12 @@ def zip_combinations(
         t.List[TrainingCfg]: A list of independent training configurations.
     """
 
+    # Sanity check
+    if len(parsed_sections_list) == 0:
+        raise ValueError(
+            f"You should not use `zip` combination mode with an empty list of parsed section. Please use `product` mode."
+        )
+
     # Init result and expected length
     expected_length = len(parsed_sections_list[0].values)
     result = [copy.deepcopy(training_cfg) for _ in range(expected_length)]

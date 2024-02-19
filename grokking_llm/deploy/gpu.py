@@ -21,8 +21,12 @@ def run_deploy_gpu(
     """Executes the deployment on a GPU."""
 
     # Init
+    if gpu is None:
+        gpu = "all"
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu
+
     logger.info(f"Initiating an GPU deployment agent on GPU {gpu}")
-    os.environ["CUDA_VISIBLE_DEVICES"] = gpu
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
 

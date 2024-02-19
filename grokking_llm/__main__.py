@@ -7,7 +7,7 @@ import typing as t
 
 import typer
 
-from .deploy import run_deploy_prepare
+from .deploy import run_deploy_cpu, run_deploy_gpu, run_deploy_prepare
 from .measures import run_main_measure
 from .training import run_main_train
 
@@ -43,10 +43,13 @@ def deploy_prepare(
 
 @app.command()
 def deploy_gpu(
-    gpu: t.Optional[int] = None,
     config: t.Optional[str] = None,
+    gpu: t.Optional[int] = None,
 ):
-    raise NotImplementedError
+    run_deploy_gpu(
+        config=config,
+        gpu=gpu,
+    )
 
 
 @app.command()
