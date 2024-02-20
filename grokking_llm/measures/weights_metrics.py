@@ -6,7 +6,6 @@
 import typing as t
 
 import numpy as np
-from joblib import Parallel, delayed
 from loguru import logger
 from safetensors import safe_open
 from tqdm import tqdm
@@ -71,6 +70,12 @@ class WeightsMetrics(DynamicMetricsGroup):
             framework="torch",
         )
 
+        # DEBUG
+        from time import time
+
+        compute_time = [0.0 for _ in range(4)]
+        call_count = [0 for _ in range(4)]
+
         # Init values
         # X axis: frob, nuc, Linf, L2
         # Y axis: norm, dist
@@ -100,29 +105,46 @@ class WeightsMetrics(DynamicMetricsGroup):
             tot_num_params += num_params
 
             # Computing -- Frobenius norm
+            call_count[0] += 1
+            t0 = time()
             values[0, 0] += num_params * np.linalg.norm(tensor_now, ord="fro")
             values[0, 1] += num_params * np.linalg.norm(
                 tensor_0 - tensor_now, ord="fro"
             )
+            compute_time[0] += time() - t0
 
             # Computing -- Nuclear norm
+            call_count[1] += 1
+            t0 = time()
             values[1, 0] += num_params * np.linalg.norm(tensor_now, ord="nuc")
             values[1, 1] += num_params * np.linalg.norm(
                 tensor_0 - tensor_now, ord="nuc"
             )
+            compute_time[1] += time() - t0
 
             # Computing -- L infinity norm
+            call_count[2] += 1
+            t0 = time()
             values[2, 0] += num_params * np.linalg.norm(tensor_now, ord=np.inf)
             values[2, 1] += num_params * np.linalg.norm(
                 tensor_0 - tensor_now, ord=np.inf
             )
+            compute_time[2] += time() - t0
 
             # Computing -- L 2 norm
+            call_count[3] += 1
+            t0 = time()
             values[3, 0] += num_params * np.linalg.norm(tensor_now, ord=2)
             values[3, 1] += num_params * np.linalg.norm(tensor_0 - tensor_now, ord=2)
+            compute_time[3] += time() - t0
 
         # Averaging
         values /= tot_num_params
+
+        # DEBUG
+        compute_time = [f"{gap:.5}" for gap in compute_time]
+        logger.debug(f"Checkpoint = {checkpoint}: call: {call_count}")
+        logger.debug(f"Checkpoint = {checkpoint}: time: {compute_time}")
 
         # Output
         return [

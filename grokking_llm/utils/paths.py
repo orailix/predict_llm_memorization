@@ -73,6 +73,7 @@ else:
     )
 
 # Configs paths
+env_vars_cfg_path = configs / "env_vars.cfg"
 credentials_cfg_path = configs / "credentials.cfg"
 training_cfg_path = configs / "training.cfg"
 

@@ -10,7 +10,6 @@ import hashlib
 import typing as t
 from pathlib import Path
 
-from filelock import FileLock
 from loguru import logger
 
 from ..utils import paths

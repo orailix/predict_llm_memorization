@@ -14,7 +14,7 @@ MAIN_LOG_PATH = paths.logs / "main.log"
 paths.logs.mkdir(exist_ok=True, parents=True)
 logger.add(
     paths.logs / "main.log",
-    rotation="100 MB",
+    rotation="10 MB",
 )
 
 logger.info("Welcome to `grokking_llm` module!")

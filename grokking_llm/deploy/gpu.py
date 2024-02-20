@@ -32,9 +32,6 @@ def run_deploy_gpu(
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
 
-    # Init accelerator state
-    Accelerator(mixed_precision="fp16")
-
     # Deploy
     while not deployment_cfg.stack_todo_gpu.empty():
 

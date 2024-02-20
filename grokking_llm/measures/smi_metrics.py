@@ -141,7 +141,7 @@ class SmiMetrics(DynamicMetricsGroup):
 
             smi_per_layer = Parallel(n_jobs=n_jobs)(
                 delayed(process_layer)(forward_values.mcq_states_per_layer[layer])
-                for layer in forward_values.mcq_states_per_layer
+                for layer in SMI_LAYERS
             )
 
             for layer_idx in range(len(SMI_LAYERS)):

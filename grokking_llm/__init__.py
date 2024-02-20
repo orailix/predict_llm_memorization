@@ -4,4 +4,5 @@
 # Apache Licence v2.0.
 # isort: skip_file
 from .utils import logs
+from .utils import env_vars
 from .utils import hf_hub

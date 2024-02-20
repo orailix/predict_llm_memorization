@@ -3,3 +3,4 @@
 !.gitignore
 !main.cfg
 !deployment.cfg
+!env_vars.cfg
