@@ -50,6 +50,10 @@ def get_model(cfg: TrainingCfg, at_checkpoint: t.Optional[int] = None) -> PeftMo
 
     # Are we looking for a precise checkpoint ?
     if at_checkpoint is not None:
+
+        if at_checkpoint == "latest":
+            at_checkpoint = sorted(cfg.get_available_checkpoints())[-1]
+
         checkpoint_dir = cfg.get_output_dir() / CHECKPOINT_FORMAT.format(
             number=at_checkpoint
         )

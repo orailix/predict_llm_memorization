@@ -116,6 +116,15 @@ def test_get_model_integrity():
             assert (param == first_lora_parameter_checkpoint_0).all()
             break
 
+    # Check epoch "latest" is 1
+    logger.debug("Re-loading latest checkpoint")
+    model_latest_reloaded = get_model(cfg, at_checkpoint="latest")
+    for (_, param_1), (_, param_1_reloaded) in zip(
+        model_checkpoint_1.named_parameters(),
+        model_latest_reloaded.named_parameters(),
+    ):
+        assert (param_1 == param_1_reloaded).all()
+
     # Check epoch 2 is not available
     logger.debug("Looking for model_epoch_2")
     with pytest.raises(FileNotFoundError):
