@@ -3,6 +3,7 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import re
 import typing as t
 
 from loguru import logger
@@ -23,6 +24,8 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "weights": WeightsMetrics,
 }
 
+forward_on_cfg_pattern = re.compile("^forward_on_.+$")
+
 
 def run_main_measure(
     name: str,
@@ -33,12 +36,17 @@ def run_main_measure(
     """Main function for measures."""
 
     # Parsing inputs -- name
-    if name not in NAMES_TO_METRICS:
+    if name in NAMES_TO_METRICS:
+        metrics_class = NAMES_TO_METRICS[name]
+        metrics_class_kwargs = {}
+    elif forward_on_cfg_pattern.match(name):
+        metrics_class = ForwardMetrics
+        metrics_class_kwargs = {"target_cfg_name": name[len("forward_on_") :]}
+    else:
         raise ValueError(
-            f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)}"
+            f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)} or of type `forward_on_[...]`"
         )
 
-    metrics_class = NAMES_TO_METRICS[name]
     logger.info(f"Starting a measure pipeline with metric group '{name}'")
 
     # Parsing inputs -- training_cfg
@@ -53,6 +61,8 @@ def run_main_measure(
             raise ValueError(
                 "ckeckpoint='all' is incompatible with 'force_recompute=True'. If you want to force it, delete the metric output file and call this method again."
             )
+    elif checkpoint == "latest":
+        checkpoint = sorted(training_cfg.get_available_checkpoints())[-1]
     else:
         try:
             checkpoint = int(checkpoint)
@@ -64,7 +74,7 @@ def run_main_measure(
     logger.info(f"Running measures for checkpoint: {checkpoint}")
 
     # Running measures
-    metrics = metrics_class(training_cfg=training_cfg)
+    metrics = metrics_class(training_cfg=training_cfg, **metrics_class_kwargs)
     if checkpoint == "all":
         metrics.compute_all_values()
     else:

@@ -22,12 +22,27 @@ from .utils.forward_values import ForwardValues
 class ForwardMetrics(DynamicMetricsGroup):
     """Class used to centralize all forward_pass computations."""
 
-    def __init__(self, training_cfg: TrainingCfg) -> None:
+    def __init__(
+        self, training_cfg: TrainingCfg, target_cfg_name: t.Optional[str] = None
+    ) -> None:
+
+        # Parsing target_cfg_name
+        try:
+            self.target_cfg = TrainingCfg.autoconfig(target_cfg_name)
+            self.target_cfg_name = self.target_cfg.get_config_id()
+        except TypeError:
+            self.target_cfg = self.training_cfg
+            self.target_cfg_name = None
+
+        # Main initialization
         super().__init__(training_cfg)
 
     @property
     def metrics_group_name(self) -> str:
-        return "forward_metrics"
+        if self.target_cfg_name is None:
+            return "forward_metrics"
+        else:
+            return f"forward_metrics_on_{self.target_cfg_name}"
 
     @property
     def metrics_names(self) -> t.List[str]:
@@ -36,12 +51,18 @@ class ForwardMetrics(DynamicMetricsGroup):
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
 
         # Loading model
+        logger.info(
+            f"Loading model from measure config: {self.training_cfg.get_config_id()}"
+        )
         model = get_model(self.training_cfg, at_checkpoint=checkpoint)
         vocab_size = model.config.vocab_size
 
         # Dataloaders
+        logger.info(
+            f"Loading datasets from target config: {self.target_cfg.get_config_id()}"
+        )
         train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
-            self.training_cfg
+            self.target_cfg
         )
 
         # Accelerator init
@@ -65,9 +86,16 @@ class ForwardMetrics(DynamicMetricsGroup):
         forward_export_dir.mkdir(exist_ok=True)
 
         # Iterating over dataloaders
+        info_suffix = (
+            "" if self.target_cfg_name is None else f"_on_{self.target_cfg_name}"
+        )
         for data_loader, info in zip(
             [train_trl_dl, train_rdl_dl, test_all_dl],
-            ["train_trl", "train_rdl", "test"],
+            [
+                "train_trl" + info_suffix,
+                "train_rdl" + info_suffix,
+                "test" + info_suffix,
+            ],
         ):
             # Logging
             logger.info(f"Computing outputs of the model with dataloader: {info}")

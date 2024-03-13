@@ -316,6 +316,9 @@ TRAINING_ARGS:"""
             - name: A string describing the config to build.
         """
 
+        if name is None:
+            raise TypeError("Cannot build a TrainingCfg from Nonetype.")
+
         if isinstance(name, Path):
             logger.info(f"Autoconfig `name`: {name} is a valid path, building from it.")
             return cls.from_file(name)
