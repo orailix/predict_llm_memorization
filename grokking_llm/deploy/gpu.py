@@ -19,8 +19,12 @@ from .deployment_cfg import DeploymentCfg
 def run_deploy_gpu(
     config: t.Union[str, Path],
     gpu: str,
+    train_only: bool = False,
 ):
-    """Executes the deployment on a GPU."""
+    """Executes the deployment on a GPU.
+
+    train_only: If True, only executes the training of the model (no forward pass)
+    """
 
     # Init
     if gpu is None:
@@ -29,6 +33,7 @@ def run_deploy_gpu(
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
     logger.info(f"Initiating an GPU deployment agent on GPU {gpu}")
+    logger.info(f"Train_only = {train_only}")
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
 
@@ -56,10 +61,16 @@ def run_deploy_gpu(
             run_main_measure("general", training_cfg_path)
             logger.info(f"Finished general measure on GPU {gpu}: {training_cfg_path}")
 
-            # Forward
-            logger.info(f"Starting forward measure on GPU {gpu}: {training_cfg_path}")
-            run_main_measure("forward", training_cfg_path)
-            logger.info(f"Finished forward measure on GPU {gpu}: {training_cfg_path}")
+            if not train_only:
+
+                # Forward
+                logger.info(
+                    f"Starting forward measure on GPU {gpu}: {training_cfg_path}"
+                )
+                run_main_measure("forward", training_cfg_path)
+                logger.info(
+                    f"Finished forward measure on GPU {gpu}: {training_cfg_path}"
+                )
 
             # Exiting
             deployment_cfg.stack_done_gpu.push(training_cfg_path)
