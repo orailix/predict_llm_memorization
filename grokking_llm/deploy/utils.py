@@ -59,7 +59,11 @@ class DiskStack:
             raise ValueError("You cannot push items with '\\n' is a DiskStack.")
 
         with self.lock.acquire():
-            self.path.write_text(self.path.read_text() + f"{item}\n")
+            if self.path.read_text()[-1] != "\n":
+                sep = "\n"
+            else:
+                sep = ""
+            self.path.write_text(self.path.read_text() + sep + f"{item}\n")
 
     def push_chunk(self, items: t.Iterable[str]) -> None:
         to_push = ""
