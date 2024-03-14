@@ -32,6 +32,9 @@ def run_deploy_gpu(
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
+    if "CUDA_VISIBLE_DEVICES" is os.environ:
+        logger.info(f"CUDA_VISIBLE_DEVICES = {os.environ['CUDA_VISIBLE_DEVICES']}")
+
     logger.info(f"Initiating an GPU deployment agent on GPU {gpu}")
     logger.info(f"Train_only = {train_only}")
     deployment_cfg = DeploymentCfg.autoconfig(config)
