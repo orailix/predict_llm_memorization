@@ -31,7 +31,7 @@ class ForwardMetrics(DynamicMetricsGroup):
             self.target_cfg = TrainingCfg.autoconfig(target_cfg_name)
             self.target_cfg_name = self.target_cfg.get_config_id()
         except TypeError:
-            self.target_cfg = self.training_cfg
+            self.target_cfg = training_cfg
             self.target_cfg_name = None
 
         # Main initialization
