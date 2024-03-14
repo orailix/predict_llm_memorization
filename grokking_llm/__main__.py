@@ -44,12 +44,10 @@ def deploy_prepare(
 @app.command()
 def deploy_gpu(
     config: t.Optional[str] = None,
-    gpu: t.Optional[str] = None,
     train_only: bool = False,
 ):
     run_deploy_gpu(
         config=config,
-        gpu=gpu,
         train_only=train_only,
     )
 

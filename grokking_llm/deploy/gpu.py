@@ -18,7 +18,6 @@ from .deployment_cfg import DeploymentCfg
 
 def run_deploy_gpu(
     config: t.Union[str, Path],
-    gpu: str,
     train_only: bool = False,
 ):
     """Executes the deployment on a GPU.
@@ -27,11 +26,11 @@ def run_deploy_gpu(
     """
 
     # Init
-    if gpu is None:
-        gpu = "all"
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = gpu
-
+    gpu = (
+        os.environ["CUDA_VISIBLE_DEVICES"]
+        if "CUDA_VISIBLE_DEVICES" in os.environ
+        else "ALL"
+    )
     logger.info(f"Initiating an GPU deployment agent on GPU {gpu}")
     logger.info(f"Train_only = {train_only}")
     deployment_cfg = DeploymentCfg.autoconfig(config)
