@@ -43,7 +43,7 @@ def test_deployment_id():
 def test_autoconfig():
 
     # Cleaning
-    for child in paths.deployment_configs.iterdir():
+    for child in paths.deployment_outputs.iterdir():
         if child.is_dir():
             shutil.rmtree(child)
 
@@ -78,7 +78,7 @@ def test_autoconfig():
         DeploymentCfg.autoconfig(str(np.random.randint(1e6)))
 
     # Cleaning
-    for child in paths.deployment_configs.iterdir():
+    for child in paths.deployment_outputs.iterdir():
         if child.is_dir():
             shutil.rmtree(child)
 

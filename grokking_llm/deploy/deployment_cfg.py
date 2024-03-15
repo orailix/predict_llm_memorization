@@ -27,7 +27,7 @@ class DeploymentCfg:
 
         # ID and export dir
         self.id = self.get_deployment_id()
-        self.export_dir = paths.deployment_configs / self.id
+        self.export_dir = paths.deployment_outputs / self.id
         self.export_dir.mkdir(exist_ok=True)
         with (self.export_dir / "deployment.cfg").open("w") as f:
             self.cfg.write(f)
@@ -77,7 +77,7 @@ class DeploymentCfg:
         - If it is a string correspondinf to a file in
             utils.paths.configs, builds from it
         - If it is the prefix (at least four characters) of the hash of a
-            deployment config in utils.paths.deployment_configs, builds from it
+            deployment config in utils.paths.deployment_outputs, builds from it
 
         Args:
             name: The name to autoconfig
@@ -104,7 +104,7 @@ class DeploymentCfg:
 
         elif len(name) >= 4:
 
-            for child in paths.deployment_configs.iterdir():
+            for child in paths.deployment_outputs.iterdir():
                 if not child.is_dir():
                     continue
 

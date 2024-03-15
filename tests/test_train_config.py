@@ -199,11 +199,11 @@ def test_train_config_output_dir():
             shutil.rmtree(dir_)
 
     # Sync dir 0
-    assert not (paths.output / training_cfg_0.get_config_id()).is_dir()
+    assert not (paths.individual_outputs / training_cfg_0.get_config_id()).is_dir()
     dir_0 = training_cfg_0.get_output_dir()
     config_reloaded = TrainingCfg.from_json(dir_0 / "training_cfg.json")
     assert dir_0.is_dir()
-    assert dir_0 == paths.output / training_cfg_0.get_config_id()
+    assert dir_0 == paths.individual_outputs / training_cfg_0.get_config_id()
     assert config_reloaded == training_cfg_0
     assert config_reloaded.training_args["num_train_epochs"] == 1
 
@@ -215,12 +215,12 @@ def test_train_config_output_dir():
     assert config_reloaded.training_args["num_train_epochs"] == 2
 
     # Sync dir 2
-    assert not (paths.output / training_cfg_2.get_config_id()).is_dir()
+    assert not (paths.individual_outputs / training_cfg_2.get_config_id()).is_dir()
     dir_2 = training_cfg_2.get_output_dir()
     config_reloaded = TrainingCfg.from_json(dir_2 / "training_cfg.json")
     assert dir_2.is_dir()
     assert dir_2 != dir_0
-    assert dir_2 == paths.output / training_cfg_2.get_config_id()
+    assert dir_2 == paths.individual_outputs / training_cfg_2.get_config_id()
     assert config_reloaded == training_cfg_2
     assert config_reloaded.training_args["num_train_epochs"] == 1
 
@@ -379,9 +379,12 @@ def test_resume_from_checkpoint_non_boolean():
 def test_autoconfig():
 
     # Cleaning
-    for child in paths.output.iterdir():
+    for child in paths.individual_outputs.iterdir():
         if child.is_dir():
-            shutil.rmtree(child)
+            try:
+                shutil.rmtree(child)
+            except OSError:
+                pass
 
     # Autoconfig -- path
     assert TrainingCfg.autoconfig(training_cfg_path) == TrainingCfg.from_file(
@@ -416,6 +419,9 @@ def test_autoconfig():
         TrainingCfg.autoconfig(str(np.random.randint(1e6)))
 
     # Cleaning
-    for child in paths.output.iterdir():
+    for child in paths.individual_outputs.iterdir():
         if child.is_dir():
-            shutil.rmtree(child)
+            try:
+                shutil.rmtree(child)
+            except OSError:
+                pass

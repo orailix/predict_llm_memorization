@@ -23,16 +23,16 @@ class ForwardMetrics(DynamicMetricsGroup):
     """Class used to centralize all forward_pass computations."""
 
     def __init__(
-        self, training_cfg: TrainingCfg, target_cfg_name: t.Optional[str] = None
+        self, training_cfg: TrainingCfg, target_cfg: t.Optional[TrainingCfg] = None
     ) -> None:
 
-        # Parsing target_cfg_name
-        try:
-            self.target_cfg = TrainingCfg.autoconfig(target_cfg_name)
-            self.target_cfg_name = self.target_cfg.get_config_id()
-        except TypeError:
+        # Parsing target_cfg
+        if target_cfg is None:
             self.target_cfg = training_cfg
             self.target_cfg_name = None
+        else:
+            self.target_cfg = target_cfg
+            self.target_cfg_name = self.target_cfg.get_config_id()
 
         # Main initialization
         super().__init__(training_cfg)

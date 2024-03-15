@@ -12,7 +12,7 @@ from grokking_llm.utils import paths
 def test_disk_stack():
 
     # Init
-    stack_path = paths.output / "stask_test"
+    stack_path = paths.output / "stack_test"
 
     # Cleaning
     if stack_path.is_file():

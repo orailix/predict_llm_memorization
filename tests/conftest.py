@@ -10,8 +10,9 @@ from grokking_llm.utils import paths
 
 # Re-directing outputs
 paths.output = Path(__file__).parent / "outputs"
+individual_outputs = paths.output / "individual"
+deployment_outputs = paths.output / "deployment"
 paths.configs = Path(__file__).parent / "configs"
-paths.deployment_configs = paths.configs / ".deployment_configs"
 
 # To remove a warning from Jupyter
 os.environ["JUPYTER_PLATFORM_DIRS"] = "1"

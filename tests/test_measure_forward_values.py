@@ -58,6 +58,13 @@ def test_forward_values():
     assert (reloaded.mcq_states_per_layer[6] == torch.Tensor(range(6, 16))).all()
     assert (reloaded.mcq_states_per_layer[7] == torch.Tensor(range(7, 17))).all()
 
+    # Cleaning
+    if export_path.is_dir():
+        try:
+            shutil.rmtree(export_path)
+        except OSError:
+            pass
+
 
 def test_concatenation():
 

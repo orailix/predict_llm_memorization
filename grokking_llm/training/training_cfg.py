@@ -176,7 +176,7 @@ TRAINING_ARGS:"""
 
         Creates the dir and saves the config if it does not exist."""
 
-        result = paths.output / self.get_config_id()
+        result = paths.individual_outputs / self.get_config_id()
         result.mkdir(parents=True, exist_ok=True)
         self.to_json(result / SAVING_NAME)
 
@@ -208,6 +208,10 @@ TRAINING_ARGS:"""
                 continue
 
         return sorted(result)
+
+    @property
+    def latest_checkpoint(self) -> int:
+        return sorted(self.get_available_checkpoints())[-1]
 
     def get_resume_from_checkpoint_status(self) -> t.Union[bool, str]:
         """Gets the value to pass to trainer.train(resume_from_checkpoint=...)
@@ -309,7 +313,7 @@ TRAINING_ARGS:"""
         4. If `grokking_llm.utils.paths.configs / f'{name}.json'` is a valid
         file, builds the result from it.
         5. If `name` is a at least 4 character length, will look at every dir
-        in `grokking_llm.paths.outputs`, and build the output from the config
+        in `grokking_llm.paths.individual_outputs`, and build the output from the config
         of the first dir for which `name` is a prefix of it's config_id
 
         Args:
@@ -347,13 +351,13 @@ TRAINING_ARGS:"""
 
         if len(name) >= 4:
 
-            for child in paths.output.iterdir():
+            for child in paths.individual_outputs.iterdir():
                 if not child.is_dir():
                     continue
 
                 if child.name[: len(name)] == name:
                     logger.info(
-                        f"Autoconfig `name`: {name} is the prefix of confi_id {child.name} in `paths.outputs`, building from it."
+                        f"Autoconfig `name`: {name} is the prefix of confi_id {child.name} in `paths.individual_outputs`, building from it."
                     )
                     return cls.from_file(child / "training_cfg.json")
 

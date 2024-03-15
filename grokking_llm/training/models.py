@@ -52,7 +52,7 @@ def get_model(cfg: TrainingCfg, at_checkpoint: t.Optional[int] = None) -> PeftMo
     if at_checkpoint is not None:
 
         if at_checkpoint == "latest":
-            at_checkpoint = sorted(cfg.get_available_checkpoints())[-1]
+            at_checkpoint = cfg.latest_checkpoint
 
         checkpoint_dir = cfg.get_output_dir() / CHECKPOINT_FORMAT.format(
             number=at_checkpoint

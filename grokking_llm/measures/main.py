@@ -41,7 +41,10 @@ def run_main_measure(
         metrics_class_kwargs = {}
     elif forward_on_cfg_pattern.match(name):
         metrics_class = ForwardMetrics
-        metrics_class_kwargs = {"target_cfg_name": name[len("forward_on_") :]}
+        logger.info(f"Detected a `foward_on` metrics: initializing the target_cfg.")
+        metrics_class_kwargs = {
+            "target_cfg": TrainingCfg.autoconfig(name[len("forward_on_") :])
+        }
     else:
         raise ValueError(
             f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)} or of type `forward_on_[...]`"
@@ -62,7 +65,7 @@ def run_main_measure(
                 "ckeckpoint='all' is incompatible with 'force_recompute=True'. If you want to force it, delete the metric output file and call this method again."
             )
     elif checkpoint == "latest":
-        checkpoint = sorted(training_cfg.get_available_checkpoints())[-1]
+        checkpoint = training_cfg.latest_checkpoint
     else:
         try:
             checkpoint = int(checkpoint)

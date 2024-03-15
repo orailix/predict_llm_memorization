@@ -77,8 +77,8 @@ env_vars_cfg_path = configs / "env_vars.cfg"
 credentials_cfg_path = configs / "credentials.cfg"
 training_cfg_path = configs / "training.cfg"
 
-# Deployment configs
-deployment_configs = configs / ".deployment_configs"
-deployment_configs.mkdir(exist_ok=True)
-if not (deployment_configs / ".gitignore").exists():
-    (deployment_configs / ".gitignore").write_text("*")
+# Output sub-folders
+individual_outputs = output / "individual"
+individual_outputs.mkdir(exist_ok=True)
+deployment_outputs = output / "deployment"
+deployment_outputs.mkdir(exist_ok=True)
