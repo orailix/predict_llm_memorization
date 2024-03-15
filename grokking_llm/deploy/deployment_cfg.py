@@ -28,16 +28,18 @@ class DeploymentCfg:
         # ID and export dir
         self.id = self.get_deployment_id()
         self.export_dir = paths.deployment_outputs / self.id
-        self.export_dir.mkdir(exist_ok=True)
+        self.export_dir.mkdir(exist_ok=True, parents=True)
         with (self.export_dir / "deployment.cfg").open("w") as f:
             self.cfg.write(f)
 
         # Stacks
-        self.stack_all = DiskStack(self.export_dir / "stack_all")
-        self.stack_todo_gpu = DiskStack(self.export_dir / "stack_todo_gpu")
-        self.stack_todo_cpu = DiskStack(self.export_dir / "stack_todo_cpu")
-        self.stack_done_gpu = DiskStack(self.export_dir / "stack_done_gpu")
-        self.stack_done_cpu = DiskStack(self.export_dir / "stack_done_cpu")
+        self.stacks_dir = self.export_dir / "stacks"
+        self.stacks_dir.mkdir(exist_ok=True, parents=True)
+        self.stack_all = DiskStack(self.stacks_dir / "stack_all")
+        self.stack_todo_gpu = DiskStack(self.stacks_dir / "stack_todo_gpu")
+        self.stack_todo_cpu = DiskStack(self.stacks_dir / "stack_todo_cpu")
+        self.stack_done_gpu = DiskStack(self.stacks_dir / "stack_done_gpu")
+        self.stack_done_cpu = DiskStack(self.stacks_dir / "stack_done_cpu")
 
     def get_deployment_id(self):
         return base64.urlsafe_b64encode(

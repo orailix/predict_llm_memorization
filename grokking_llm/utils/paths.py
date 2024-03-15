@@ -79,6 +79,6 @@ training_cfg_path = configs / "training.cfg"
 
 # Output sub-folders
 individual_outputs = output / "individual"
-individual_outputs.mkdir(exist_ok=True)
+individual_outputs.mkdir(exist_ok=True, parents=True)
 deployment_outputs = output / "deployment"
-deployment_outputs.mkdir(exist_ok=True)
+deployment_outputs.mkdir(exist_ok=True, parents=True)

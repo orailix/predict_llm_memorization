@@ -18,7 +18,7 @@ def test_forward_values():
     export_path = paths.output / "forward_values"
     if export_path.is_dir():
         shutil.rmtree(export_path)
-    export_path.mkdir(exist_ok=True)
+    export_path.mkdir(exist_ok=True, parents=True)
 
     # Creating object
     forward_values = ForwardValues(

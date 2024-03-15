@@ -83,7 +83,7 @@ class ForwardMetrics(DynamicMetricsGroup):
             / f"checkpoint-{checkpoint}"
             / "forward_values"
         )
-        forward_export_dir.mkdir(exist_ok=True)
+        forward_export_dir.mkdir(exist_ok=True, parents=True)
 
         # Iterating over dataloaders
         info_suffix = (

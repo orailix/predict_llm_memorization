@@ -63,7 +63,7 @@ class DynamicMetricsGroup(ABC):
         # Directories
         output_dir = self.training_cfg.get_output_dir()
         self.metrics_dir = output_dir / "metrics"
-        self.metrics_dir.mkdir(exist_ok=True)
+        self.metrics_dir.mkdir(exist_ok=True, parents=True)
         self.output_file = self.metrics_dir / f"{self.metrics_group_name}.csv"
 
         # Creating output file
