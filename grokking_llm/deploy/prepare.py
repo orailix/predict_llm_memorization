@@ -62,9 +62,8 @@ def get_possible_training_cfg(deployment_cfg: DeploymentCfg) -> t.List[TrainingC
     """Returns the possible training_cfg based on a deployment_cfg."""
 
     # General config
-    base_config = deployment_cfg.cfg["general"]["base_config"]
     mode = deployment_cfg.cfg["general"]["mode"]
-    training_cfg = TrainingCfg.autoconfig(base_config)
+    training_cfg = deployment_cfg.base_config
 
     # Parsing sections
     parsed_sections_list = deployment_cfg.get_parsed_section_list()

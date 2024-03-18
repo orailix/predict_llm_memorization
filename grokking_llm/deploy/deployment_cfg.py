@@ -12,6 +12,7 @@ from pathlib import Path
 
 from loguru import logger
 
+from ..training import TrainingCfg
 from ..utils import paths
 from .utils import DiskStack, ParsedSection
 
@@ -25,10 +26,17 @@ class DeploymentCfg:
         # Config
         self.cfg = parsed_config
 
+        # Loading base training cfg
+        self.base_config = TrainingCfg.autoconfig(self.cfg["general"]["base_config"])
+
         # ID and export dir
         self.id = self.get_deployment_id()
         self.export_dir = paths.deployment_outputs / self.id
         self.export_dir.mkdir(exist_ok=True, parents=True)
+        self.base_config.to_json(self.export_dir / "base_training_cfg.json")
+        self.cfg["general"]["base_config"] = str(
+            self.export_dir / "base_training_cfg.json"
+        )
         with (self.export_dir / "deployment.cfg").open("w") as f:
             self.cfg.write(f)
 
@@ -51,8 +59,16 @@ class DeploymentCfg:
         for section_name in sorted(self.cfg.sections()):
             desc += f"[{section_name}]\n"
             for key in sorted(self.cfg[section_name]):
-                value = self.cfg[section_name][key]
-                value = convert_str_to_int_or_float(value)
+
+                # Special case for the base config
+                if section_name == "general" and key == "base_config":
+                    value = self.base_config.get_config_id()
+                # Base case
+                else:
+                    value = self.cfg[section_name][key]
+                    value = convert_str_to_int_or_float(value)
+
+                # Update description
                 desc += f"{key} = {value}\n"
 
         return desc
