@@ -44,11 +44,15 @@ def deploy_prepare(
 @app.command()
 def deploy_gpu(
     config: t.Optional[str] = None,
-    train_only: bool = False,
+    skip_training: bool = False,
+    skip_self_forward: bool = False,
+    forward_latest_on: t.Optional[str] = None,
 ):
     run_deploy_gpu(
         config=config,
-        train_only=train_only,
+        skip_training=skip_training,
+        skip_self_forward=skip_self_forward,
+        forward_latest_on=forward_latest_on,
     )
 
 

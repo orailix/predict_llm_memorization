@@ -85,18 +85,27 @@ class ForwardMetrics(DynamicMetricsGroup):
         )
         forward_export_dir.mkdir(exist_ok=True, parents=True)
 
+        # If we do the forward pass on another training config, we skip the test dataloader
+        if self.target_cfg_name is None:  # Forward pass on itself
+            iterator = zip(
+                [train_trl_dl, train_rdl_dl, test_all_dl],
+                [
+                    "train_trl",
+                    "train_rdl",
+                    "test",
+                ],
+            )
+        else:  # Forward on another target config
+            iterator = zip(
+                [train_trl_dl, train_rdl_dl],
+                [
+                    f"train_trl_on_{self.target_cfg_name}",
+                    f"train_rdl_on_{self.target_cfg_name}",
+                ],
+            )
+
         # Iterating over dataloaders
-        info_suffix = (
-            "" if self.target_cfg_name is None else f"_on_{self.target_cfg_name}"
-        )
-        for data_loader, info in zip(
-            [train_trl_dl, train_rdl_dl, test_all_dl],
-            [
-                "train_trl" + info_suffix,
-                "train_rdl" + info_suffix,
-                "test" + info_suffix,
-            ],
-        ):
+        for data_loader, info in iterator:
             # Logging
             logger.info(f"Computing outputs of the model with dataloader: {info}")
 
