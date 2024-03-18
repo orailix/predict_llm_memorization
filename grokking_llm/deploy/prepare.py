@@ -47,8 +47,10 @@ def run_deploy_prepare(config: t.Union[str, Path]) -> None:
 
     # Dump
     to_push = []
+    push_dir = deployment_cfg.export_dir / "training_cfg"
+    push_dir.mkdir(exist_ok=True, parents=True)
     for cfg_idx, cfg in enumerate(possible_training_cfg):
-        export_path = deployment_cfg.export_dir / f"training_cfg_{cfg_idx}.json"
+        export_path = push_dir / f"training_cfg_{cfg_idx}.json"
         cfg.to_json(export_path)
         to_push.append(export_path)
 

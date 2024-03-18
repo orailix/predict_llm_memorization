@@ -96,7 +96,7 @@ def test_prepare_product():
     # Counting exports
     count_export = 0
     checked_import = False
-    for child in deployment_cfg.export_dir.iterdir():
+    for child in (deployment_cfg.export_dir / "training_cfg").iterdir():
         if (
             child.is_file()
             and child.suffix == ".json"
@@ -138,7 +138,7 @@ def test_prepare_zip():
     # Counting exports
     count_export = 0
     checked_import = False
-    for child in deployment_cfg.export_dir.iterdir():
+    for child in (deployment_cfg.export_dir / "training_cfg").iterdir():
         if (
             child.is_file()
             and child.suffix == ".json"
