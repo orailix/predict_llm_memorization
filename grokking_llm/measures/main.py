@@ -8,10 +8,12 @@ import typing as t
 
 from loguru import logger
 
+from ..deploy.deployment_cfg import DeploymentCfg
 from ..training import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
+from .memo_membership import MemoMembership
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
@@ -25,6 +27,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
 }
 
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")
+memorized_on_shadow_pattern = re.compile("^memo_on_shadow_.+$")
 
 
 def run_main_measure(
@@ -45,9 +48,20 @@ def run_main_measure(
         metrics_class_kwargs = {
             "target_cfg": TrainingCfg.autoconfig(name[len("forward_on_") :])
         }
+    elif memorized_on_shadow_pattern.match(name):
+        metrics_class = MemoMembership
+        logger.info(
+            f"Detected a `memo_on_shadow`: initializing the shadow deployment_cfg`"
+        )
+        metrics_class_kwargs = {
+            "shadow_deployment_cfg": DeploymentCfg.autoconfig(
+                name[len("memo_on_shadow_") :]
+            )
+        }
     else:
         raise ValueError(
-            f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)} or of type `forward_on_[...]`"
+            f"Got `name`='{name}', but it should be in {list(NAMES_TO_METRICS)} or of "
+            f"type `forward_on_[...]` or of type `memo_on_shadow_[...]`"
         )
 
     logger.info(f"Starting a measure pipeline with metric group '{name}'")

@@ -5,7 +5,6 @@
 
 import base64
 import configparser
-import dataclasses
 import hashlib
 import typing as t
 from pathlib import Path
@@ -206,7 +205,7 @@ def process_range_section(sec: configparser.SectionProxy) -> ParsedSection:
 
     # Appending values
     while not end_condition(start):
-        result.values.append(start)
+        result.values.append(convert_str_to_int_or_float(start))
         start += step
         start = round(start, 12)
 

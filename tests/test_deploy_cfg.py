@@ -96,7 +96,7 @@ def test_parse_sections():
     # Checks on section 0 -- range from 0 to 1
     assert parsed_sections[0].name == "label_noise"
     for val_parsed, val_groundtruth in zip(
-        parsed_sections[0].values, [k * 0.1 for k in range(11)]
+        parsed_sections[0].values, [0] + [k * 0.1 for k in range(1, 10)] + [1]
     ):
         assert val_parsed == pytest.approx(val_groundtruth)
         assert type(val_parsed) == type(val_groundtruth)
@@ -104,7 +104,7 @@ def test_parse_sections():
     # Checks on section 1 -- range from 11 to 1
     assert parsed_sections[1].name == "lora_r"
     for val_parsed, val_groundtruth in zip(
-        parsed_sections[1].values, [float(11 - k) for k in range(11)]
+        parsed_sections[1].values, [11 - k for k in range(11)]
     ):
         assert val_parsed == pytest.approx(val_groundtruth)
         assert type(val_parsed) == type(val_groundtruth)
