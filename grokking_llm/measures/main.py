@@ -14,6 +14,7 @@ from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
 from .memo_membership import MemoMembership
+from .memo_proba_gap import MemoProbaGap
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
@@ -24,6 +25,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "perf": PerfMetrics,
     "smi": SmiMetrics,
     "weights": WeightsMetrics,
+    "memo_proba_gap": MemoProbaGap,
 }
 
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")
