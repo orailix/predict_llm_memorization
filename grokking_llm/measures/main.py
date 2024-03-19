@@ -13,8 +13,8 @@ from ..training import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
-from .memo_membership import MemoMembership
-from .memo_proba_gap import MemoProbaGap
+from .memo_membership_metrics import MemoMembership
+from .memo_proba_gap_metrics import MemoProbaGap
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
