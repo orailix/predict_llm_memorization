@@ -70,7 +70,9 @@ class MemoMembership(DynamicMetricsGroup):
 
     @property
     def metrics_names(self) -> t.List[str]:
-        return ["memo_prop"] + [f"memo_{idx}" for idx in self.global_idx]
+        return (
+            ["prop_memo"] + ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
+        )
 
     def _get_shadow_values(self, checkpoint):
         """TODO"""
@@ -208,7 +210,7 @@ class MemoMembership(DynamicMetricsGroup):
         # Normal approximation
         num_pos = []
         num_neg = []
-        target_global_idx_is_memorized = []
+        target_global_idx_memo_score = []
         for target_global_idx in self.global_idx:
 
             # Getting proba_gaps for pos and neg shadow models
@@ -260,7 +262,12 @@ class MemoMembership(DynamicMetricsGroup):
             neg_likelihood = norm_pdf(
                 neg_mean, neg_std, proba_gaps[target_global_idx][0]
             )
-            target_global_idx_is_memorized.append(pos_likelihood > neg_likelihood)
+
+            # Normalizing likelihoods
+            pos_proba, neg_proba = torch.softmax(
+                torch.Tensor([pos_likelihood, neg_likelihood]), dim=0
+            ).tolist()
+            target_global_idx_memo_score.append(pos_proba - neg_proba)
 
         # Logging
         mean_num_pos, min_num_pos, max_num_pos = (
@@ -273,7 +280,8 @@ class MemoMembership(DynamicMetricsGroup):
             np.min(num_neg),
             np.max(num_neg),
         )
-        num_memorized = sum(target_global_idx_is_memorized)
+        num_memorized = sum([(item > 0) for item in target_global_idx_memo_score])
+        mean_memorized = np.mean(target_global_idx_memo_score)
         logger.debug(
             f"Num positive per target sample: mean={mean_num_pos}, min={min_num_pos}, max={max_num_pos}"
         )
@@ -283,9 +291,10 @@ class MemoMembership(DynamicMetricsGroup):
         logger.debug(
             f"Num target sample memorized: {num_memorized}/{num_samples} [{num_memorized/num_samples:.2%}]"
         )
+        logger.debug(f"Mean memorization score: {mean_memorized}")
 
         # Output
-        return [num_memorized / num_samples] + [
-            int(target_global_idx_is_memorized[k])
-            for k in range(len(target_global_idx_is_memorized))
-        ]
+        return [
+            num_memorized / num_samples,
+            mean_memorized,
+        ] + target_global_idx_memo_score

@@ -45,7 +45,7 @@ class MemoProbaGap(DynamicMetricsGroup):
 
     @property
     def metrics_names(self) -> t.List[str]:
-        return ["memo_prop"] + [f"memo_{idx}" for idx in self.global_idx]
+        return ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
 
     def _get_shadow_values(self, checkpoint):
         """TODO"""
