@@ -10,8 +10,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from grokking_llm.deploy import DeploymentCfg, ParsedSection
-from grokking_llm.utils import paths
+from grokking_llm.utils import DeploymentCfg, ParsedSection, paths
 
 # Files
 deployment_cfg_path = paths.configs / "deployment_0.cfg"

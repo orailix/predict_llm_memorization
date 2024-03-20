@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from loguru import logger
 
-from ..training import TrainingCfg
+from ..utils import TrainingCfg
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics

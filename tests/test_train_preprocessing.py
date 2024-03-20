@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 from transformers import AutoTokenizer
 
-from grokking_llm.training import TrainingCfg
 from grokking_llm.training.datasets import (
     add_labels,
     add_tokenized_possible_labels,
@@ -22,7 +21,7 @@ from grokking_llm.training.datasets import (
     tokenize_dataset,
 )
 from grokking_llm.training.formatting import format_arc, format_ethics, format_mmlu
-from grokking_llm.utils import paths
+from grokking_llm.utils import TrainingCfg, paths
 from grokking_llm.utils.constants import (
     DATASET_BARE_LABEL,
     DATASET_RANDOM_LABEL,

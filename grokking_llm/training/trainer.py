@@ -13,8 +13,8 @@ from loguru import logger
 from peft import PeftModel
 from peft.utils import constants
 
+from ..utils import TrainingCfg
 from .models import save_model
-from .training_cfg import TrainingCfg
 
 # To avoid saving the first embedding layer since it's not needed
 constants.EMBEDDING_LAYER_NAMES.remove("lm_head")

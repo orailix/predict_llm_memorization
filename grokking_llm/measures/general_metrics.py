@@ -5,7 +5,8 @@
 
 import typing as t
 
-from ..training import TrainingCfg, get_dataset, get_random_split
+from ..training import get_dataset, get_random_split
+from ..utils import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 

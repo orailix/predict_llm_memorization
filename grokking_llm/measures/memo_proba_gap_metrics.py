@@ -7,13 +7,11 @@ import typing as t
 from typing import List
 
 import numpy as np
-import torch
 from loguru import logger
 from tqdm import tqdm
 
-from ..deploy.deployment_cfg import DeploymentCfg
-from ..deploy.prepare import get_possible_training_cfg
-from ..training import TrainingCfg, get_dataset, get_random_split
+from ..training import get_dataset, get_random_split
+from ..utils import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils.forward_values import ForwardValues
 

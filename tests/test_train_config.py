@@ -9,8 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from grokking_llm.training import TrainingCfg
-from grokking_llm.utils import paths
+from grokking_llm.utils import TrainingCfg, paths
 from grokking_llm.utils.constants import TRAIN_CFG_DEFAULT_TRAINING_ARGS
 
 # Test files

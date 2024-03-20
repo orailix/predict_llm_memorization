@@ -6,15 +6,14 @@
 import shutil
 
 from grokking_llm.training import (
-    TrainingCfg,
     add_labels,
     format_dataset,
     get_dataset,
     get_model,
     get_trainer,
-    save_model,
     tokenize_dataset,
 )
+from grokking_llm.utils import TrainingCfg
 
 
 def test_get_trainer():

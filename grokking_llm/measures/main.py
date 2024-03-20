@@ -8,8 +8,7 @@ import typing as t
 
 from loguru import logger
 
-from ..deploy.deployment_cfg import DeploymentCfg
-from ..training import TrainingCfg
+from ..utils import DeploymentCfg, TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics

@@ -8,6 +8,7 @@ import typing as t
 import torch
 from loguru import logger
 
+from ..utils import TrainingCfg
 from .datasets import (
     add_labels,
     format_dataset,
@@ -17,7 +18,6 @@ from .datasets import (
 )
 from .models import get_model, get_num_params
 from .trainer import get_trainer
-from .training_cfg import TrainingCfg
 
 
 def run_main_train(config: t.Optional[str] = None):

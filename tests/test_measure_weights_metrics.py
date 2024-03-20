@@ -6,7 +6,8 @@
 import shutil
 
 from grokking_llm.measures import WeightsMetrics
-from grokking_llm.training import TrainingCfg, get_model, save_model
+from grokking_llm.training import get_model, save_model
+from grokking_llm.utils import TrainingCfg
 
 
 def test_weights_metrics():

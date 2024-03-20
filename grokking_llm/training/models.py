@@ -15,7 +15,7 @@ from transformers import (
     PreTrainedModel,
 )
 
-from .training_cfg import TrainingCfg
+from ..utils import TrainingCfg
 
 CHECKPOINT_FORMAT = "checkpoint-{number}"
 

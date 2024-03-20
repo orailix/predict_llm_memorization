@@ -14,9 +14,9 @@ from pathlib import Path
 import torch
 from loguru import logger
 
-from ..utils import paths
-from ..utils.constants import *
-from ..utils.hf_hub import (
+from . import paths
+from .constants import *
+from .hf_hub import (
     DS_ARC,
     DS_ETHICS,
     DS_MMLU,

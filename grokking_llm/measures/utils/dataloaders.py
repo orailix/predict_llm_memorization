@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 from transformers.data.data_collator import default_data_collator
 
 from ...training import (
-    TrainingCfg,
     add_labels,
     add_tokenized_possible_labels,
     format_dataset,
@@ -17,6 +16,7 @@ from ...training import (
     get_random_split,
     tokenize_dataset,
 )
+from ...utils import TrainingCfg
 
 
 def get_dataloaders_for_measures(

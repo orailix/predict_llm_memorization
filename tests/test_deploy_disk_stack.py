@@ -5,8 +5,7 @@
 
 import pytest
 
-from grokking_llm.deploy import DiskStack
-from grokking_llm.utils import paths
+from grokking_llm.utils import DiskStack, paths
 
 
 def test_disk_stack():

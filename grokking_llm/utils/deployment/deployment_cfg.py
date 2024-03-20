@@ -11,9 +11,10 @@ from pathlib import Path
 
 from loguru import logger
 
-from ..training import TrainingCfg
-from ..utils import paths
-from .utils import DiskStack, ParsedSection
+from .. import paths
+from ..training_cfg import TrainingCfg
+from .disk_stacks import DiskStack
+from .parsed_section import ParsedSection
 
 
 class DeploymentCfg:
@@ -47,6 +48,10 @@ class DeploymentCfg:
         self.stack_todo_cpu = DiskStack(self.stacks_dir / "stack_todo_cpu")
         self.stack_done_gpu = DiskStack(self.stacks_dir / "stack_done_gpu")
         self.stack_done_cpu = DiskStack(self.stacks_dir / "stack_done_cpu")
+
+        # Training cfg dir
+        self.configs_dir = self.export_dir / "training_cfg"
+        self.configs_dir.mkdir(exist_ok=True, parents=True)
 
     def get_deployment_id(self):
         return base64.urlsafe_b64encode(

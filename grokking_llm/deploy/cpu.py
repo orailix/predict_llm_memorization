@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 
 from ..measures import run_main_measure
-from .deployment_cfg import DeploymentCfg
+from ..utils import DeploymentCfg
 
 
 def run_deploy_cpu(

@@ -14,5 +14,4 @@ from .datasets import (
 )
 from .main import run_main_train
 from .models import get_model, get_num_params, save_model
-from .trainer import get_trainer
-from .training_cfg import TrainingCfg
+from .trainer import compute_mcq_last_token_loss, get_trainer

@@ -9,7 +9,7 @@ import typing as t
 import pytest
 
 from grokking_llm.measures import DynamicMetricsGroup
-from grokking_llm.training import TrainingCfg
+from grokking_llm.utils import TrainingCfg
 
 
 class DummyChildClass(DynamicMetricsGroup):

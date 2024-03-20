@@ -11,7 +11,8 @@ import torch
 from loguru import logger
 from transformers import AutoModelForCausalLM
 
-from grokking_llm.training import TrainingCfg, get_model, get_num_params, save_model
+from grokking_llm.training import get_model, get_num_params, save_model
+from grokking_llm.utils import TrainingCfg
 
 
 def test_get_model_quality():

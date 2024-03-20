@@ -8,13 +8,12 @@ import shutil
 
 import pytest
 
-from grokking_llm.deploy import DeploymentCfg
-from grokking_llm.deploy.prepare import (
+from grokking_llm.deploy.prepare import run_deploy_prepare
+from grokking_llm.utils import DeploymentCfg, TrainingCfg
+from grokking_llm.utils.possible_training_cfg import (
     product_combinations,
-    run_deploy_prepare,
     zip_combinations,
 )
-from grokking_llm.training import TrainingCfg
 
 
 def test_product():

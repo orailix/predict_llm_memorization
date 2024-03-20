@@ -11,8 +11,8 @@ import torch
 from loguru import logger
 
 from ..measures import run_main_measure
-from ..training import TrainingCfg, run_main_train
-from .deployment_cfg import DeploymentCfg
+from ..training import run_main_train
+from ..utils import DeploymentCfg, TrainingCfg
 
 
 def run_deploy_gpu(

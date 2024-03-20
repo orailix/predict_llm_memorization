@@ -11,7 +11,7 @@ import pandas as pd
 import torch
 from loguru import logger
 
-from ..training import TrainingCfg
+from ..utils import TrainingCfg
 
 SEP = ","
 

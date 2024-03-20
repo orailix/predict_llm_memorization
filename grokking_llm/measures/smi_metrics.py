@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
 
-from ..training import TrainingCfg
+from ..utils import TrainingCfg
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
