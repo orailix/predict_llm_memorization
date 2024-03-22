@@ -5,6 +5,7 @@
 
 import configparser
 import os
+import sys
 
 from loguru import logger
 
@@ -53,6 +54,12 @@ if not offline:
         os.environ["HF_TOKEN"] = token
     else:
         logger.warning("No credential found. This may prevent you to use LLaMA models.")
+
+# Need to re-load `transformers` ?
+if "transformers" in sys.modules:
+    logger.warning(
+        f"Detected `transformers` already imported in sys.modules. This is likely to prevent you from using HF cache. To fix this, import `grokking_llm` module before any HuggingFace module."
+    )
 
 if __name__ == "__main__":
     pass
