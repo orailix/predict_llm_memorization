@@ -134,7 +134,7 @@ class SmiMetrics(DynamicMetricsGroup):
             y = forward_values.mcq_labels
 
             # Logging
-            logger.debug(f"X size: {X_per_layer[0].size()}")
+            logger.debug(f"X size: {X_per_layer[1].size()}")
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing each layer

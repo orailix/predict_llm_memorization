@@ -100,24 +100,8 @@ class PSmiMetrics(DynamicMetricsGroup):
         y = forward_values_all.mcq_labels
 
         # Logging
-        logger.debug(f"X size: {X_per_layer[0].size()}")
+        logger.debug(f"X size: {X_per_layer[1].size()}")
         logger.debug(f"y size: {y.size()}")
-
-        # Multiprocessing each layer
-        # n_jobs = min(len(SMI_LAYERS), os.cpu_count())
-        # logger.info(
-        #     f"Computing the SMI for each layer using a pool of {n_jobs} processes."
-        # )
-
-        # def process_layer(x):
-        #     return p_smi_estimator(
-        #         x, y, n_estimator=self.n_estimator, n_neighbors=self.n_neighbors
-        #     )
-
-        # smi_per_layer = Parallel(n_jobs=n_jobs)(
-        #     delayed(process_layer)(forward_values_all.mcq_states_per_layer[layer])
-        #     for layer in SMI_LAYERS
-        # )
 
         # Uniprocess computation
         logger.debug("Starting P-SMI core computation")
