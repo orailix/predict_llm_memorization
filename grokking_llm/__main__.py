@@ -7,7 +7,12 @@ import typing as t
 
 import typer
 
-from .deploy import run_deploy_cpu, run_deploy_gpu, run_deploy_prepare
+from .deploy import (
+    run_deploy_clean_forward_values,
+    run_deploy_cpu,
+    run_deploy_gpu,
+    run_deploy_prepare,
+)
 from .measures import run_main_measure
 from .training import run_main_train
 
@@ -39,6 +44,13 @@ def deploy_prepare(
     config: t.Optional[str] = None,
 ):
     run_deploy_prepare(config=config)
+
+
+@app.command()
+def deploy_clean_forward_values(
+    config: t.Optional[str] = None,
+):
+    run_deploy_clean_forward_values(config=config)
 
 
 @app.command()

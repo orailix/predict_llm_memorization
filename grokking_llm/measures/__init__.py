@@ -4,6 +4,7 @@
 # Apache Licence v2.0.
 
 from .dynamic_metrics_group import DynamicMetricsGroup
+from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
 from .main import run_main_measure
 from .memo_membership_metrics import MemoMembership
