@@ -5,11 +5,11 @@
 
 import os
 import typing as t
+from pathlib import Path
 
 import numpy as np
 from joblib import Parallel, delayed
 from loguru import logger
-from tqdm import tqdm
 
 from ..utils import TrainingCfg
 from ..utils.constants import SMI_LAYERS
@@ -55,15 +55,23 @@ class SmiMetrics(DynamicMetricsGroup):
 
     @property
     def metrics_names(self) -> t.List[str]:
-        return [
-            f"{dl}_smi_mean_{layer}"
-            for dl in ["train_all", "train_trl", "train_rdl", "test"]
-            for layer in SMI_LAYERS
-        ] + [
-            f"{dl}_smi_max_{layer}"
-            for dl in ["train_all", "train_trl", "train_rdl", "test"]
-            for layer in SMI_LAYERS
-        ]
+        return (
+            [
+                f"{dl}_smi_mean_{layer}"
+                for dl in ["train_all", "train_trl", "train_rdl", "test"]
+                for layer in SMI_LAYERS
+            ]
+            + [
+                f"{dl}_smi_max_{layer}"
+                for dl in ["train_all", "train_trl", "train_rdl", "test"]
+                for layer in SMI_LAYERS
+            ]
+            + [
+                f"{dl}_smi_min_{layer}"
+                for dl in ["train_all", "train_trl", "train_rdl", "test"]
+                for layer in SMI_LAYERS
+            ]
+        )
 
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
 
@@ -101,6 +109,7 @@ class SmiMetrics(DynamicMetricsGroup):
         # Dim 2 => layer #1, layer #2, etc
         smi_mean = np.zeros((4, len(SMI_LAYERS)), dtype=float)
         smi_max = np.zeros((4, len(SMI_LAYERS)), dtype=float)
+        smi_min = np.zeros((4, len(SMI_LAYERS)), dtype=float)
 
         # Iterating over forward values
         for idx, forward_values in enumerate(
@@ -147,15 +156,24 @@ class SmiMetrics(DynamicMetricsGroup):
             for layer_idx in range(len(SMI_LAYERS)):
                 smi_mean[idx, layer_idx] = smi_per_layer[layer_idx][0]
                 smi_max[idx, layer_idx] = smi_per_layer[layer_idx][1]
+                smi_min[idx, layer_idx] = smi_per_layer[layer_idx][2]
 
         # ==================== Output ====================
 
-        return [
-            smi_mean[dl_idx, layer_idx]
-            for dl_idx in range(4)
-            for layer_idx in range(len(SMI_LAYERS))
-        ] + [
-            smi_max[dl_idx, layer_idx]
-            for dl_idx in range(4)
-            for layer_idx in range(len(SMI_LAYERS))
-        ]
+        return (
+            [
+                smi_mean[dl_idx, layer_idx]
+                for dl_idx in range(4)
+                for layer_idx in range(len(SMI_LAYERS))
+            ]
+            + [
+                smi_max[dl_idx, layer_idx]
+                for dl_idx in range(4)
+                for layer_idx in range(len(SMI_LAYERS))
+            ]
+            + [
+                smi_min[dl_idx, layer_idx]
+                for dl_idx in range(4)
+                for layer_idx in range(len(SMI_LAYERS))
+            ]
+        )
