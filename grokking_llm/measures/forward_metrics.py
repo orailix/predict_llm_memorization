@@ -76,6 +76,7 @@ class ForwardMetrics(DynamicMetricsGroup):
             train_trl_dl, train_rdl_dl, test_all_dl
         )
         model.eval()
+        model.config.output_hidden_states = True
 
         # Export dir
         forward_export_dir = (
@@ -191,10 +192,12 @@ class ForwardMetrics(DynamicMetricsGroup):
                 # MCQ states per layer
                 for layer in SMI_LAYERS:
                     mcq_states_per_layer_items[layer].append(
-                        outputs["past_key_values"][layer][0][:, :, -3, :]
-                        .view(bs, -1)
-                        .cpu()
+                        outputs["hidden_states"][layer][:, -3, :].cpu()
                     )
+
+                # Cleaning
+                del outputs
+                torch.cuda.empty_cache()
 
             # Saving ForwardValues
             forward_values = ForwardValues(
