@@ -42,6 +42,24 @@ class ForwardValues:
             self.inserted_label_index.int(),
         ]
 
+    def __repr__(self) -> str:
+        states_size = self.mcq_states_per_layer[
+            list(self.mcq_states_per_layer)[0]
+        ].size()
+        return f"""ForwardValues object:
+    - name: {self.name}
+    - num_samples: {self.num_samples}
+    - vocab_size: {self.vocab_size}
+    - global_index: torch.Tensor of size: {self.global_index.size()}
+    - input_ids: torch.Tensor of size: {self.input_ids.size()}
+    - tokenized_possible_labels: torch.Tensor of size: {self.tokenized_possible_labels.size()}
+    - inserted_label_index: torch.Tensor of size: {self.inserted_label_index.size()}
+    - loss_all: torch.Tensor of size: {self.loss_all.size()}
+    - loss_asw: torch.Tensor of size: {self.loss_asw.size()}
+    - mcq_predicted_proba: torch.Tensor of size: {self.mcq_predicted_proba.size()}
+    - mcq_states_per_layer: {sorted(list(self.mcq_states_per_layer))} -> torch.Tensor of size {states_size}
+"""
+
     def save(self, save_dir: t.Union[str, Path]):
 
         # Sanity checks
