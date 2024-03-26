@@ -680,7 +680,7 @@ TRAINING_ARGS:"""
             # Check for device compatibility
             d = torch.device(self.accelerator)
             torch.rand(1).to(d)
-        except RuntimeError as e:
+        except (RuntimeError, AssertionError) as e:
             logger.warning(
                 f"Your configuration is not compatible with the following device: {self.accelerator}. This is likely to cause errors in yoru pipeline."
             )
