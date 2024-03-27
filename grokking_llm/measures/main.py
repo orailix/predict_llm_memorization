@@ -9,6 +9,7 @@ import typing as t
 from loguru import logger
 
 from ..utils import DeploymentCfg, TrainingCfg
+from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
@@ -27,6 +28,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "p_smi": PSmiMetrics,
     "weights": WeightsMetrics,
     "memo_proba_gap": MemoProbaGap,
+    "compress_forward": CompressForwardMetrics,
 }
 
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")

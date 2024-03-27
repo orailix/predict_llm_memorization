@@ -74,12 +74,16 @@ def deploy_cpu(
     checkpoint: t.Optional[str] = None,
     njobs: t.Optional[int] = None,
     force_recompute: bool = False,
+    skip_metrics: t.Optional[str] = None,
+    only_metrics: t.Optional[str] = None,
 ):
     run_deploy_cpu(
         config=config,
         checkpoint=checkpoint,
         force_recompute=force_recompute,
         njobs=njobs,
+        skip_metrics=skip_metrics,
+        only_metrics=only_metrics,
     )
 
 

@@ -13,12 +13,24 @@ from loguru import logger
 from ..measures import run_main_measure
 from ..utils import DeploymentCfg
 
+CPU_METRICS = [
+    "general",
+    "perf",
+    "smi",
+    "p_smi",
+    "weights",
+    "memo_proba_gap",
+    "compress_forward",
+]
+
 
 def run_deploy_cpu(
     config: t.Union[str, Path],
     checkpoint: t.Optional[str] = None,
     force_recompute: bool = False,
     njobs: t.Optional[int] = None,
+    skip_metrics: t.Optional[str] = None,
+    only_metrics: t.Optional[str] = None,
 ):
     """Executes the deployment on a CPU."""
 
@@ -33,14 +45,26 @@ def run_deploy_cpu(
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
 
+    # skip_metrics and only_metrics
+    metrics = CPU_METRICS
+    if (skip_metrics is not None) and (only_metrics is not None):
+        raise ValueError(f"You cannot use both `skip_metrics` and `only_metrics`.")
+    elif skip_metrics is not None:
+        to_skip = skip_metrics.split(",")
+        logger.debug(f"Skipping metrics: {to_skip}")
+        metrics = [m for m in metrics if m not in to_skip]
+    elif only_metrics is not None:
+        metrics = only_metrics.split(",")
+
+    logger.debug(f"Computing CPU metrics: {metrics}")
+
     # Deploy -- njobs == 1
     if njobs == 1:
-
         while not deployment_cfg.stack_todo_cpu.empty():
 
             try:
                 training_cfg_path = deployment_cfg.stack_todo_cpu.pop()
-                for measure_name in ["perf", "smi", "weights"]:
+                for measure_name in metrics:
                     run_main_measure(
                         measure_name,
                         config=training_cfg_path,
@@ -83,7 +107,7 @@ def run_deploy_cpu(
                 checkpoint=checkpoint,
                 force_recompute=force_recompute,
             )
-            for measure_name in ["perf", "smi", "weights"]
+            for measure_name in metrics
             for training_cfg_path in todo_cpu
         )
 

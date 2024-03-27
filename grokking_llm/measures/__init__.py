@@ -3,6 +3,7 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
