@@ -12,6 +12,8 @@ from loguru import logger
 from safetensors import safe_open
 from safetensors.torch import save_file
 
+from ...utils import TrainingCfg
+
 
 @dataclasses.dataclass
 class ForwardValues:
@@ -181,3 +183,63 @@ class ForwardValues:
                 for layer in values_0.mcq_states_per_layer
             },
         )
+
+
+def get_forward_value(
+    training_cfg: TrainingCfg,
+    checkpoint: int,
+    name: str,
+    enable_compressed: bool = False,
+) -> ForwardValues:
+    """Gets the forward values.
+
+    Args:
+        training_cfg: The config of the model to get the values from
+        checkpoint: The checkpoint of the model to get the values from
+        name: The name of the forwad values to look for
+        enable_compressed: If the forward values are not found, look at a compressed version of them."""
+
+    # Logging
+    logger.debug(
+        f"Loading forward values {name} from config {training_cfg.get_config_id()} at checkpoint {checkpoint}"
+    )
+
+    # Export dir
+    forward_export_dir = (
+        training_cfg.get_output_dir() / f"checkpoint-{checkpoint}" / "forward_values"
+    )
+
+    # First attempt
+    load_path = forward_export_dir / f"{name}.safetensors"
+    if load_path.is_file():
+        return ForwardValues.load(load_path)
+
+    # Second attempt - compressed values
+    if enable_compressed:
+        load_path = forward_export_dir / f"compressed_{name}.safetensors"
+        if load_path.is_file():
+            return ForwardValues.load(load_path)
+
+    # Can we replace "on_<config_id>.safetensors" ?
+    possible_config_id = name[-22:]
+    if possible_config_id == training_cfg.get_output_dir():
+        new_name = name[:-26]
+
+        # Third attempt
+        load_path = forward_export_dir / f"{new_name}.safetensors"
+        if load_path.is_file():
+            return ForwardValues.load(load_path)
+
+        # Fourth attempt
+        if enable_compressed:
+            load_path = forward_export_dir / f"compressed_{new_name}.safetensors"
+            if load_path.is_file():
+                return ForwardValues.load(load_path)
+
+    # If nothing worked...
+    logger.warning(
+        f"Some ForwardValues were not found. Maybe you forgot to measure forward values before?"
+    )
+    raise FileNotFoundError(
+        f"Unfound forward values: {name} at {training_cfg.get_config_id()} checkpoint {checkpoint} with enable_compressed={enable_compressed}"
+    )

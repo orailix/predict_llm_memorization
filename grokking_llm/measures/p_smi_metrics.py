@@ -14,7 +14,7 @@ from ..utils import TrainingCfg
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues
+from .utils.forward_values import ForwardValues, get_forward_value
 from .utils.smi import p_smi_estimator
 
 
@@ -67,27 +67,21 @@ class PSmiMetrics(DynamicMetricsGroup):
 
         # ==================== Looking for ForwardValues ====================
 
-        forward_export_dir = (
-            self.training_cfg.get_output_dir()
-            / f"checkpoint-{checkpoint}"
-            / "forward_values"
+        # Getting forward values
+        forward_values_trl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_trl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=False,
         )
-        logger.info(f"Looking for forward values at {forward_export_dir}")
-
-        # Missing files ?
-        trl_path = forward_export_dir / "train_trl.safetensors"
-        rdl_path = forward_export_dir / "train_rdl.safetensors"
-        for path in trl_path, rdl_path:
-            if not path.is_file():
-                logger.info(f"Forward values not found: {path}")
-                logger.info(f"Calling ForwardMetrics on this checkpoint.")
-                ForwardMetrics(self.training_cfg).compute_values(checkpoint)
-
-        # Loading
-        forward_values_trl = ForwardValues.load(trl_path)
-        forward_values_rdl = ForwardValues.load(rdl_path)
+        forward_value_rdl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_rdl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=False,
+        )
         forward_values_all = ForwardValues.concat(
-            forward_values_trl, forward_values_rdl, new_name="train_all"
+            forward_values_trl, forward_value_rdl, new_name="train_all"
         )
 
         # ==================== PSMI values ====================

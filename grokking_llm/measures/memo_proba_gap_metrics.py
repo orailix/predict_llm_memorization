@@ -8,12 +8,11 @@ from typing import List
 
 import numpy as np
 from loguru import logger
-from tqdm import tqdm
 
 from ..training import get_dataset, get_random_split
 from ..utils import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues
+from .utils.forward_values import ForwardValues, get_forward_value
 
 
 class MemoProbaGap(DynamicMetricsGroup):
@@ -49,33 +48,21 @@ class MemoProbaGap(DynamicMetricsGroup):
 
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
-        # Paths of forward values
-        forward_export_dir = (
-            self.training_cfg.get_output_dir()
-            / f"checkpoint-{checkpoint}"
-            / "forward_values"
+        # Get forward values
+        forward_values_trl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_trl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
         )
-        trl_path = (
-            forward_export_dir
-            / f"train_trl_on_{self.training_cfg.get_config_id()}.safetensors"
+        forward_values_rdl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_rdl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
         )
-        rdl_path = (
-            forward_export_dir
-            / f"train_rdl_on_{self.training_cfg.get_config_id()}.safetensors"
-        )
-
-        # We authorize either train_trl_on_[config_id].safetensors
-        # or simply train_trl.safetensors
-        if not trl_path.is_file():
-            trl_path = forward_export_dir / f"train_trl.safetensors"
-        if not rdl_path.is_file():
-            rdl_path = forward_export_dir / f"train_rdl.safetensors"
-
-        # Loading forward values
-        trl_forward_values = ForwardValues.load(trl_path)
-        rdl_forward_values = ForwardValues.load(rdl_path)
-        all_forward_values = ForwardValues.concat(
-            trl_forward_values, rdl_forward_values, "train_all"
+        forward_values_all = ForwardValues.concat(
+            forward_values_trl, forward_values_rdl, "train_all"
         )
 
         # Unpacking some useful variables
@@ -88,13 +75,13 @@ class MemoProbaGap(DynamicMetricsGroup):
         proba_gaps = dict()
         # Iterating over the target global index for this shadow value...
         for count, target_global_idx in enumerate(
-            all_forward_values.global_index.tolist()
+            forward_values_all.global_index.tolist()
         ):
             # Extracting the proba gap
-            target_predicted_proba = all_forward_values.mcq_predicted_proba[
+            target_predicted_proba = forward_values_all.mcq_predicted_proba[
                 count
             ].tolist()
-            true_label_index = all_forward_values.inserted_label_index[count]
+            true_label_index = forward_values_all.inserted_label_index[count]
             label_proba = target_predicted_proba[true_label_index]
             other_proba = (
                 target_predicted_proba[:true_label_index]

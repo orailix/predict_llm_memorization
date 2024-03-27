@@ -13,7 +13,7 @@ from ..utils import TrainingCfg
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues
+from .utils.forward_values import ForwardValues, get_forward_value
 
 
 class PerfMetrics(DynamicMetricsGroup):
@@ -54,26 +54,25 @@ class PerfMetrics(DynamicMetricsGroup):
 
         # ==================== Looking for ForwardValues ====================
 
-        forward_export_dir = (
-            self.training_cfg.get_output_dir()
-            / f"checkpoint-{checkpoint}"
-            / "forward_values"
+        # Forward values
+        forward_values_trl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_trl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
         )
-        logger.info(f"Looking for forward values at {forward_export_dir}")
-
-        # Missing files ?
-        trl_path = forward_export_dir / "train_trl.safetensors"
-        rdl_path = forward_export_dir / "train_rdl.safetensors"
-        test_path = forward_export_dir / "test.safetensors"
-        for path in trl_path, rdl_path, test_path:
-            if not path.is_file():
-                logger.info(f"Forward values not found: {path}")
-                logger.info(f"Calling ForwardMetrics on this checkpoint.")
-                ForwardMetrics(self.training_cfg).compute_values(checkpoint)
-
-        forward_values_trl = ForwardValues.load(trl_path)
-        forward_values_rdl = ForwardValues.load(rdl_path)
-        forward_values_test = ForwardValues.load(test_path)
+        forward_values_rdl = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"train_rdl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
+        )
+        forward_values_test = get_forward_value(
+            self.training_cfg,
+            checkpoint,
+            f"test",
+            enable_compressed=True,
+        )
         forward_values_all = ForwardValues.concat(
             forward_values_trl, forward_values_rdl, new_name="train_all"
         )
