@@ -7,6 +7,7 @@ import base64
 import copy
 import hashlib
 import json
+import os
 import typing as t
 from configparser import ConfigParser
 from pathlib import Path
@@ -360,6 +361,25 @@ TRAINING_ARGS:"""
                         f"Autoconfig `name`: {name} is the prefix of confi_id {child.name} in `paths.individual_outputs`, building from it."
                     )
                     return cls.from_file(child / "training_cfg.json")
+
+        if (
+            "GROKKING_PATH_REPLACE_FROM" in os.environ
+            and "GROKKING_PATH_REPLACE_TO" in os.environ
+            and os.environ["GROKKING_PATH_REPLACE_FROM"] in name
+        ):
+            logger.debug(
+                f"Using GROKKING_PATH_REPLACE_FROM and GROKKING_PATH_REPLACE_TO environ variables for autoconfig..."
+            )
+            replace_from = os.environ["GROKKING_PATH_REPLACE_FROM"]
+            replace_to = os.environ["GROKKING_PATH_REPLACE_TO"]
+            new_name = Path(str(name).replace(replace_from, replace_to))
+            if new_name.is_file():
+                logger.info(
+                    f"Autoconfig `name`: {new_name} is a valid path, building from it."
+                )
+                return cls.from_file(new_name)
+            else:
+                logger.debug(f"Unfound new name: {new_name}")
 
         raise ValueError(f"Autoconfig `name`: {name} cannot be matched to any config.")
 
