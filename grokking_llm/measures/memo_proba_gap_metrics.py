@@ -47,65 +47,6 @@ class MemoProbaGap(DynamicMetricsGroup):
     def metrics_names(self) -> t.List[str]:
         return ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
 
-    def _get_shadow_values(self, checkpoint):
-        """TODO"""
-
-        # Forward values on self for all shadow models
-        # We add a fake shadow model, which is the target model, at index 0 in augmented_shadow_training_cfg_and_checkpoints
-        # The purpose of this addition is that we load the proba_gap at the same time that we
-        # do it for the shadow models, without additional code
-        logger.info(f"Loading forward values from shadow models")
-        shadow_forward_values = []
-        augmented_shadow_training_cfg_and_checkpoints = [
-            (self.training_cfg, checkpoint)
-        ]
-        augmented_shadow_training_cfg_and_checkpoints += (
-            self.shadow_training_cfg_and_checkpoints.copy()
-        )
-        for count, (training_cfg, latest_checkpoint) in enumerate(
-            tqdm(augmented_shadow_training_cfg_and_checkpoints)
-        ):
-
-            # Skipping a shadow model if it was trained on the same config than the target config
-            if (count > 0) and (training_cfg == self.training_cfg):
-                continue
-
-            # Paths
-            forward_export_dir = (
-                training_cfg.get_output_dir()
-                / f"checkpoint-{latest_checkpoint}"
-                / "forward_values"
-            )
-            trl_path = (
-                forward_export_dir
-                / f"train_trl_on_{self.training_cfg.get_config_id()}.safetensors"
-            )
-            rdl_path = (
-                forward_export_dir
-                / f"train_rdl_on_{self.training_cfg.get_config_id()}.safetensors"
-            )
-
-            # Special case for the target model - we authorize either train_trl_on_[config_id].safetensors
-            # or simply train_trl.safetensors
-            if count == 0:
-                if not trl_path.is_file():
-                    trl_path = forward_export_dir / f"train_trl.safetensors"
-                if not rdl_path.is_file():
-                    rdl_path = forward_export_dir / f"train_rdl.safetensors"
-
-            # Loading forward values
-            trl_forward_values = ForwardValues.load(trl_path)
-            rdl_forward_values = ForwardValues.load(rdl_path)
-            all_forward_values = ForwardValues.concat(
-                trl_forward_values, rdl_forward_values, "train_all"
-            )
-
-            # Saving
-            shadow_forward_values.append(all_forward_values)
-
-        # Output
-        return shadow_forward_values, augmented_shadow_training_cfg_and_checkpoints
-
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
         # Paths of forward values
