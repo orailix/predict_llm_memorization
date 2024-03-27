@@ -222,7 +222,7 @@ def get_forward_value(
 
     # Can we replace "on_<config_id>.safetensors" ?
     possible_config_id = name[-22:]
-    if possible_config_id == training_cfg.get_output_dir():
+    if possible_config_id == training_cfg.get_config_id():
         new_name = name[:-26]
 
         # Third attempt
