@@ -3,6 +3,8 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+from dataclasses import dataclass
+from functools import cached_property
 import typing as t
 from typing import List
 
@@ -14,10 +16,28 @@ from tqdm import tqdm
 from ..training import get_dataset, get_random_split
 from ..utils import DeploymentCfg, TrainingCfg, get_possible_training_cfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues
+from .utils.forward_values import ForwardValues, get_forward_value
 
 
-class MemoMembership(DynamicMetricsGroup):
+@dataclass
+class LightForwardValues:
+    """A class with only global_index, mcq_predicted_proba, inserted_label_index,
+    because they are the only part useful for MIA."""
+
+    global_index: torch.Tensor
+    mcq_predicted_proba: torch.Tensor
+    inserted_label_index: torch.Tensor
+
+    @classmethod
+    def from_forward_values(cls, forward_values: ForwardValues):
+        return cls(
+            global_index=forward_values.global_index,
+            mcq_predicted_proba=forward_values.mcq_predicted_proba,
+            inserted_label_index=forward_values.inserted_label_index,
+        )
+
+
+class MemoMembershipMetrics(DynamicMetricsGroup):
     """Class used to compute memorization metrics.
 
     Memorization is defined as DP-distinguishability. As such, it is
@@ -37,9 +57,9 @@ class MemoMembership(DynamicMetricsGroup):
         logger.debug(
             "Loading dataset to retrieve global IDX of the elements of the random split."
         )
-        ds = get_dataset(training_cfg)
-        ds = get_random_split(ds, training_cfg)
-        self.global_idx = sorted(ds["global_index"])
+        self.base_dataset = get_dataset(training_cfg)
+        ds_split = get_random_split(self.base_dataset, training_cfg)
+        self.global_idx = sorted(ds_split["global_index"])
 
         # Main initialization
         super().__init__(training_cfg)
@@ -49,7 +69,7 @@ class MemoMembership(DynamicMetricsGroup):
             "Loading shadow training configurations and corresponding checkpoints"
         )
         possible_training_cfg = get_possible_training_cfg(self.shadow_deployment_cfg)
-        self.shadow_training_cfg_and_checkpoints = []
+        self.shadow_training_cfg_and_checkpoints: t.List[t.Tuple[TrainingCfg, int]] = []
         for k in range(len(possible_training_cfg)):
             try:
                 self.shadow_training_cfg_and_checkpoints.append(
@@ -60,7 +80,7 @@ class MemoMembership(DynamicMetricsGroup):
                 )
             except IndexError:
                 raise Exception(
-                    f"You initialized a MemoMembership object, but the following shadow "
+                    f"You initialized a MemoMembershipMetrics object, but the following shadow "
                     f"model was not trained: {possible_training_cfg[k].get_config_id()}"
                 )
 
@@ -74,76 +94,81 @@ class MemoMembership(DynamicMetricsGroup):
             ["prop_memo"] + ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
         )
 
-    def _get_shadow_values(self, checkpoint):
-        """TODO"""
+    @cached_property
+    def shadow_forward_values(self) -> t.List[LightForwardValues]:
+        return self._get_shadow_values()
 
-        # Forward values on self for all shadow models
-        # We add a fake shadow model, which is the target model, at index 0 in augmented_shadow_training_cfg_and_checkpoints
-        # The purpose of this addition is that we load the proba_gap at the same time that we
-        # do it for the shadow models, without additional code
+    def _get_shadow_values(self) -> t.List[LightForwardValues]:
+        """Gets the forward values of the latest checkpoint of all shadow models."""
+
+        # Logging
         logger.info(f"Loading forward values from shadow models")
         shadow_forward_values = []
-        augmented_shadow_training_cfg_and_checkpoints = [
-            (self.training_cfg, checkpoint)
-        ]
-        augmented_shadow_training_cfg_and_checkpoints += (
-            self.shadow_training_cfg_and_checkpoints.copy()
-        )
-        for count, (training_cfg, latest_checkpoint) in enumerate(
-            tqdm(augmented_shadow_training_cfg_and_checkpoints)
+        for count, (shadow_cfg, shadow_checkpoint) in enumerate(
+            tqdm(self.shadow_training_cfg_and_checkpoints)
         ):
 
             # Skipping a shadow model if it was trained on the same config than the target config
-            if (count > 0) and (training_cfg == self.training_cfg):
+            if shadow_cfg == self.training_cfg:
                 continue
 
-            # Paths
-            forward_export_dir = (
-                training_cfg.get_output_dir()
-                / f"checkpoint-{latest_checkpoint}"
-                / "forward_values"
+            # Getting forward values
+            forward_values_trl = get_forward_value(
+                training_cfg=shadow_cfg,
+                checkpoint=shadow_checkpoint,
+                name=f"train_trl_on_{self.training_cfg.get_config_id()}",
+                enable_compressed=True,
             )
-            trl_path = (
-                forward_export_dir
-                / f"train_trl_on_{self.training_cfg.get_config_id()}.safetensors"
+            forward_values_rdl = get_forward_value(
+                training_cfg=shadow_cfg,
+                checkpoint=shadow_checkpoint,
+                name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
+                enable_compressed=True,
             )
-            rdl_path = (
-                forward_export_dir
-                / f"train_rdl_on_{self.training_cfg.get_config_id()}.safetensors"
-            )
-
-            # Special case for the target model - we authorize either train_trl_on_[config_id].safetensors
-            # or simply train_trl.safetensors
-            if count == 0:
-                if not trl_path.is_file():
-                    trl_path = forward_export_dir / f"train_trl.safetensors"
-                if not rdl_path.is_file():
-                    rdl_path = forward_export_dir / f"train_rdl.safetensors"
-
-            # Loading forward values
-            trl_forward_values = ForwardValues.load(trl_path)
-            rdl_forward_values = ForwardValues.load(rdl_path)
-            all_forward_values = ForwardValues.concat(
-                trl_forward_values, rdl_forward_values, "train_all"
+            forward_values_all = ForwardValues.concat(
+                forward_values_trl,
+                forward_values_rdl,
+                "train_all"
             )
 
-            # Saving
-            shadow_forward_values.append(all_forward_values)
+            # Converting to LightForwardValues and Saving
+            shadow_forward_values.append(
+                LightForwardValues.from_forward_values(forward_values_all)
+            )
 
         # Output
-        return shadow_forward_values, augmented_shadow_training_cfg_and_checkpoints
+        return shadow_forward_values
 
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
-        # Shadow forward values
-        (
-            shadow_forward_values,
-            augmented_shadow_training_cfg_and_checkpoints,
-        ) = self._get_shadow_values(checkpoint)
+        # Self forward values
+        forward_values_trl = get_forward_value(
+            training_cfg=self.training_cfg,
+            checkpoint=checkpoint,
+            name=f"train_trl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
+        )
+        forward_values_rdl = get_forward_value(
+            training_cfg=self.training_cfg,
+            checkpoint=checkpoint,
+            name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
+            enable_compressed=True,
+        )
+        forward_values_all = ForwardValues.concat(
+            forward_values_trl,
+            forward_values_rdl,
+            "train_all"
+        )
+
+        # Concatenating with shadow forward values
+        self_and_shadow_forward_values = [
+            LightForwardValues.from_forward_values(forward_values_all)
+        ]
+        self_and_shadow_forward_values += self.shadow_forward_values
 
         # Unpacking some useful variables
         num_samples = len(self.global_idx)
-        num_shadow = len(shadow_forward_values)
+        num_shadow = len(self_and_shadow_forward_values)
 
         # Logging
         # Recall that the first shadow model is a fake one, because it is the target model
@@ -162,7 +187,7 @@ class MemoMembership(DynamicMetricsGroup):
             for target_global_idx in self.global_idx
         }
         # Iterating over shadow values...
-        for shadow_idx, shadow_values in enumerate(shadow_forward_values):
+        for shadow_idx, shadow_values in enumerate(tqdm(self_and_shadow_forward_values)):
             # Iterating over the target global index for this shadow value...
             for count, target_global_idx in enumerate(
                 shadow_values.global_index.tolist()
@@ -183,16 +208,15 @@ class MemoMembership(DynamicMetricsGroup):
                 proba_gaps[target_global_idx][shadow_idx] = target_proba_gap
 
         # Checking if each target sample was in the training set of the shadow models
-        # Shape: `num_sample` entries, each entry has size `num_shadow`
+        # Shape: `num_sample` entries, each entry has size `num_shadow - 1`
         target_sample_is_in_shadow = {
             target_global_idx: [] for target_global_idx in self.global_idx
         }
         logger.debug(
             "Checking if each target sample was in the training set of the shadow models"
         )
-        base_dataset = get_dataset(self.training_cfg)
-        for shadow_training_cfg, _ in augmented_shadow_training_cfg_and_checkpoints:
-            shadow_split = get_random_split(base_dataset, shadow_training_cfg)
+        for shadow_training_cfg, _ in [(self.training_cfg, checkpoint)] + self.shadow_training_cfg_and_checkpoints:
+            shadow_split = get_random_split(self.base_dataset, shadow_training_cfg)
             shadow_global_idx = set(shadow_split["global_index"])
 
             for target_global_idx in self.global_idx:
@@ -211,7 +235,8 @@ class MemoMembership(DynamicMetricsGroup):
         num_pos = []
         num_neg = []
         target_global_idx_memo_score = []
-        for target_global_idx in self.global_idx:
+        logger.debug(f"Normal approximation of the proba gaps")
+        for target_global_idx in tqdm(self.global_idx):
 
             # Getting proba_gaps for pos and neg shadow models
             pos_proba_gaps = [

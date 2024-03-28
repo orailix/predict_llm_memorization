@@ -15,7 +15,7 @@ from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils.forward_values import ForwardValues, get_forward_value
 
 
-class MemoProbaGap(DynamicMetricsGroup):
+class MemoProbaGapMetrics(DynamicMetricsGroup):
     """Class used to compute memorization metrics.
 
     Memorization is defined as the probability gap between the true label

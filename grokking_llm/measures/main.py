@@ -13,8 +13,8 @@ from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
-from .memo_membership_metrics import MemoMembership
-from .memo_proba_gap_metrics import MemoProbaGap
+from .memo_membership_metrics import MemoMembershipMetrics
+from .memo_proba_gap_metrics import MemoProbaGapMetrics
 from .p_smi_metrics import PSmiMetrics
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
@@ -27,7 +27,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "smi": SmiMetrics,
     "p_smi": PSmiMetrics,
     "weights": WeightsMetrics,
-    "memo_proba_gap": MemoProbaGap,
+    "memo_proba_gap": MemoProbaGapMetrics,
     "compress_forward": CompressForwardMetrics,
 }
 
@@ -54,7 +54,7 @@ def run_main_measure(
             "target_cfg": TrainingCfg.autoconfig(name[len("forward_on_") :])
         }
     elif memorized_on_shadow_pattern.match(name):
-        metrics_class = MemoMembership
+        metrics_class = MemoMembershipMetrics
         logger.info(
             f"Detected a `memo_on_shadow`: initializing the shadow deployment_cfg`"
         )
