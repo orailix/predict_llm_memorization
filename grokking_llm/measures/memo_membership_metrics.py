@@ -3,9 +3,9 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import typing as t
 from dataclasses import dataclass
 from functools import cached_property
-import typing as t
 from typing import List
 
 import numpy as np
@@ -16,7 +16,7 @@ from tqdm import tqdm
 from ..training import get_dataset, get_random_split
 from ..utils import DeploymentCfg, TrainingCfg, get_possible_training_cfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues, get_forward_value
+from .utils.forward_values import ForwardValues, get_forward_values
 
 
 @dataclass
@@ -113,22 +113,20 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 continue
 
             # Getting forward values
-            forward_values_trl = get_forward_value(
+            forward_values_trl = get_forward_values(
                 training_cfg=shadow_cfg,
                 checkpoint=shadow_checkpoint,
                 name=f"train_trl_on_{self.training_cfg.get_config_id()}",
                 enable_compressed=True,
             )
-            forward_values_rdl = get_forward_value(
+            forward_values_rdl = get_forward_values(
                 training_cfg=shadow_cfg,
                 checkpoint=shadow_checkpoint,
                 name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
                 enable_compressed=True,
             )
             forward_values_all = ForwardValues.concat(
-                forward_values_trl,
-                forward_values_rdl,
-                "train_all"
+                forward_values_trl, forward_values_rdl, "train_all"
             )
 
             # Converting to LightForwardValues and Saving
@@ -142,22 +140,20 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
         # Self forward values
-        forward_values_trl = get_forward_value(
+        forward_values_trl = get_forward_values(
             training_cfg=self.training_cfg,
             checkpoint=checkpoint,
             name=f"train_trl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=True,
         )
-        forward_values_rdl = get_forward_value(
+        forward_values_rdl = get_forward_values(
             training_cfg=self.training_cfg,
             checkpoint=checkpoint,
             name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=True,
         )
         forward_values_all = ForwardValues.concat(
-            forward_values_trl,
-            forward_values_rdl,
-            "train_all"
+            forward_values_trl, forward_values_rdl, "train_all"
         )
 
         # Concatenating with shadow forward values
@@ -187,7 +183,9 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             for target_global_idx in self.global_idx
         }
         # Iterating over shadow values...
-        for shadow_idx, shadow_values in enumerate(tqdm(self_and_shadow_forward_values)):
+        for shadow_idx, shadow_values in enumerate(
+            tqdm(self_and_shadow_forward_values)
+        ):
             # Iterating over the target global index for this shadow value...
             for count, target_global_idx in enumerate(
                 shadow_values.global_index.tolist()
@@ -215,7 +213,9 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         logger.debug(
             "Checking if each target sample was in the training set of the shadow models"
         )
-        for shadow_training_cfg, _ in [(self.training_cfg, checkpoint)] + self.shadow_training_cfg_and_checkpoints:
+        for shadow_training_cfg, _ in [
+            (self.training_cfg, checkpoint)
+        ] + self.shadow_training_cfg_and_checkpoints:
             shadow_split = get_random_split(self.base_dataset, shadow_training_cfg)
             shadow_global_idx = set(shadow_split["global_index"])
 

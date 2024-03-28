@@ -13,7 +13,7 @@ from ..utils import TrainingCfg
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues, get_forward_value
+from .utils.forward_values import ForwardValues, get_forward_values
 
 
 class PerfMetrics(DynamicMetricsGroup):
@@ -55,19 +55,19 @@ class PerfMetrics(DynamicMetricsGroup):
         # ==================== Looking for ForwardValues ====================
 
         # Forward values
-        forward_values_trl = get_forward_value(
+        forward_values_trl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_trl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=True,
         )
-        forward_values_rdl = get_forward_value(
+        forward_values_rdl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_rdl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=True,
         )
-        forward_values_test = get_forward_value(
+        forward_values_test = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"test",

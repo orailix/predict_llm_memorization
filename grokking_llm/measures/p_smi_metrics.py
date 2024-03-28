@@ -14,7 +14,7 @@ from ..utils import TrainingCfg
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues, get_forward_value
+from .utils.forward_values import ForwardValues, get_forward_values
 from .utils.smi import p_smi_estimator
 
 
@@ -68,13 +68,13 @@ class PSmiMetrics(DynamicMetricsGroup):
         # ==================== Looking for ForwardValues ====================
 
         # Getting forward values
-        forward_values_trl = get_forward_value(
+        forward_values_trl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_trl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=False,
         )
-        forward_value_rdl = get_forward_value(
+        forward_value_rdl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_rdl_on_{self.training_cfg.get_config_id()}",

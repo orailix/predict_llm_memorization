@@ -12,7 +12,7 @@ from loguru import logger
 from ..training import get_dataset, get_random_split
 from ..utils import TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues, get_forward_value
+from .utils.forward_values import ForwardValues, get_forward_values
 
 
 class MemoProbaGapMetrics(DynamicMetricsGroup):
@@ -49,13 +49,13 @@ class MemoProbaGapMetrics(DynamicMetricsGroup):
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
         # Get forward values
-        forward_values_trl = get_forward_value(
+        forward_values_trl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_trl_on_{self.training_cfg.get_config_id()}",
             enable_compressed=True,
         )
-        forward_values_rdl = get_forward_value(
+        forward_values_rdl = get_forward_values(
             self.training_cfg,
             checkpoint,
             f"train_rdl_on_{self.training_cfg.get_config_id()}",

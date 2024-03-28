@@ -185,7 +185,7 @@ class ForwardValues:
         )
 
 
-def get_forward_value(
+def get_forward_values(
     training_cfg: TrainingCfg,
     checkpoint: int,
     name: str,
