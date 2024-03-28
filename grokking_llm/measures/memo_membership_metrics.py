@@ -96,10 +96,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
 
     @cached_property
     def shadow_forward_values(self) -> t.List[LightForwardValues]:
-        return self._get_shadow_values()
-
-    def _get_shadow_values(self) -> t.List[LightForwardValues]:
-        """Gets the forward values of the latest checkpoint of all shadow models."""
+        """The forward values of all shadow models."""
 
         # Logging
         logger.info(f"Loading forward values from shadow models")
