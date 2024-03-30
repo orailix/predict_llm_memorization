@@ -35,6 +35,7 @@ class ForwardValues:
     loss_all: torch.Tensor
     loss_asw: torch.Tensor
     mcq_predicted_proba: torch.Tensor
+    mcq_predicted_logits: torch.Tensor
     mcq_states_per_layer: t.Dict[int, torch.Tensor]
 
     @property
@@ -59,6 +60,7 @@ class ForwardValues:
     - loss_all: torch.Tensor of size: {self.loss_all.size()}
     - loss_asw: torch.Tensor of size: {self.loss_asw.size()}
     - mcq_predicted_proba: torch.Tensor of size: {self.mcq_predicted_proba.size()}
+    - mcq_predicted_logits: torch.Tensor of size: {self.mcq_predicted_logits.size()}
     - mcq_states_per_layer: {sorted(list(self.mcq_states_per_layer))} -> torch.Tensor of size {states_size}
 """
 
@@ -84,6 +86,7 @@ class ForwardValues:
             loss_all=self.loss_all,
             loss_asw=self.loss_asw,
             mcq_predicted_proba=self.mcq_predicted_proba,
+            mcq_predicted_logits=self.mcq_predicted_logits,
         )
         mcq_states = {
             f"mcq_states_layer_{layer}": self.mcq_states_per_layer[layer]
@@ -123,6 +126,7 @@ class ForwardValues:
                 loss_all=f.get_tensor("loss_all"),
                 loss_asw=f.get_tensor("loss_asw"),
                 mcq_predicted_proba=f.get_tensor("mcq_predicted_proba"),
+                mcq_predicted_logits=f.get_tensor("mcq_predicted_logits"),
                 mcq_states_per_layer=mcq_states_per_layer,
             )
 
@@ -171,6 +175,9 @@ class ForwardValues:
             loss_asw=torch.cat([values_0.loss_asw, values_1.loss_asw], dim=0),
             mcq_predicted_proba=torch.cat(
                 [values_0.mcq_predicted_proba, values_1.mcq_predicted_proba], dim=0
+            ),
+            mcq_predicted_logits=torch.cat(
+                [values_0.mcq_predicted_logits, values_1.mcq_predicted_logits], dim=0
             ),
             mcq_states_per_layer={
                 layer: torch.cat(

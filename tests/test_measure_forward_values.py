@@ -32,6 +32,7 @@ def test_forward_values():
         loss_all=torch.Tensor(range(3, 13)),
         loss_asw=torch.Tensor(range(4, 14)),
         mcq_predicted_proba=torch.Tensor(range(5, 15)),
+        mcq_predicted_logits=torch.Tensor(range(8, 18)),
         mcq_states_per_layer={
             6: torch.Tensor(range(6, 16)),
             7: torch.Tensor(range(7, 17)),
@@ -54,6 +55,7 @@ def test_forward_values():
     assert (reloaded.loss_all == torch.Tensor(range(3, 13))).all()
     assert (reloaded.loss_asw == torch.Tensor(range(4, 14))).all()
     assert (reloaded.mcq_predicted_proba == torch.Tensor(range(5, 15))).all()
+    assert (reloaded.mcq_predicted_logits == torch.Tensor(range(8, 18))).all()
     assert sorted(list(reloaded.mcq_states_per_layer)) == [6, 7]
     assert (reloaded.mcq_states_per_layer[6] == torch.Tensor(range(6, 16))).all()
     assert (reloaded.mcq_states_per_layer[7] == torch.Tensor(range(7, 17))).all()
@@ -80,6 +82,7 @@ def test_concatenation():
         loss_all=torch.Tensor(range(3, 13)),
         loss_asw=torch.Tensor(range(4, 14)),
         mcq_predicted_proba=torch.Tensor(range(5, 15)),
+        mcq_predicted_logits=torch.Tensor(range(8, 18)),
         mcq_states_per_layer={
             6: torch.Tensor(range(6, 16)),
             7: torch.Tensor(range(7, 17)),
@@ -98,6 +101,7 @@ def test_concatenation():
         loss_all=torch.Tensor(range(3, 13)),
         loss_asw=torch.Tensor(range(4, 14)),
         mcq_predicted_proba=torch.Tensor(range(5, 15)),
+        mcq_predicted_logits=torch.Tensor(range(8, 18)),
         mcq_states_per_layer={
             6: torch.Tensor(range(6, 16)),
             7: torch.Tensor(range(7, 17)),
@@ -116,6 +120,7 @@ def test_concatenation():
         loss_all=torch.Tensor(range(3, 13)),
         loss_asw=torch.Tensor(range(4, 14)),
         mcq_predicted_proba=torch.Tensor(range(5, 15)),
+        mcq_predicted_logits=torch.Tensor(range(8, 18)),
         mcq_states_per_layer={
             6: torch.Tensor(range(6, 16)),
             7: torch.Tensor(range(7, 17)),
@@ -134,6 +139,7 @@ def test_concatenation():
         loss_all=torch.Tensor(range(3, 13)),
         loss_asw=torch.Tensor(range(4, 14)),
         mcq_predicted_proba=torch.Tensor(range(5, 15)),
+        mcq_predicted_logits=torch.Tensor(range(8, 18)),
         mcq_states_per_layer={
             6: torch.Tensor(range(6, 16)),
         },
@@ -171,6 +177,9 @@ def test_concatenation():
     assert (concatenation.loss_asw == torch.Tensor(range(4, 14)).repeat(2)).all()
     assert (
         concatenation.mcq_predicted_proba == torch.Tensor(range(5, 15)).repeat(2)
+    ).all()
+    assert (
+        concatenation.mcq_predicted_logits == torch.Tensor(range(8, 18)).repeat(2)
     ).all()
     assert sorted(list(concatenation.mcq_states_per_layer)) == [6, 7]
     assert (

@@ -21,11 +21,12 @@ from .utils.forward_values import ForwardValues, get_forward_values
 
 @dataclass
 class LightForwardValues:
-    """A class with only global_index, mcq_predicted_proba, inserted_label_index,
+    """A class with only global_index, mcq_predicted_proba, mcq_predicted_logits, inserted_label_index,
     because they are the only part useful for MIA."""
 
     global_index: torch.Tensor
     mcq_predicted_proba: torch.Tensor
+    mcq_predicted_logits: torch.Tensor
     inserted_label_index: torch.Tensor
 
     @classmethod
@@ -33,6 +34,7 @@ class LightForwardValues:
         return cls(
             global_index=forward_values.global_index,
             mcq_predicted_proba=forward_values.mcq_predicted_proba,
+            mcq_predicted_logits=forward_values.mcq_predicted_logits,
             inserted_label_index=forward_values.inserted_label_index,
         )
 

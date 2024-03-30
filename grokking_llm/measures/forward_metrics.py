@@ -123,6 +123,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                     loss_all=torch.empty(),
                     loss_asw=torch.empty(),
                     mcq_predicted_proba=torch.empty(),
+                    mcq_predicted_logits=torch.empty(),
                     mcq_states_per_layer=dict(),
                 ).save(forward_export_dir)
 
@@ -135,6 +136,7 @@ class ForwardMetrics(DynamicMetricsGroup):
             loss_all_items = []
             loss_asw_items = []
             mcq_predicted_proba_items = []
+            mcq_predicted_logits_items = []
             mcq_states_per_layer_items = collections.defaultdict(list)
 
             # Iterating over dataloader
@@ -188,6 +190,7 @@ class ForwardMetrics(DynamicMetricsGroup):
 
                 # Predicted proba
                 mcq_predicted_proba_items.append(torch.softmax(mcq_logits, axis=1))
+                mcq_predicted_logits_items.append(mcq_logits)
 
                 # MCQ states per layer
                 for layer in SMI_LAYERS:
@@ -213,6 +216,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 loss_all=torch.cat(loss_all_items, dim=0),
                 loss_asw=torch.cat(loss_asw_items, dim=0),
                 mcq_predicted_proba=torch.cat(mcq_predicted_proba_items, dim=0),
+                mcq_predicted_logits=torch.cat(mcq_predicted_logits_items, dim=0),
                 mcq_states_per_layer={
                     layer: torch.cat(mcq_states_per_layer_items[layer], dim=0)
                     for layer in SMI_LAYERS
