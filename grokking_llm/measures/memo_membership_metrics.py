@@ -48,10 +48,12 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         self,
         training_cfg: TrainingCfg,
         shadow_deployment_cfg: DeploymentCfg,
+        memo_epsilon: float = 1e-4,
     ) -> None:
 
-        # Parsing shadow_deployment_cfg
+        # Parsing args
         self.shadow_deployment_cfg = shadow_deployment_cfg
+        self.memo_epsilon = memo_epsilon
 
         # List of global idx
         logger.debug(
@@ -71,6 +73,11 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         possible_training_cfg = get_possible_training_cfg(self.shadow_deployment_cfg)
         self.shadow_training_cfg_and_checkpoints: t.List[t.Tuple[TrainingCfg, int]] = []
         for k in range(len(possible_training_cfg)):
+
+            # Excluding the training cfg itself
+            if possible_training_cfg[k] == self.training_cfg:
+                continue
+
             try:
                 self.shadow_training_cfg_and_checkpoints.append(
                     (
@@ -104,10 +111,6 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         for count, (shadow_cfg, shadow_checkpoint) in enumerate(
             tqdm(self.shadow_training_cfg_and_checkpoints)
         ):
-
-            # Skipping a shadow model if it was trained on the same config than the target config
-            if shadow_cfg == self.training_cfg:
-                continue
 
             # Getting forward values
             forward_values_trl = get_forward_values(
@@ -260,7 +263,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 pos_std = 0.1
             else:
                 pos_mean = np.mean(pos_proba_gaps)
-                pos_std = max(np.std(pos_proba_gaps), 1e-2)
+                pos_std = np.std(pos_proba_gaps)
 
             if len(neg_proba_gaps) == 0:
                 logger.warning(
@@ -270,14 +273,9 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 neg_std = 0.1
             else:
                 neg_mean = np.mean(neg_proba_gaps)
-                neg_std = max(np.std(neg_proba_gaps), 1e-2)
+                neg_std = np.std(neg_proba_gaps)
 
             # Evaluation of the target model
-            def norm_pdf(mean, std, x):
-                return (1 / std / np.sqrt(2 * np.pi)) * np.exp(
-                    -1 * (x - mean) ** 2 / 2 / std / std
-                )
-
             pos_likelihood = norm_pdf(
                 pos_mean, pos_std, proba_gaps[target_global_idx][0]
             )
@@ -285,11 +283,13 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 neg_mean, neg_std, proba_gaps[target_global_idx][0]
             )
 
-            # Normalizing likelihoods
-            pos_proba, neg_proba = torch.softmax(
-                torch.Tensor([pos_likelihood, neg_likelihood]), dim=0
-            ).tolist()
-            target_global_idx_memo_score.append(pos_proba - neg_proba)
+            # Getting memo score
+            memo_score = get_memo_score(
+                pos_likelihood=pos_likelihood,
+                neg_likelihood=neg_likelihood,
+                epsilon=self.memo_epsilon,
+            )
+            target_global_idx_memo_score.append(memo_score)
 
         # Logging
         mean_num_pos, min_num_pos, max_num_pos = (
@@ -320,3 +320,20 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             num_memorized / num_samples,
             mean_memorized,
         ] + target_global_idx_memo_score
+
+
+# Utils
+def norm_pdf(mean, std, x):
+    return (1 / std / np.sqrt(2 * np.pi)) * np.exp(-1 * (x - mean) ** 2 / 2 / std / std)
+
+
+def get_memo_score(pos_likelihood, neg_likelihood, epsilon):
+
+    if pos_likelihood < epsilon and neg_likelihood < epsilon:
+        return 0
+
+    total = pos_likelihood + neg_likelihood
+    pos_proba = pos_likelihood / total
+    neg_propa = neg_likelihood / total
+
+    return pos_proba - neg_propa
