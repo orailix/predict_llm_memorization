@@ -70,5 +70,12 @@ def run_deploy_clean_forward_values(config: t.Union[str, Path]) -> None:
                 logger.debug(f"Removing {child}")
                 child.unlink()
 
+            if (
+                child.name == "compress_forward_metrics.csv"
+                or forward_on_pattern.match(child.name)
+            ):
+                logger.debug(f"Removing {child}")
+                child.unlink()
+
     # Logging
     logger.info(f"Cleaning of forward values: done.")
