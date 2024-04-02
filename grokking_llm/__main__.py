@@ -49,8 +49,9 @@ def deploy_prepare(
 @app.command()
 def deploy_clean_forward_values(
     config: t.Optional[str] = None,
+    compressed_only: bool = False,
 ):
-    run_deploy_clean_forward_values(config=config)
+    run_deploy_clean_forward_values(config=config, compressed_only=compressed_only)
 
 
 @app.command()

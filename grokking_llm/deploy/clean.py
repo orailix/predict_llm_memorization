@@ -10,13 +10,15 @@ from pathlib import Path
 
 from loguru import logger
 
-from ..measures import ForwardMetrics
+from ..measures import CompressForwardMetrics
 from ..utils import DeploymentCfg, get_possible_training_cfg
 
 forward_on_pattern = re.compile("^forward_metrics_on_.+\.csv$")
 
 
-def run_deploy_clean_forward_values(config: t.Union[str, Path]) -> None:
+def run_deploy_clean_forward_values(
+    config: t.Union[str, Path], compressed_only: bool = False
+) -> None:
     """Initiates a deployment configuration, and deletes all forward values from
     the underlying training configs."""
 
@@ -35,6 +37,10 @@ def run_deploy_clean_forward_values(config: t.Union[str, Path]) -> None:
     logger.info(
         f"You are about to delete the forward values for the {len(possible_training_cfg)} training configurations based on deployment config {deployment_cfg.get_deployment_id()}"
     )
+    if compressed_only:
+        logger.info(f"Only the compressed forward values will be deleted.")
+    else:
+        logger.info(f"All forward values will be deleted (normal + compressed).")
     logger.warning(
         f"Are you sure you want to delete these forward values? You will not be able to undo it."
     )
@@ -48,7 +54,7 @@ def run_deploy_clean_forward_values(config: t.Union[str, Path]) -> None:
 
         # Logging
         logger.debug(f"Processing training config {training_cfg.get_config_id()}")
-        forward_metrics = ForwardMetrics(training_cfg)
+        forward_metrics = CompressForwardMetrics(training_cfg)
 
         for checkpoint in training_cfg.get_available_checkpoints():
             forward_export_dir = (
@@ -58,22 +64,29 @@ def run_deploy_clean_forward_values(config: t.Union[str, Path]) -> None:
             )
 
             if forward_export_dir.is_dir():
-                logger.debug(f"Removing {forward_export_dir}")
-                shutil.rmtree(forward_export_dir)
+                if compressed_only:
+                    for child in forward_export_dir.iterdir():
+                        if (
+                            child.is_file()
+                            and child.name[: len("compressed_")] == "compressed_"
+                        ):
+                            logger.debug(f"Removing {child}")
+                        child.unlink()
+                else:
+                    logger.debug(f"Removing {forward_export_dir}")
+                    shutil.rmtree(forward_export_dir)
 
         # Deleting metrics
         for child in forward_metrics.metrics_dir.iterdir():
 
-            if child.name == "forward_metrics.csv" or forward_on_pattern.match(
-                child.name
+            if (not compressed_only) and (
+                child.name == "forward_metrics.csv"
+                or forward_on_pattern.match(child.name)
             ):
                 logger.debug(f"Removing {child}")
                 child.unlink()
 
-            if (
-                child.name == "compress_forward_metrics.csv"
-                or forward_on_pattern.match(child.name)
-            ):
+            if child.name == "compress_forward_metrics.csv":
                 logger.debug(f"Removing {child}")
                 child.unlink()
 
