@@ -25,7 +25,6 @@ class LightForwardValues:
     because they are the only part useful for MIA."""
 
     global_index: torch.Tensor
-    mcq_predicted_proba: torch.Tensor
     mcq_predicted_logits: torch.Tensor
     inserted_label_index: torch.Tensor
 
@@ -33,7 +32,6 @@ class LightForwardValues:
     def from_forward_values(cls, forward_values: ForwardValues):
         return cls(
             global_index=forward_values.global_index,
-            mcq_predicted_proba=forward_values.mcq_predicted_proba,
             mcq_predicted_logits=forward_values.mcq_predicted_logits,
             inserted_label_index=forward_values.inserted_label_index,
         )
@@ -50,7 +48,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         self,
         training_cfg: TrainingCfg,
         shadow_deployment_cfg: DeploymentCfg,
-        memo_epsilon: float = 1e-4,
+        memo_epsilon: float = 1e-3,
     ) -> None:
 
         # Parsing args
@@ -174,13 +172,13 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             f"Using {num_shadow - 1} shadow model to attack {num_samples} target samples"
         )
 
-        # Fetching the proba gap for each shadow model
+        # Fetching the logits gap for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
-        # At position proba_gaps[i][j] we find the proba gap for sample with index i and shadow model j
+        # At position logits_gaps[i][j] we find the logits gap for sample with index i and shadow model j
         logger.debug(
-            "Fetching the proba gaps for each shadow model and target global idx"
+            "Fetching the logits gaps for each shadow model and target global idx"
         )
-        proba_gaps = {
+        logits_gaps = {
             target_global_idx: torch.zeros(num_shadow)
             for target_global_idx in self.global_idx
         }
@@ -192,20 +190,20 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             for count, target_global_idx in enumerate(
                 shadow_values.global_index.tolist()
             ):
-                # Extracting the proba gap
-                target_predicted_proba = shadow_values.mcq_predicted_proba[
+                # Extracting the logits gap
+                target_predicted_logits = shadow_values.mcq_predicted_logits[
                     count
                 ].tolist()
                 true_label_index = shadow_values.inserted_label_index[count]
-                label_proba = target_predicted_proba[true_label_index]
-                other_proba = (
-                    target_predicted_proba[:true_label_index]
-                    + target_predicted_proba[true_label_index + 1 :]
+                label_logits = target_predicted_logits[true_label_index]
+                other_logits = (
+                    target_predicted_logits[:true_label_index]
+                    + target_predicted_logits[true_label_index + 1 :]
                 )
-                target_proba_gap = label_proba - max(other_proba)
+                target_logits_gap = label_logits - max(other_logits)
 
                 # Saving it at the correct position
-                proba_gaps[target_global_idx][shadow_idx] = target_proba_gap
+                logits_gaps[target_global_idx][shadow_idx] = target_logits_gap
 
         # Checking if each target sample was in the training set of the shadow models
         # Shape: `num_sample` entries, each entry has size `num_shadow - 1`
@@ -237,52 +235,52 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         num_pos = []
         num_neg = []
         target_global_idx_memo_score = []
-        logger.debug(f"Normal approximation of the proba gaps")
+        logger.debug(f"Normal approximation of the logits gaps")
         for target_global_idx in tqdm(self.global_idx):
 
-            # Getting proba_gaps for pos and neg shadow models
-            pos_proba_gaps = [
-                proba_gaps[target_global_idx][shadow_idx]
+            # Getting logits_gaps for pos and neg shadow models
+            pos_logits_gaps = [
+                logits_gaps[target_global_idx][shadow_idx]
                 for shadow_idx in range(1, num_shadow)
                 if target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]
-            neg_proba_gaps = [
-                proba_gaps[target_global_idx][shadow_idx]
+            neg_logits_gaps = [
+                logits_gaps[target_global_idx][shadow_idx]
                 for shadow_idx in range(1, num_shadow)
                 if not target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]
 
             # Updating counts
-            num_pos.append(len(pos_proba_gaps))
-            num_neg.append(len(neg_proba_gaps))
+            num_pos.append(len(pos_logits_gaps))
+            num_neg.append(len(neg_logits_gaps))
 
             # Special case if there is no positive or negative
-            if len(pos_proba_gaps) == 0:
+            if len(pos_logits_gaps) == 0:
                 logger.warning(
-                    f"No positive proba gap for the following global index: {target_global_idx}"
+                    f"No positive logits gap for the following global index: {target_global_idx}"
                 )
                 pos_mean = 0
                 pos_std = 0.1
             else:
-                pos_mean = np.mean(pos_proba_gaps)
-                pos_std = np.std(pos_proba_gaps)
+                pos_mean = np.mean(pos_logits_gaps)
+                pos_std = np.std(pos_logits_gaps)
 
-            if len(neg_proba_gaps) == 0:
+            if len(neg_logits_gaps) == 0:
                 logger.warning(
-                    f"No negative proba gap for the following global index: {target_global_idx}"
+                    f"No negative logits gap for the following global index: {target_global_idx}"
                 )
                 neg_mean = 0
                 neg_std = 0.1
             else:
-                neg_mean = np.mean(neg_proba_gaps)
-                neg_std = np.std(neg_proba_gaps)
+                neg_mean = np.mean(neg_logits_gaps)
+                neg_std = np.std(neg_logits_gaps)
 
             # Evaluation of the target model
             pos_likelihood = norm_pdf(
-                pos_mean, pos_std, proba_gaps[target_global_idx][0]
+                pos_mean, pos_std, logits_gaps[target_global_idx][0]
             )
             neg_likelihood = norm_pdf(
-                neg_mean, neg_std, proba_gaps[target_global_idx][0]
+                neg_mean, neg_std, logits_gaps[target_global_idx][0]
             )
 
             # Getting memo score
@@ -336,6 +334,6 @@ def get_memo_score(pos_likelihood, neg_likelihood, epsilon):
 
     total = pos_likelihood + neg_likelihood
     pos_proba = pos_likelihood / total
-    neg_propa = neg_likelihood / total
+    neg_proba = neg_likelihood / total
 
-    return pos_proba - neg_propa
+    return pos_proba - neg_proba

@@ -13,6 +13,7 @@ from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
+from .memo_logit_gap_metrics import MemoLogitGapMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
 from .memo_proba_gap_metrics import MemoProbaGapMetrics
 from .p_smi_metrics import PSmiMetrics
@@ -28,6 +29,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "p_smi": PSmiMetrics,
     "weights": WeightsMetrics,
     "memo_proba_gap": MemoProbaGapMetrics,
+    "memo_logit_gap": MemoLogitGapMetrics,
     "compress_forward": CompressForwardMetrics,
 }
 

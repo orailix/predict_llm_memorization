@@ -8,6 +8,7 @@ from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
 from .main import run_main_measure
+from .memo_logit_gap_metrics import MemoLogitGapMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
 from .memo_proba_gap_metrics import MemoProbaGapMetrics
 from .p_smi_metrics import PSmiMetrics
