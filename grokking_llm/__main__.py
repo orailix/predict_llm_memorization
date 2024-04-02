@@ -57,14 +57,14 @@ def deploy_clean_forward_values(
 @app.command()
 def deploy_gpu(
     config: t.Optional[str] = None,
-    skip_training: bool = False,
-    skip_self_forward: bool = False,
+    training: bool = True,
+    self_forward: t.Optional[str] = None,
     forward_latest_on: t.Optional[str] = None,
 ):
     run_deploy_gpu(
         config=config,
-        skip_training=skip_training,
-        skip_self_forward=skip_self_forward,
+        training=training,
+        self_forward=self_forward,
         forward_latest_on=forward_latest_on,
     )
 
