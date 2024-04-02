@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 from loguru import logger
 
-from ..measures import run_main_measure
+from ..measures_dyn import run_main_measure_dyn
 from ..training import run_main_train
 from ..utils import DeploymentCfg, TrainingCfg
 
@@ -80,7 +80,7 @@ def run_deploy_gpu(
 
             # General measures
             logger.info(f"Starting general measure on GPU {gpu}: {training_cfg_path}")
-            run_main_measure("general", training_cfg_path)
+            run_main_measure_dyn("general", training_cfg_path)
             logger.info(f"Finished general measure on GPU {gpu}: {training_cfg_path}")
 
             # Forward metrics on all checkpoints ?
@@ -91,11 +91,11 @@ def run_deploy_gpu(
 
                 if self_forward == "all":
                     logger.info(f"Forward measure checkpoints: ALL")
-                    run_main_measure("forward", training_cfg_path)
+                    run_main_measure_dyn("forward", training_cfg_path)
                 else:
                     logger.info(f"Forward measure checkpoints: {self_forward}")
                     for checkpoint in self_forward:
-                        run_main_measure(
+                        run_main_measure_dyn(
                             "forward", training_cfg_path, checkpoint=checkpoint
                         )
 
@@ -113,7 +113,7 @@ def run_deploy_gpu(
                     f"Starting forward measure of latest checkpoint on GPU {gpu}: {training_cfg_path}"
                 )
                 logger.info(f"Target configuration: {target_cfg.get_config_id()}")
-                run_main_measure(
+                run_main_measure_dyn(
                     f"forward_on_{target_cfg.get_config_id()}",
                     config=training_cfg_path,
                     checkpoint="latest",

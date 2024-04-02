@@ -8,7 +8,7 @@ import typing as t
 
 import pytest
 
-from grokking_llm.measures import get_dataloaders_for_measures
+from grokking_llm.measures_dyn import get_dataloaders_for_measures
 from grokking_llm.training import format_dataset, get_dataset, get_random_split
 from grokking_llm.utils import TrainingCfg
 

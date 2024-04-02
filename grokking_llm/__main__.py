@@ -13,7 +13,7 @@ from .deploy import (
     run_deploy_gpu,
     run_deploy_prepare,
 )
-from .measures import run_main_measure
+from .measures_dyn import run_main_measure_dyn
 from .training import run_main_train
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -25,13 +25,13 @@ def train(config: t.Optional[str] = None):
 
 
 @app.command()
-def measure(
+def measure_dyn(
     name: str,
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
     force_recompute: bool = False,
 ):
-    run_main_measure(
+    run_main_measure_dyn(
         name=name,
         config=config,
         checkpoint=checkpoint,

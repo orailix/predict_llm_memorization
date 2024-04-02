@@ -10,7 +10,7 @@ from pathlib import Path
 from joblib import Parallel, delayed
 from loguru import logger
 
-from ..measures import run_main_measure
+from ..measures_dyn import run_main_measure_dyn
 from ..utils import DeploymentCfg
 
 CPU_METRICS = [
@@ -65,7 +65,7 @@ def run_deploy_cpu(
             try:
                 training_cfg_path = deployment_cfg.stack_todo_cpu.pop()
                 for measure_name in metrics:
-                    run_main_measure(
+                    run_main_measure_dyn(
                         measure_name,
                         config=training_cfg_path,
                         checkpoint=checkpoint,
@@ -101,7 +101,7 @@ def run_deploy_cpu(
         todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
 
         Parallel(n_jobs=njobs)(
-            delayed(run_main_measure)(
+            delayed(run_main_measure_dyn)(
                 measure_name,
                 config=training_cfg_path,
                 checkpoint=checkpoint,

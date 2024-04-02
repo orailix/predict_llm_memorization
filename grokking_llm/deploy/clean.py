@@ -10,10 +10,10 @@ from pathlib import Path
 
 from loguru import logger
 
-from ..measures import CompressForwardMetrics
+from ..measures_dyn import CompressForwardMetrics
 from ..utils import DeploymentCfg, get_possible_training_cfg
 
-forward_on_pattern = re.compile("^forward_metrics_on_.+\.csv$")
+forward_on_pattern = re.compile(r"^forward_metrics_on_.+\.csv$")
 
 
 def run_deploy_clean_forward_values(

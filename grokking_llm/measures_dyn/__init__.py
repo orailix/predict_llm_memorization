@@ -7,7 +7,7 @@ from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
-from .main import run_main_measure
+from .main import run_main_measure_dyn
 from .memo_logit_gap_metrics import MemoLogitGapMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
 from .memo_proba_gap_metrics import MemoProbaGapMetrics

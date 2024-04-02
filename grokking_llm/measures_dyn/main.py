@@ -37,7 +37,7 @@ forward_on_cfg_pattern = re.compile("^forward_on_.+$")
 memorized_on_shadow_pattern = re.compile("^memo_on_shadow_.+$")
 
 
-def run_main_measure(
+def run_main_measure_dyn(
     name: str,
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
