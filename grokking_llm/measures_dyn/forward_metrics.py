@@ -23,11 +23,22 @@ class ForwardMetrics(DynamicMetricsGroup):
     """Class used to centralize all forward_pass computations."""
 
     def __init__(
-        self, training_cfg: TrainingCfg, target_cfg: t.Optional[TrainingCfg] = None
+        self,
+        training_cfg: TrainingCfg,
+        target_cfg: t.Optional[TrainingCfg] = None,
+        full_dataset: bool = False,
     ) -> None:
 
-        # Parsing target_cfg
-        if target_cfg is None:
+        # Parsing arguments
+        self.full_dataset = full_dataset
+        if self.full_dataset:
+            if target_cfg is not None:
+                raise ValueError(
+                    f"You should not provide a target TrainingCfg with full_dataset=True."
+                )
+            self.target_cfg = training_cfg
+            self.target_cfg_name = "all"
+        elif target_cfg is None:
             self.target_cfg = training_cfg
             self.target_cfg_name = None
         else:
@@ -61,8 +72,11 @@ class ForwardMetrics(DynamicMetricsGroup):
         logger.info(
             f"Loading datasets from target config: {self.target_cfg.get_config_id()}"
         )
+        if self.full_dataset:
+            logger.info(f"Loading the full dataset, without random split.")
         train_trl_dl, train_rdl_dl, test_all_dl = get_dataloaders_for_measures(
-            self.target_cfg
+            self.target_cfg,
+            full_dataset=self.full_dataset,
         )
 
         # Accelerator init
@@ -87,7 +101,10 @@ class ForwardMetrics(DynamicMetricsGroup):
         forward_export_dir.mkdir(exist_ok=True, parents=True)
 
         # If we do the forward pass on another training config, we skip the test dataloader
-        if self.target_cfg_name is None:  # Forward pass on itself
+        if self.target_cfg_name in [
+            None,
+            "all",
+        ]:  # Forward pass on itself or on the full dataset
             iterator = zip(
                 [train_trl_dl, train_rdl_dl, test_all_dl],
                 [

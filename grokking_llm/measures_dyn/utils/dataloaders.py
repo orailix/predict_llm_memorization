@@ -20,7 +20,7 @@ from ...utils import TrainingCfg
 
 
 def get_dataloaders_for_measures(
-    training_cfg: TrainingCfg,
+    training_cfg: TrainingCfg, full_dataset: bool = False
 ) -> t.Tuple[DataLoader, DataLoader, DataLoader]:
     """Gets the train_trl, train_rdl and test dataloader.
 
@@ -31,13 +31,19 @@ def get_dataloaders_for_measures(
         - [test] The test set
 
     The train_all dataloader is not relevant, because we can simply
-    add the results with train_trl and train_rdl."""
+    add the results with train_trl and train_rdl.
+
+    If `full_dataset` is True, we skip the call to `get_random_split`,
+    so the dataloaders correspond to the full dataset."""
 
     # DATASET -- TRAIN
     train_dataset = get_dataset(training_cfg, split="train")
     train_dataset_formatted = format_dataset(train_dataset, training_cfg)
     train_dataset_labelled = add_labels(train_dataset_formatted, training_cfg, "train")
-    train_dataset_split = get_random_split(train_dataset_labelled, training_cfg)
+    if full_dataset:
+        train_dataset_split = train_dataset_labelled
+    else:
+        train_dataset_split = get_random_split(train_dataset_labelled, training_cfg)
     train_dataset_tokenized = tokenize_dataset(train_dataset_split, training_cfg)
     train_dataset_complete = add_tokenized_possible_labels(
         train_dataset_tokenized, training_cfg
