@@ -71,7 +71,7 @@ def run_deploy_clean_forward_values(
                             and child.name[: len("compressed_")] == "compressed_"
                         ):
                             logger.debug(f"Removing {child}")
-                        child.unlink()
+                            child.unlink()
                 else:
                     logger.debug(f"Removing {forward_export_dir}")
                     shutil.rmtree(forward_export_dir)
