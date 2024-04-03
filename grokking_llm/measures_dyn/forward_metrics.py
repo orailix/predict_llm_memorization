@@ -37,7 +37,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                     f"You should not provide a target TrainingCfg with full_dataset=True."
                 )
             self.target_cfg = training_cfg
-            self.target_cfg_name = "all"
+            self.target_cfg_name = "full_dataset"
         elif target_cfg is None:
             self.target_cfg = training_cfg
             self.target_cfg_name = None
@@ -103,7 +103,7 @@ class ForwardMetrics(DynamicMetricsGroup):
         # If we do the forward pass on another training config, we skip the test dataloader
         if self.target_cfg_name in [
             None,
-            "all",
+            "full_dataset",
         ]:  # Forward pass on itself or on the full dataset
             iterator = zip(
                 [train_trl_dl, train_rdl_dl, test_all_dl],

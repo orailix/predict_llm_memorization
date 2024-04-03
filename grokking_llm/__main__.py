@@ -59,12 +59,14 @@ def deploy_gpu(
     config: t.Optional[str] = None,
     training: bool = True,
     self_forward: t.Optional[str] = None,
+    self_forward_full_dataset: bool = False,
     forward_latest_on: t.Optional[str] = None,
 ):
     run_deploy_gpu(
         config=config,
         training=training,
         self_forward=self_forward,
+        self_forward_full_dataset=self_forward_full_dataset,
         forward_latest_on=forward_latest_on,
     )
 

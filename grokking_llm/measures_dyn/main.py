@@ -33,7 +33,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "compress_forward": CompressForwardMetrics,
 }
 
-forward_on_all = "forward_on_all"
+forward_on_full_dataset = "forward_on_full_dataset"
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")
 memorized_on_shadow_pattern = re.compile("^memo_on_shadow_.+$")
 
@@ -50,9 +50,9 @@ def run_main_measure_dyn(
     if name in NAMES_TO_METRICS:
         metrics_class = NAMES_TO_METRICS[name]
         metrics_class_kwargs = {}
-    elif name == forward_on_all:
+    elif name == forward_on_full_dataset:
         metrics_class = ForwardMetrics
-        logger.info(f"Detected a `forward_on_all` metrics.")
+        logger.info(f"Detected a `forward_on_full_dataset` metrics.")
         metrics_class_kwargs = {"full_dataset": True}
     elif forward_on_cfg_pattern.match(name):
         metrics_class = ForwardMetrics

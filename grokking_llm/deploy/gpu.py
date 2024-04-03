@@ -19,6 +19,7 @@ def run_deploy_gpu(
     config: t.Union[str, Path],
     training: bool = True,
     self_forward: t.Optional[str] = None,
+    self_forward_full_dataset: bool = False,
     forward_latest_on: t.Optional[str] = None,
 ):
     """Executes the deployment on a GPU.
@@ -27,6 +28,7 @@ def run_deploy_gpu(
         training: If True, the model will first be trained
         self_forward: If None, the self-forward pass will be computed for no checkpoints. If "all", it will be
             computed for all checkpoints. If "a,b,c" it will be computed for checkpoints a and b and c.
+        self_forward_full_dataset: Will be passed as "full_dataset" kwarg for the self-forward pass.
         forward_latest_on: If not None, we will compute ForwardMetrics(target_cfg = forward_latest_on) for the latest checkpoint
     """
 
@@ -48,6 +50,7 @@ def run_deploy_gpu(
     logger.info(f"Initiating an GPU deployment agent on GPU {gpu}")
     logger.info(f"training = {training}")
     logger.info(f"self_forward = {self_forward}")
+    logger.info(f"self_forward_full_dataset = {self_forward_full_dataset}")
     logger.info(f"forward_latest_on = {forward_latest_on}")
     deployment_cfg = DeploymentCfg.autoconfig(config)
     logger.info(f"Deployment configuration:\n{deployment_cfg}")
@@ -89,14 +92,22 @@ def run_deploy_gpu(
                     f"Starting forward measure on GPU {gpu}: {training_cfg_path}"
                 )
 
+                # Full dataset or not?
+                if self_forward_full_dataset:
+                    metric_name = "forward_on_full_dataset"
+                else:
+                    metric_name = "forward"
+                logger.info(f"Using metric: {metric_name}")
+
+                # Forward on what?
                 if self_forward == "all":
                     logger.info(f"Forward measure checkpoints: ALL")
-                    run_main_measure_dyn("forward", training_cfg_path)
+                    run_main_measure_dyn(metric_name, training_cfg_path)
                 else:
                     logger.info(f"Forward measure checkpoints: {self_forward}")
                     for checkpoint in self_forward:
                         run_main_measure_dyn(
-                            "forward", training_cfg_path, checkpoint=checkpoint
+                            metric_name, training_cfg_path, checkpoint=checkpoint
                         )
 
                 logger.info(
