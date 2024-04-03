@@ -11,16 +11,17 @@ import pandas as pd
 import torch
 from loguru import logger
 
-from ..utils import TrainingCfg
+from ..utils import DeploymentCfg
 
 SEP = ","
 
 
-class DynamicMetricsGroup(ABC):
-    """Abstract base class used to represent a group of dynamic metrics.
+class StaticMetricsGroup(ABC):
+    """Abstract base class used to represent a group a static metrics.
 
-    Dynamic metrics are metrics that depend on the epoch, and that are computed
-    for all checkpoints of a given training config.
+    Static metrics are metrics that are valid for a group of models trained from
+    a DeploymentCfg object. The metric may depend on a checkpoint, but shoudl
+    be the same for all shadow model derived from the DeploymentCfg.
 
     The metric group can contain several individual metrics, and the value of each
     individual metric for each checkpoint available is stored in a csv file
@@ -50,21 +51,21 @@ class DynamicMetricsGroup(ABC):
             sep=SEP,
         )
 
-    def __init__(self, training_cfg: TrainingCfg) -> None:
-        # Saving training configuration
-        self.training_cfg = training_cfg
-        self.config_input_id = training_cfg.get_config_id()
+    def __init__(self, deployment_cfg: DeploymentCfg) -> None:
+        # Saving configuration
+        self.deployment_cfg = deployment_cfg
+        self.config_id = deployment_cfg.get_deployment_id()
 
         # Logging
         logger.info(
-            f"Creating a dynamic metric object to measure `{self.metrics_group_name}` on config {self.config_input_id}"
+            f"Creating a static metric object to measure `{self.metrics_group_name}` on config {self.config_id}"
         )
 
         # Directories
-        output_dir = self.training_cfg.get_output_dir()
-        self.metrics_dir = output_dir / "metrics"
-        self.metrics_dir.mkdir(exist_ok=True, parents=True)
-        self.output_file = self.metrics_dir / f"{self.metrics_group_name}.csv"
+        self.deployment_cfg.metrics_dir.mkdir(exist_ok=True, parents=True)
+        self.output_file = (
+            self.deployment_cfg.metrics_dir / f"{self.metrics_group_name}.csv"
+        )
 
         # Creating output file
         if not self.output_file.is_file():
@@ -97,18 +98,12 @@ class DynamicMetricsGroup(ABC):
             will be recomputed for this checkpoint even if they already exist
             (and in this case the previous values will be overwritten)."""
 
-        # Check that the requested checkpoint exists
-        if checkpoint not in self.training_cfg.get_available_checkpoints():
-            raise ValueError(
-                f"Checkpoint {checkpoint} at config {self.config_input_id} is requested for metrics {self.metrics_group_name} but does not exist."
-            )
-
         # Check if the metric has already been computed
         overwrite_checkpoint = False
         if checkpoint in self.get_checkpoint_measured():
             if not recompute_if_exists:
                 logger.debug(
-                    f"Computation of {self.metrics_group_name} for config {self.config_input_id} already exist for checkpoint {checkpoint} ; skipping it."
+                    f"Computation of {self.metrics_group_name} for config {self.config_id} already exist for checkpoint {checkpoint} ; skipping it."
                 )
                 return
             else:
@@ -148,32 +143,6 @@ class DynamicMetricsGroup(ABC):
         # Saving - the order does not matter
         with self.output_file.open("a") as f:
             f.write(row_to_add)
-
-    def get_checkpoints_available_for_measure(self) -> t.List[int]:
-        """Returns the list of checkpoints available for this config but not measured."""
-
-        checkpoints_available = set(self.training_cfg.get_available_checkpoints())
-        checkpoints_measured = set(self.get_checkpoint_measured())
-        checkpoints_to_do = checkpoints_available.difference(checkpoints_measured)
-
-        return sorted(list(checkpoints_to_do))
-
-    def compute_all_values(self) -> None:
-        """Computes and saves the individual metrics for all available checkpoints
-        for which this has not been done.
-
-        This method is not compatible with a "recompute_if_exits" argument, because after
-        each computation of the metric we re-check on disk which checkpoints are to be measured.
-        """
-
-        while len(self.get_checkpoints_available_for_measure()) > 0:
-
-            for checkpoint in self.get_checkpoints_available_for_measure():
-                self.compute_values(checkpoint)
-
-                # RAM and VRAM freeing
-                torch.cuda.empty_cache()
-                gc.collect()
 
     # ==================== METRICS DF ====================
 

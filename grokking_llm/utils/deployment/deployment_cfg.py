@@ -49,6 +49,10 @@ class DeploymentCfg:
         self.stack_done_gpu = DiskStack(self.stacks_dir / "stack_done_gpu")
         self.stack_done_cpu = DiskStack(self.stacks_dir / "stack_done_cpu")
 
+        # Static metrics
+        self.metrics_dir = self.export_dir / "metrics"
+        self.metrics_dir.mkdir(exist_ok=True, parents=True)
+
         # Training cfg dir
         self.configs_dir = self.export_dir / "training_cfg"
         self.configs_dir.mkdir(exist_ok=True, parents=True)
