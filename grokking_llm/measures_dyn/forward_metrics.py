@@ -101,16 +101,22 @@ class ForwardMetrics(DynamicMetricsGroup):
         forward_export_dir.mkdir(exist_ok=True, parents=True)
 
         # If we do the forward pass on another training config, we skip the test dataloader
-        if self.target_cfg_name in [
-            None,
-            "full_dataset",
-        ]:  # Forward pass on itself or on the full dataset
+        if self.target_cfg is None:  # Forward pass on self
             iterator = zip(
                 [train_trl_dl, train_rdl_dl, test_all_dl],
                 [
                     "train_trl",
                     "train_rdl",
                     "test",
+                ],
+            )
+        elif self.target_cfg == "full_dataset":  # Forward pass on full dataset
+            iterator = zip(
+                [train_trl_dl, train_rdl_dl, test_all_dl],
+                [
+                    "train_trl_on_full_dataset",
+                    "train_rdl_on_full_dataset",
+                    "test_on_full_dataset",
                 ],
             )
         else:  # Forward on another target config
