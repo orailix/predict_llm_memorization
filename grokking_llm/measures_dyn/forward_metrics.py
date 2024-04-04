@@ -12,11 +12,10 @@ from loguru import logger
 from tqdm import tqdm
 
 from ..training import compute_mcq_last_token_loss, get_model
-from ..utils import TrainingCfg
+from ..utils import ForwardValues, TrainingCfg
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils.dataloaders import get_dataloaders_for_measures
-from .utils.forward_values import ForwardValues
 
 
 class ForwardMetrics(DynamicMetricsGroup):

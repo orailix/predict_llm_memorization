@@ -10,11 +10,9 @@ from functools import cached_property
 from loguru import logger
 
 from ..training import get_dataset, get_random_split
-from ..utils import TrainingCfg
+from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues, get_forward_values
 from .utils.smi import p_smi_estimator
 
 

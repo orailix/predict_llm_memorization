@@ -10,9 +10,8 @@ import numpy as np
 from loguru import logger
 
 from ..training import get_dataset, get_random_split
-from ..utils import TrainingCfg
+from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues, get_forward_values
 
 
 class MemoProbaGapMetrics(DynamicMetricsGroup):

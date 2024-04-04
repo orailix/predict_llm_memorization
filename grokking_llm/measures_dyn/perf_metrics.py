@@ -9,11 +9,10 @@ import numpy as np
 import torch
 from loguru import logger
 
-from ..utils import TrainingCfg
+from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
-from .utils.forward_values import ForwardValues, get_forward_values
 
 
 class PerfMetrics(DynamicMetricsGroup):

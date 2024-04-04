@@ -8,9 +8,8 @@ import typing as t
 import torch
 from loguru import logger
 
-from ..utils import TrainingCfg
+from ..utils import ForwardValues, TrainingCfg
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues
 
 
 class CompressForwardMetrics(DynamicMetricsGroup):

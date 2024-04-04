@@ -8,8 +8,7 @@ import shutil
 import pytest
 import torch
 
-from grokking_llm.measures_dyn import ForwardValues
-from grokking_llm.utils import paths
+from grokking_llm.utils import ForwardValues, paths
 
 
 def test_forward_values():

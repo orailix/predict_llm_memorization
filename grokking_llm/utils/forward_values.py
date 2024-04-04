@@ -12,7 +12,7 @@ from loguru import logger
 from safetensors import safe_open
 from safetensors.torch import save_file
 
-from ...utils import TrainingCfg
+from .training_cfg import TrainingCfg
 
 
 @dataclasses.dataclass

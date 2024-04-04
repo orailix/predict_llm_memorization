@@ -14,9 +14,14 @@ from loguru import logger
 from tqdm import tqdm
 
 from ..training import get_dataset, get_random_split
-from ..utils import DeploymentCfg, TrainingCfg, get_possible_training_cfg
+from ..utils import (
+    DeploymentCfg,
+    ForwardValues,
+    TrainingCfg,
+    get_forward_values,
+    get_possible_training_cfg,
+)
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.forward_values import ForwardValues, get_forward_values
 
 
 @dataclass
