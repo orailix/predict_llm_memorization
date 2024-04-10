@@ -87,7 +87,7 @@ class PSmiStatic(StaticMetricsGroup):
             )
 
             # Sanity check
-            if len(forward_values_all) != len(self.global_idx):
+            if forward_values_all.global_index.size(0) != len(self.global_idx):
                 raise RuntimeError(
                     f"Incorrect loading of the forward values: {len(forward_values_all)} != {len(self.global_idx)}"
                 )
