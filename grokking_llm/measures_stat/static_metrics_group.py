@@ -67,16 +67,16 @@ class StaticMetricsGroup(ABC):
             self.deployment_cfg.metrics_dir / f"{self.metrics_group_name}.csv"
         )
 
+        # Loading global id of the full dataset
+        logger.info("Loading full dataset to retrieve global_index.")
+        ds = get_dataset(self.deployment_cfg.base_config)
+        self.global_idx = sorted(ds["global_index"])
+
         # Creating output file
         if not self.output_file.is_file():
             self._init_output_file()
         else:
             logger.debug(f"Found existing output file at {self.output_file}")
-
-        # Loading global id of the full dataset
-        logger.info("Loading full dataset to retrieve global_index.")
-        ds = get_dataset(self.deployment_cfg.base_config)
-        self.global_idx = sorted(ds["global_index"])
 
         # Loading all possible training cfg
         logger.info("Fetching all possible TrainingCfg for this deployment config.")

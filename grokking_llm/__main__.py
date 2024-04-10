@@ -14,6 +14,7 @@ from .deploy import (
     run_deploy_prepare,
 )
 from .measures_dyn import run_main_measure_dyn
+from .measures_stat import run_main_measure_stat
 from .training import run_main_train
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -32,6 +33,21 @@ def measure_dyn(
     force_recompute: bool = False,
 ):
     run_main_measure_dyn(
+        name=name,
+        config=config,
+        checkpoint=checkpoint,
+        force_recompute=force_recompute,
+    )
+
+
+@app.command()
+def measure_stat(
+    name: str,
+    config: t.Optional[str] = None,
+    checkpoint: t.Optional[str] = None,
+    force_recompute: bool = False,
+):
+    run_main_measure_stat(
         name=name,
         config=config,
         checkpoint=checkpoint,
