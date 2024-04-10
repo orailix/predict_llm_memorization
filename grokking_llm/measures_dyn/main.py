@@ -92,6 +92,8 @@ def run_main_measure_dyn(
             )
     elif checkpoint == "latest":
         checkpoint = training_cfg.latest_checkpoint
+    elif "," in checkpoint:
+        checkpoint = [int(item) for item in checkpoint.split(",")]
     else:
         try:
             checkpoint = int(checkpoint)
@@ -106,6 +108,9 @@ def run_main_measure_dyn(
     metrics = metrics_class(training_cfg=training_cfg, **metrics_class_kwargs)
     if checkpoint == "all":
         metrics.compute_all_values()
+    elif isinstance(checkpoint, list):
+        for ch in checkpoint:
+            metrics.compute_values(checkpoint=ch, recompute_if_exists=force_recompute)
     else:
         metrics.compute_values(
             checkpoint=checkpoint, recompute_if_exists=force_recompute
