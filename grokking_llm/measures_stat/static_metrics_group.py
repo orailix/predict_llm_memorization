@@ -69,8 +69,9 @@ class StaticMetricsGroup(ABC):
 
         # Loading global id of the full dataset
         logger.info("Loading full dataset to retrieve global_index.")
-        ds = get_dataset(self.deployment_cfg.base_config)
-        self.global_idx = sorted(ds["global_index"])
+        ds_train = get_dataset(self.deployment_cfg.base_config, split="train")
+        ds_test = get_dataset(self.deployment_cfg.base_config, split="test")
+        self.global_idx = sorted(ds_train["global_index"] + ds_test["global_index"])
 
         # Creating output file
         if not self.output_file.is_file():
