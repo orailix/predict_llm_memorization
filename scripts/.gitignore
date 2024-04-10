@@ -1,2 +1,4 @@
 *
+!mistral_ethics/
+!bind_gpu.sh
 !.gitignore
