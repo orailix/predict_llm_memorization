@@ -11,10 +11,9 @@ import numpy as np
 from joblib import Parallel, delayed
 from loguru import logger
 
-from ..utils import ForwardValues, TrainingCfg, get_forward_values
+from ..utils import ForwardValues, TrainingCfg, get_forward_values, smi_estimator
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.smi import smi_estimator
 
 
 class SmiMetrics(DynamicMetricsGroup):

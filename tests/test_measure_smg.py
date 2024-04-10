@@ -11,7 +11,7 @@ import pytest
 from grokking_llm.measures_stat import StaticMetricsGroup
 from grokking_llm.utils import DeploymentCfg, paths
 
-deployment_cfg_path = paths.configs / "deployment_0.cfg"
+deployment_cfg_path = paths.configs / "deployment_3.cfg"
 
 
 class DummyChildClass(StaticMetricsGroup):

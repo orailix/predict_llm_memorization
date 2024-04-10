@@ -16,3 +16,4 @@ from .deployment.parsed_section import ParsedSection
 from .training_cfg import TrainingCfg
 from .possible_training_cfg import get_possible_training_cfg
 from .forward_values import ForwardValues, get_forward_values
+from .smi import smi_estimator, p_smi_estimator

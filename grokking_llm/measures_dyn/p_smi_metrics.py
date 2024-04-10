@@ -10,10 +10,9 @@ from functools import cached_property
 from loguru import logger
 
 from ..training import get_dataset, get_random_split
-from ..utils import ForwardValues, TrainingCfg, get_forward_values
+from ..utils import ForwardValues, TrainingCfg, get_forward_values, p_smi_estimator
 from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .utils.smi import p_smi_estimator
 
 
 class PSmiMetrics(DynamicMetricsGroup):
@@ -98,7 +97,8 @@ class PSmiMetrics(DynamicMetricsGroup):
         # Uniprocess computation
         logger.debug("Starting P-SMI core computation")
         p_smi_per_layer = {
-            layer: p_smi_estimator(X_per_layer[layer], y) for layer in SMI_LAYERS
+            layer: p_smi_estimator(X_per_layer[layer], y, n_estimator=self.n_estimator)
+            for layer in SMI_LAYERS
         }
         logger.debug("End of P-SMI core computation")
 

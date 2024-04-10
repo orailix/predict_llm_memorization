@@ -15,5 +15,4 @@ from .p_smi_metrics import PSmiMetrics
 from .perf_metrics import PerfMetrics
 from .smi_metrics import SmiMetrics
 from .utils.dataloaders import get_dataloaders_for_measures
-from .utils.smi import p_smi_estimator, smi_estimator
 from .weights_metrics import WeightsMetrics

@@ -8,10 +8,10 @@ import typing as t
 from abc import ABC, abstractmethod, abstractproperty
 
 import pandas as pd
-import torch
 from loguru import logger
 
-from ..utils import DeploymentCfg
+from ..training import get_dataset
+from ..utils import DeploymentCfg, get_possible_training_cfg
 
 SEP = ","
 
@@ -72,6 +72,15 @@ class StaticMetricsGroup(ABC):
             self._init_output_file()
         else:
             logger.debug(f"Found existing output file at {self.output_file}")
+
+        # Loading global id of the full dataset
+        logger.info("Loading full dataset to retrieve global_index.")
+        ds = get_dataset(self.deployment_cfg.base_config)
+        self.global_idx = sorted(ds["global_index"])
+
+        # Loading all possible training cfg
+        logger.info("Fetching all possible TrainingCfg for this deployment config.")
+        self.training_cfg_list = get_possible_training_cfg(self.deployment_cfg)
 
     # ==================== COMPUTE VALUES ====================
 
