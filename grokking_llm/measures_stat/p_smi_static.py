@@ -117,17 +117,21 @@ class PSmiStatic(StaticMetricsGroup):
             }
             logger.debug("End of P-SMI core computation")
 
+            layer_to_layer_count = {
+                layer: count for count, layer in enumerate(SMI_LAYERS)
+            }
             for layer, (psmi_mean, psmi_max, psmi_min) in p_smi_per_layer.items():
                 # The values in psmi_mean, etc are in the same order as in X used above
                 # As a result, it is the same order as forward_values_all.global_index
+                layer_count = layer_to_layer_count[layer]
                 for count, idx in enumerate(forward_values_all.global_index.tolist()):
-                    p_smi_mean_per_shadow_per_layer_per_idx[shadow_idx][layer][
+                    p_smi_mean_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
                     ] = float(psmi_mean[count])
-                    p_smi_max_per_shadow_per_layer_per_idx[shadow_idx][layer][
+                    p_smi_max_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
                     ] = float(psmi_max[count])
-                    p_smi_min_per_shadow_per_layer_per_idx[shadow_idx][layer][
+                    p_smi_min_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
                     ] = float(psmi_min[count])
 
@@ -152,6 +156,7 @@ class PSmiStatic(StaticMetricsGroup):
         ]:
             for layer in SMI_LAYERS:
                 for idx in self.global_idx:
-                    result.append(container[layer][idx])
+                    layer_count = layer_to_layer_count[layer]
+                    result.append(container[layer_count][idx])
 
         return result
