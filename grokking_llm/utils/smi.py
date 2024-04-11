@@ -4,6 +4,7 @@
 # Apache Licence v2.0.
 
 import collections
+import typing as t
 
 import numpy as np
 import torch
@@ -17,7 +18,7 @@ def smi_estimator(
     n_estimator: int = 100,
     n_neighbors: int = 3,
     random_state: int = 0,
-) -> float:
+) -> t.Tuple[float, float, float]:
     """
 
     Empirically, for our architectures, we observed that the mutual information
@@ -75,7 +76,7 @@ def p_smi_estimator(
     y: torch.Tensor,
     smi_quantile: float = 0.99,
     n_estimator: int = 100,
-) -> float:
+) -> t.Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Estimates the (sample-wise) Pointsize Sliced Mutual Information [1]
 
     Empirically, for our architectures, we observed that the mutual information

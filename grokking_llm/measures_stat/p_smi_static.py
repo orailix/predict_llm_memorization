@@ -123,13 +123,13 @@ class PSmiStatic(StaticMetricsGroup):
                 for count, idx in enumerate(forward_values_all.global_index.tolist()):
                     p_smi_mean_per_shadow_per_layer_per_idx[shadow_idx][layer][
                         idx
-                    ] = psmi_mean[count]
+                    ] = float(psmi_mean[count])
                     p_smi_max_per_shadow_per_layer_per_idx[shadow_idx][layer][
                         idx
-                    ] = psmi_max[count]
+                    ] = float(psmi_max[count])
                     p_smi_min_per_shadow_per_layer_per_idx[shadow_idx][layer][
                         idx
-                    ] = psmi_min[count]
+                    ] = float(psmi_min[count])
 
         # ==================== Output ====================
 
