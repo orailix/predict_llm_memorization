@@ -4,7 +4,7 @@
 #SBATCH --job-name=p_smi_full_dataset
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=10
 #SBATCH --partition=cpu_p1
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00
