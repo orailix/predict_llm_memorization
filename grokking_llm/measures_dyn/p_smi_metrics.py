@@ -30,14 +30,26 @@ class PSmiMetrics(DynamicMetricsGroup):
         self,
         training_cfg: TrainingCfg,
         n_estimator: int = 2000,
+        full_dataset: bool = False,
     ) -> None:
+        # Logging
+        logger.info(
+            f"Initializing a PSmiMetrics with {n_estimator} estimators, and full_dataset={full_dataset}."
+        )
+        self.full_dataset = full_dataset
+
         # List of global idx
         logger.debug(
             "Loading dataset to retrieve global IDX of the elements of the random split."
         )
-        ds = get_dataset(training_cfg)
-        ds = get_random_split(ds, training_cfg)
-        self.global_idx = sorted(ds["global_index"])
+        if not full_dataset:
+            ds = get_dataset(training_cfg)
+            ds = get_random_split(ds, training_cfg)
+            self.global_idx = sorted(ds["global_index"])
+        else:
+            ds_train = get_dataset(training_cfg, split="train")
+            ds_test = get_dataset(training_cfg, split="test")
+            self.global_idx = sorted(ds_train["global_index"] + ds_test["global_index"])
 
         # Main initialization
         super().__init__(training_cfg)
@@ -47,7 +59,10 @@ class PSmiMetrics(DynamicMetricsGroup):
 
     @property
     def metrics_group_name(self) -> str:
-        return "p_smi_metrics"
+        if not self.full_dataset:
+            return "p_smi_metrics"
+        else:
+            return "p_smi_on_full_dataset_metrics"
 
     @cached_property
     def metrics_names(self) -> t.List[str]:
@@ -64,27 +79,52 @@ class PSmiMetrics(DynamicMetricsGroup):
 
         # ==================== Looking for ForwardValues ====================
 
+        # On which dataset
+        if not self.full_dataset:
+            on_dataset = f"on_{self.training_cfg.get_config_id()}"
+        else:
+            on_dataset = "on_full_dataset"
+
         # Getting forward values
         forward_values_trl = get_forward_values(
             self.training_cfg,
             checkpoint,
-            f"train_trl_on_{self.training_cfg.get_config_id()}",
+            f"train_trl_{on_dataset}",
             enable_compressed=False,
         )
         forward_value_rdl = get_forward_values(
             self.training_cfg,
             checkpoint,
-            f"train_rdl_on_{self.training_cfg.get_config_id()}",
+            f"train_rdl_{on_dataset}",
             enable_compressed=False,
         )
         forward_values_all = ForwardValues.concat(
             forward_values_trl, forward_value_rdl, new_name="train_all"
         )
 
+        # Need also the test values ?
+        if self.full_dataset:
+            forward_value_test = get_forward_values(
+                self.training_cfg,
+                checkpoint,
+                f"test_on_full_dataset",
+                enable_compressed=False,
+            )
+
+            forward_values_all = ForwardValues.concat(
+                forward_values_all, forward_value_test, new_name="train_all"
+            )
+
+        # Sanity check
+        if forward_values_all.global_index.size(0) != len(self.global_idx):
+            raise RuntimeError(
+                f"Incorrect loading of the forward values: {len(forward_values_all)} != {len(self.global_idx)}"
+            )
+
         # ==================== PSMI values ====================
 
         # Logging
-        logger.info(f"Computing P-SMI for {forward_values_all.name}")
+        logger.info(f"Computing P-SMI for config {self.training_cfg}")
 
         # Tensors
         X_per_layer = forward_values_all.mcq_states_per_layer
