@@ -38,7 +38,9 @@ if paths.main_cfg_object["internet"]["offline"] == "true":
     logger.info("Config internet.offline = true")
     logger.debug("Setting env variable HF_HUB_OFFLINE=1")
     os.environ["HF_HUB_OFFLINE"] = "1"
-    offline = False
+    logger.debug("Setting env variable HF_DATASETS_OFFLINE=1")
+    os.environ["HF_DATASETS_OFFLINE"] = "1"
+    offline = True
 
 # Dealing with HF token
 if not offline:
