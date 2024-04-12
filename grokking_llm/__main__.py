@@ -46,12 +46,14 @@ def measure_stat(
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
     force_recompute: bool = False,
+    njobs: t.Optional[str] = None,
 ):
     run_main_measure_stat(
         name=name,
         config=config,
         checkpoint=checkpoint,
         force_recompute=force_recompute,
+        njobs=njobs,
     )
 
 

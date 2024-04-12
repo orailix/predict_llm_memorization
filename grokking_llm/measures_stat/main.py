@@ -22,6 +22,7 @@ def run_main_measure_stat(
     config: t.Optional[str] = None,
     checkpoint: t.Optional[str] = None,
     force_recompute: bool = False,
+    njobs: t.Optional[str] = None,
 ):
     """Main function for measures."""
 
@@ -52,6 +53,10 @@ def run_main_measure_stat(
             )
 
     logger.info(f"Running measures for checkpoint: {checkpoint}")
+
+    # Parsing inputs -- njobs
+    if njobs is not None:
+        metrics_class_kwargs["njobs"] = int(njobs)
 
     # Running measures
     metrics = metrics_class(deployment_cfg=deployment_cfg, **metrics_class_kwargs)

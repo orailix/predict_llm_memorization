@@ -6,10 +6,12 @@
 import typing as t
 
 import torch
+from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
 
-from ..utils import DeploymentCfg, ForwardValues, get_forward_values, p_smi_estimator
+from ..measures_dyn import PSmiMetrics
+from ..utils import DeploymentCfg, TrainingCfg
 from ..utils.constants import SMI_LAYERS
 from .static_metrics_group import StaticMetricsGroup
 
@@ -20,9 +22,13 @@ class PSmiStatic(StaticMetricsGroup):
 
     """Class used to compute Pointwise Sliced Mutual Information static metric."""
 
-    def __init__(self, deployment_cfg: DeploymentCfg, n_estimator: int = 2000) -> None:
+    def __init__(
+        self, deployment_cfg: DeploymentCfg, n_estimator: int = 2000, njobs: int = 1
+    ) -> None:
         super().__init__(deployment_cfg)
+        logger.info(f"Using n_estimator={n_estimator} and njobs={njobs}")
         self.n_estimator = n_estimator
+        self.njobs = njobs
 
     @property
     def metrics_group_name(self) -> str:
@@ -56,86 +62,34 @@ class PSmiStatic(StaticMetricsGroup):
             num_model, num_layer, num_idx, dtype=float
         )
 
-        for shadow_idx, shadow_training_cfg in enumerate(tqdm(self.training_cfg_list)):
+        # ==================== Loading static metrics ====================
 
-            # ==================== Looking for ForwardValues ====================
+        logger.info(f"Loading dynamic P-SMI values")
+        dynamic_p_smi_containers = Parallel(n_jobs=self.njobs)(
+            delayed(load_dyn_df)(training_cfg)
+            for training_cfg in self.training_cfg_list
+        )
 
-            # Getting forward values
-            forward_values_trl = get_forward_values(
-                shadow_training_cfg,
-                checkpoint,
-                f"train_trl_on_full_dataset",
-                enable_compressed=False,
-            )
-            forward_value_rdl = get_forward_values(
-                shadow_training_cfg,
-                checkpoint,
-                f"train_rdl_on_full_dataset",
-                enable_compressed=False,
-            )
-            forward_value_test = get_forward_values(
-                shadow_training_cfg,
-                checkpoint,
-                f"test_on_full_dataset",
-                enable_compressed=False,
-            )
-            forward_values_all = ForwardValues.concat(
-                forward_values_trl, forward_value_rdl, new_name="train_all"
-            )
-            forward_values_all = ForwardValues.concat(
-                forward_values_all, forward_value_test, new_name="train_all"
-            )
+        layer_to_layer_count = {layer: count for count, layer in enumerate(SMI_LAYERS)}
 
-            # Sanity check
-            if forward_values_all.global_index.size(0) != len(self.global_idx):
-                raise RuntimeError(
-                    f"Incorrect loading of the forward values: {len(forward_values_all)} != {len(self.global_idx)}"
-                )
-
-            # ==================== PSMI values ====================
-
-            # Logging
-            logger.info(
-                f"Computing P-SMI for shadow model {shadow_training_cfg.get_config_id()}"
-            )
-
-            # Tensors
-            X_per_layer = forward_values_all.mcq_states_per_layer
-            y = forward_values_all.mcq_labels
-
-            # Logging
-            logger.debug(f"X size: {X_per_layer[1].size()}")
-            logger.debug(f"y size: {y.size()}")
-
-            # Uniprocess computation
-            logger.debug("Starting P-SMI core computation")
-            p_smi_per_layer = {
-                layer: p_smi_estimator(
-                    X_per_layer[layer], y, n_estimator=self.n_estimator
-                )
-                for layer in SMI_LAYERS
-            }
-            logger.debug("End of P-SMI core computation")
-
-            layer_to_layer_count = {
-                layer: count for count, layer in enumerate(SMI_LAYERS)
-            }
-            for layer, (psmi_mean, psmi_max, psmi_min) in p_smi_per_layer.items():
-                # The values in psmi_mean, etc are in the same order as in X used above
-                # As a result, it is the same order as forward_values_all.global_index
-                layer_count = layer_to_layer_count[layer]
-                for count, idx in enumerate(forward_values_all.global_index.tolist()):
+        logger.info(f"Filling values of P-SMI")
+        for shadow_idx, (psmi_mean, psmi_max, psmi_min) in enumerate(
+            tqdm(dynamic_p_smi_containers)
+        ):
+            for layer in SMI_LAYERS:
+                for idx in self.global_idx:
+                    layer_count = layer_to_layer_count[layer]
                     p_smi_mean_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
-                    ] = float(psmi_mean[count])
+                    ] = psmi_mean[checkpoint][layer][idx]
                     p_smi_max_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
-                    ] = float(psmi_max[count])
+                    ] = psmi_max[checkpoint][layer][idx]
                     p_smi_min_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
                         idx
-                    ] = float(psmi_min[count])
+                    ] = psmi_min[checkpoint][layer][idx]
 
-        # ==================== Output ====================
+        # ==================== Filling containers ====================
 
         psmi_mean_per_layer_per_idx = torch.mean(
             p_smi_mean_per_shadow_per_layer_per_idx, axis=0
@@ -147,7 +101,8 @@ class PSmiStatic(StaticMetricsGroup):
             p_smi_min_per_shadow_per_layer_per_idx, axis=0
         )
 
-        # Result
+        # ==================== Results ====================
+
         result = []
         for container in [
             psmi_mean_per_layer_per_idx,
@@ -160,3 +115,9 @@ class PSmiStatic(StaticMetricsGroup):
                     result.append(container[layer_count][idx])
 
         return result
+
+
+def load_dyn_df(training_cfg: TrainingCfg):
+    metrics = PSmiMetrics(training_cfg=training_cfg, full_dataset=True)
+    metrics_df = metrics.load_metrics_df()
+    return metrics.get_p_smi_containers(metrics_df)
