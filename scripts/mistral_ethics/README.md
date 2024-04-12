@@ -5,7 +5,6 @@ The experiments must be ran in this order.
 ## 1 - GPU: Prepare deployment, train model and compute forward values of the latest checkpoint
 
 ```bash
-bash _prepare_deploy.sh
 sbatch train_forward_latest.slurm
 ```
 
@@ -25,7 +24,6 @@ sbatch target_forward.slurm
 ## 3 - GPU: Compute forward values on the full dataset for checkpoints 1200 and 15600
 
 ```bash
-bash _prepare_deploy.sh
 sbatch self_forward.slurm
 ```
 
@@ -47,6 +45,5 @@ sbatch memo_mia_metrics.slurm
 
 ```bash
 sbatch clean_forward.slurm
-bash _prepare_deploy.sh
 sbatch compress.slurm
 ```

@@ -16,5 +16,8 @@
 # Cleaning modules
 module purge
 
+# Prepare deploy
+bash /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/_prepare_deploy.sh
+
 # Code execution with binding via bind_gpu.sh : 1 GPU per task
 srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/bind_gpu.sh /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/self_forward.sh
