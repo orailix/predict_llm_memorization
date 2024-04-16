@@ -11,11 +11,9 @@ from loguru import logger
 from tqdm import tqdm
 
 from ..measures_dyn import PSmiMetrics
-from ..utils import DeploymentCfg, TrainingCfg
+from ..utils import DeploymentCfg, TrainingCfg, get_p_smi_containers
 from ..utils.constants import SMI_LAYERS
 from .static_metrics_group import StaticMetricsGroup
-
-SEP = ","
 
 
 class PSmiStatic(StaticMetricsGroup):
@@ -120,4 +118,4 @@ class PSmiStatic(StaticMetricsGroup):
 def load_dyn_df(training_cfg: TrainingCfg):
     metrics = PSmiMetrics(training_cfg=training_cfg, full_dataset=True)
     metrics_df = metrics.load_metrics_df()
-    return metrics.get_p_smi_containers(metrics_df)
+    return get_p_smi_containers(metrics_df)

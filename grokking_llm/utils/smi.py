@@ -7,6 +7,7 @@ import collections
 import typing as t
 
 import numpy as np
+import pandas as pd
 import torch
 from sklearn.feature_selection import mutual_info_classif
 
@@ -183,3 +184,66 @@ def p_smi_estimator(
 
 def norm_pdf(mean, std, x):
     return (1 / std / np.sqrt(2 * np.pi)) * np.exp(-1 * (x - mean) ** 2 / 2 / std / std)
+
+
+def get_p_smi_containers(metrics_df: pd.DataFrame) -> t.Dict[int, t.Dict[int, float]]:
+    """
+    `metrics_df` is supposed to be the result of metrics.load_metrics_df()
+    where `metrics` is an instance either of PSmiMetrics or PSmiStatic.
+
+    Returns (
+        p_smi_mean_per_checkpoint_per_layer_per_idx,
+        p_smi_max_per_checkpoint_per_layer_per_idx,
+        p_smi_min_per_checkpoint_per_layer_per_idx,
+    ).
+    """
+
+    # Checkpoints
+    checkpoints = metrics_df.iloc[:, 0].tolist()
+
+    # Init containers
+    p_smi_mean_checkpoint_layer_idx = {
+        chk: collections.defaultdict(dict) for chk in checkpoints
+    }
+    p_smi_max_checkpoint_layer_idx = {
+        chk: collections.defaultdict(dict) for chk in checkpoints
+    }
+    p_smi_min_checkpoint_layer_idx = {
+        chk: collections.defaultdict(dict) for chk in checkpoints
+    }
+
+    # Getting checkpoint idx
+    for row_idx, chk in enumerate(checkpoints):
+        for col_idx, col_name in enumerate(metrics_df.columns):
+
+            # "checkpoint" column
+            if col_idx == 0 or col_name == "epoch":
+                continue
+
+            content = metrics_df.iloc[row_idx, col_idx]
+
+            # Container
+            if "mean_" in col_name:
+                container = p_smi_mean_checkpoint_layer_idx
+                layer_idx = col_name[len("mean_psmi_") :]
+            elif "max_" in col_name:
+                container = p_smi_max_checkpoint_layer_idx
+                layer_idx = col_name[len("max_psmi_") :]
+            elif "min_" in col_name:
+                container = p_smi_min_checkpoint_layer_idx
+                layer_idx = col_name[len("min_psmi_") :]
+            else:
+                raise ValueError(f"Name: {col_name}")
+
+            # Layer, idx
+            layer = int(layer_idx.split("_")[0])
+            idx = int(layer_idx.split("_")[1])
+
+            container[chk][layer][idx] = content
+
+    # Output
+    return (
+        p_smi_mean_checkpoint_layer_idx,
+        p_smi_max_checkpoint_layer_idx,
+        p_smi_min_checkpoint_layer_idx,
+    )

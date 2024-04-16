@@ -13,7 +13,8 @@ from . import hf_hub
 from .deployment.deployment_cfg import DeploymentCfg
 from .deployment.disk_stacks import DiskStack
 from .deployment.parsed_section import ParsedSection
+from .light_forward_values import LightForwardValues
 from .training_cfg import TrainingCfg
 from .possible_training_cfg import get_possible_training_cfg
 from .forward_values import ForwardValues, get_forward_values
-from .smi import smi_estimator, p_smi_estimator
+from .smi import smi_estimator, p_smi_estimator, get_p_smi_containers
