@@ -16,8 +16,6 @@ from ..training import get_random_split
 from ..utils import (
     DeploymentCfg,
     get_logit_gaps_for_mia,
-    get_mia_memo_score,
-    get_possible_training_cfg,
     get_shadow_forward_values_for_mia,
     norm_pdf,
 )
@@ -42,7 +40,7 @@ class MemoMembershipStatic(StaticMetricsGroup):
 
     @property
     def metrics_names(self) -> t.List[str]:
-        return ["mean_asr"] + [f"asr_{idx}" for idx in self.global_idx]
+        return ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
 
     def metrics_computation_core(self, checkpoint: int) -> t.List[float]:
 
