@@ -18,6 +18,7 @@ from .memo_membership_metrics import MemoMembershipMetrics
 from .memo_proba_gap_metrics import MemoProbaGapMetrics
 from .p_smi_metrics import PSmiMetrics
 from .perf_metrics import PerfMetrics
+from .sample_loss_metrics import SampleLoss
 from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
 
@@ -31,6 +32,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "memo_proba_gap": MemoProbaGapMetrics,
     "memo_logit_gap": MemoLogitGapMetrics,
     "compress_forward": CompressForwardMetrics,
+    "sample_loss": SampleLoss,
 }
 
 p_smi_on_full_dataset = "p_smi_on_full_dataset"

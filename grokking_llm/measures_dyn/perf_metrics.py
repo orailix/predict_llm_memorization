@@ -12,7 +12,6 @@ from loguru import logger
 from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from ..utils.constants import MAX_NUM_MCQ_ANSWER
 from .dynamic_metrics_group import DynamicMetricsGroup
-from .forward_metrics import ForwardMetrics
 
 
 class PerfMetrics(DynamicMetricsGroup):
@@ -34,7 +33,6 @@ class PerfMetrics(DynamicMetricsGroup):
 
     def __init__(self, training_cfg: TrainingCfg) -> None:
         super().__init__(training_cfg)
-        self.forward_metrics = ForwardMetrics(training_cfg)
 
     @property
     def metrics_group_name(self) -> str:
