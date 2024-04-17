@@ -3,17 +3,18 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
-import re
 import typing as t
 
 from loguru import logger
 
 from ..utils import DeploymentCfg
+from .memo_mia_static import MemoMembershipStatic
 from .p_smi_static import PSmiStatic
 from .static_metrics_group import StaticMetricsGroup
 
 NAMES_TO_METRICS: t.Dict[str, t.Type[StaticMetricsGroup]] = {
     "p_smi": PSmiStatic,
+    "memo_mia": MemoMembershipStatic,
 }
 
 

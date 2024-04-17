@@ -22,6 +22,8 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 
 @app.command()
 def train(config: t.Optional[str] = None):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_main_train(config)
 
 
@@ -32,6 +34,8 @@ def measure_dyn(
     checkpoint: t.Optional[str] = None,
     force_recompute: bool = False,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_main_measure_dyn(
         name=name,
         config=config,
@@ -48,6 +52,10 @@ def measure_stat(
     force_recompute: bool = False,
     njobs: t.Optional[str] = None,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
+    if checkpoint is None:
+        raise ValueError(f"You should pass a checkpoint with the --checkpoint option.")
     run_main_measure_stat(
         name=name,
         config=config,
@@ -61,6 +69,8 @@ def measure_stat(
 def deploy_prepare(
     config: t.Optional[str] = None,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_deploy_prepare(config=config)
 
 
@@ -69,6 +79,8 @@ def deploy_clean_forward_values(
     config: t.Optional[str] = None,
     compressed_only: bool = False,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_deploy_clean_forward_values(config=config, compressed_only=compressed_only)
 
 
@@ -80,6 +92,8 @@ def deploy_gpu(
     self_forward_full_dataset: bool = False,
     forward_latest_on: t.Optional[str] = None,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_deploy_gpu(
         config=config,
         training=training,
@@ -98,6 +112,8 @@ def deploy_cpu(
     skip_metrics: t.Optional[str] = None,
     only_metrics: t.Optional[str] = None,
 ):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
     run_deploy_cpu(
         config=config,
         checkpoint=checkpoint,

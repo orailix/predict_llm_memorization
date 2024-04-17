@@ -16,11 +16,12 @@ from tqdm import tqdm
 from ..training import get_dataset, get_random_split
 from ..utils import (
     DeploymentCfg,
-    ForwardValues,
-    LightForwardValues,
     TrainingCfg,
-    get_forward_values,
+    get_logit_gaps_for_mia,
+    get_mia_memo_score,
     get_possible_training_cfg,
+    get_shadow_forward_values_for_mia,
+    norm_pdf,
 )
 from .dynamic_metrics_group import DynamicMetricsGroup
 
@@ -59,7 +60,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             "Loading shadow training configurations and corresponding checkpoints"
         )
         possible_training_cfg = get_possible_training_cfg(self.shadow_deployment_cfg)
-        self.shadow_training_cfg_and_checkpoints: t.List[t.Tuple[TrainingCfg, int]] = []
+        self.shadow_training_cfg: t.List[TrainingCfg] = []
         for k in range(len(possible_training_cfg)):
 
             # Excluding the training cfg itself
@@ -67,12 +68,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 continue
 
             try:
-                self.shadow_training_cfg_and_checkpoints.append(
-                    (
-                        possible_training_cfg[k],
-                        possible_training_cfg[k].latest_checkpoint,
-                    )
-                )
+                self.shadow_training_cfg.append(possible_training_cfg[k])
             except IndexError:
                 raise Exception(
                     f"You initialized a MemoMembershipMetrics object, but the following shadow "
@@ -89,66 +85,15 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             ["prop_memo"] + ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
         )
 
-    @cached_property
-    def shadow_forward_values(self) -> t.List[LightForwardValues]:
-        """The forward values of all shadow models."""
-
-        # Logging
-        logger.info(f"Loading forward values from shadow models")
-        shadow_forward_values = []
-        for count, (shadow_cfg, shadow_checkpoint) in enumerate(
-            tqdm(self.shadow_training_cfg_and_checkpoints)
-        ):
-
-            # Getting forward values
-            forward_values_trl = get_forward_values(
-                training_cfg=shadow_cfg,
-                checkpoint=shadow_checkpoint,
-                name=f"train_trl_on_{self.training_cfg.get_config_id()}",
-                enable_compressed=True,
-            )
-            forward_values_rdl = get_forward_values(
-                training_cfg=shadow_cfg,
-                checkpoint=shadow_checkpoint,
-                name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
-                enable_compressed=True,
-            )
-            forward_values_all = ForwardValues.concat(
-                forward_values_trl, forward_values_rdl, "train_all"
-            )
-
-            # Converting to LightForwardValues and Saving
-            shadow_forward_values.append(
-                LightForwardValues.from_forward_values(forward_values_all)
-            )
-
-        # Output
-        return shadow_forward_values
-
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
-        # Self forward values
-        forward_values_trl = get_forward_values(
-            training_cfg=self.training_cfg,
-            checkpoint=checkpoint,
-            name=f"train_trl_on_{self.training_cfg.get_config_id()}",
-            enable_compressed=True,
-        )
-        forward_values_rdl = get_forward_values(
-            training_cfg=self.training_cfg,
-            checkpoint=checkpoint,
-            name=f"train_rdl_on_{self.training_cfg.get_config_id()}",
-            enable_compressed=True,
-        )
-        forward_values_all = ForwardValues.concat(
-            forward_values_trl, forward_values_rdl, "train_all"
-        )
+        # ==================== Forward values ====================
 
-        # Concatenating with shadow forward values
-        self_and_shadow_forward_values = [
-            LightForwardValues.from_forward_values(forward_values_all)
-        ]
-        self_and_shadow_forward_values += self.shadow_forward_values
+        self_and_shadow_forward_values = get_shadow_forward_values_for_mia(
+            [self.training_cfg] + self.shadow_training_cfg,
+            checkpoint=None,
+            on_dataset=self.training_cfg.get_config_id(),
+        )
 
         # Unpacking some useful variables
         num_samples = len(self.global_idx)
@@ -160,38 +105,14 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             f"Using {num_shadow - 1} shadow model to attack {num_samples} target samples"
         )
 
+        # ==================== Logit gaps + target_in_shadow ====================
+
         # Fetching the logits gap for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
         # At position logits_gaps[i][j] we find the logits gap for sample with index i and shadow model j
-        logger.debug(
-            "Fetching the logits gaps for each shadow model and target global idx"
+        logits_gaps = get_logit_gaps_for_mia(
+            self_and_shadow_forward_values, global_idx=self.global_idx
         )
-        logits_gaps = {
-            target_global_idx: torch.zeros(num_shadow)
-            for target_global_idx in self.global_idx
-        }
-        # Iterating over shadow values...
-        for shadow_idx, shadow_values in enumerate(
-            tqdm(self_and_shadow_forward_values)
-        ):
-            # Iterating over the target global index for this shadow value...
-            for count, target_global_idx in enumerate(
-                shadow_values.global_index.tolist()
-            ):
-                # Extracting the logits gap
-                target_predicted_logits = shadow_values.mcq_predicted_logits[
-                    count
-                ].tolist()
-                true_label_index = shadow_values.inserted_label_index[count]
-                label_logits = target_predicted_logits[true_label_index]
-                other_logits = (
-                    target_predicted_logits[:true_label_index]
-                    + target_predicted_logits[true_label_index + 1 :]
-                )
-                target_logits_gap = label_logits - max(other_logits)
-
-                # Saving it at the correct position
-                logits_gaps[target_global_idx][shadow_idx] = target_logits_gap
 
         # Checking if each target sample was in the training set of the shadow models
         # Shape: `num_sample` entries, each entry has size `num_shadow - 1`
@@ -201,9 +122,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         logger.debug(
             "Checking if each target sample was in the training set of the shadow models"
         )
-        for shadow_training_cfg, _ in [
-            (self.training_cfg, checkpoint)
-        ] + self.shadow_training_cfg_and_checkpoints:
+        for shadow_training_cfg in [self.training_cfg] + self.shadow_training_cfg:
             shadow_split = get_random_split(self.base_dataset, shadow_training_cfg)
             shadow_global_idx = set(shadow_split["global_index"])
 
@@ -218,6 +137,8 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
                 raise RuntimeError(
                     "Inconsistency: the first shadow model should be the target model."
                 )
+
+        # ==================== Normal approximation for pos/neg likelihood ====================
 
         # Normal approximation
         num_pos = []
@@ -272,12 +193,14 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             )
 
             # Getting memo score
-            memo_score = get_memo_score(
+            memo_score = get_mia_memo_score(
                 pos_likelihood=pos_likelihood,
                 neg_likelihood=neg_likelihood,
                 epsilon=self.memo_epsilon,
             )
             target_global_idx_memo_score.append(memo_score)
+
+        # ==================== Memorization score + output ====================
 
         # Logging
         mean_num_pos, min_num_pos, max_num_pos = (
@@ -308,20 +231,3 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
             num_memorized / num_samples,
             mean_memorized,
         ] + target_global_idx_memo_score
-
-
-# Utils
-def norm_pdf(mean, std, x):
-    return (1 / std / np.sqrt(2 * np.pi)) * np.exp(-1 * (x - mean) ** 2 / 2 / std / std)
-
-
-def get_memo_score(pos_likelihood, neg_likelihood, epsilon):
-
-    if pos_likelihood < epsilon and neg_likelihood < epsilon:
-        return 0
-
-    total = pos_likelihood + neg_likelihood
-    pos_proba = pos_likelihood / total
-    neg_proba = neg_likelihood / total
-
-    return pos_proba - neg_proba
