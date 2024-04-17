@@ -169,10 +169,6 @@ class MemoMembershipStatic(StaticMetricsGroup):
 
         # ==================== Output ====================
 
-        mean_asr = np.mean(asr_per_idx)
+        mean_asr = torch.mean(asr_per_idx, axis=0)
         logger.debug(f"Mean Attack Success Rate: {mean_asr}")
-        logger.debug(f"Std Attack Success Rate: {np.std(asr_per_idx)}")
-        logger.debug(f"Max Attack Success Rate: {np.max(asr_per_idx)}")
-        logger.debug(f"Min Attack Success Rate: {np.min(asr_per_idx)}")
-
         return [mean_asr] + asr_per_idx.tolist()
