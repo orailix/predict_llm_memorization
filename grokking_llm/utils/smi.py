@@ -186,7 +186,9 @@ def norm_pdf(mean, std, x):
     return (1 / std / np.sqrt(2 * np.pi)) * np.exp(-1 * (x - mean) ** 2 / 2 / std / std)
 
 
-def get_p_smi_containers(metrics_df: pd.DataFrame) -> t.Dict[int, t.Dict[int, float]]:
+def get_p_smi_containers(
+    metrics_df: pd.DataFrame,
+) -> t.Dict[int, t.Dict[int, t.Dict[int, float]]]:
     """
     `metrics_df` is supposed to be the result of metrics.load_metrics_df()
     where `metrics` is an instance either of PSmiMetrics or PSmiStatic.

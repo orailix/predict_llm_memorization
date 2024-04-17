@@ -7,7 +7,6 @@ import collections
 import typing as t
 from functools import cached_property
 
-import pandas as pd
 from loguru import logger
 
 from ..training import get_dataset, get_random_split
@@ -48,9 +47,8 @@ class PSmiMetrics(DynamicMetricsGroup):
             ds = get_random_split(ds, training_cfg)
             self.global_idx = sorted(ds["global_index"])
         else:
-            ds_train = get_dataset(training_cfg, split="train")
-            ds_test = get_dataset(training_cfg, split="test")
-            self.global_idx = sorted(ds_train["global_index"] + ds_test["global_index"])
+            ds = get_dataset(training_cfg, split="train")
+            self.global_idx = sorted(ds["global_index"])
 
         # Main initialization
         super().__init__(training_cfg)
@@ -102,19 +100,6 @@ class PSmiMetrics(DynamicMetricsGroup):
         forward_values_all = ForwardValues.concat(
             forward_values_trl, forward_value_rdl, new_name="train_all"
         )
-
-        # Need also the test values ?
-        if self.full_dataset:
-            forward_value_test = get_forward_values(
-                self.training_cfg,
-                checkpoint,
-                f"test_on_full_dataset",
-                enable_compressed=False,
-            )
-
-            forward_values_all = ForwardValues.concat(
-                forward_values_all, forward_value_test, new_name="train_all"
-            )
 
         # Sanity check
         if forward_values_all.global_index.size(0) != len(self.global_idx):

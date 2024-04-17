@@ -68,7 +68,12 @@ class PSmiStatic(StaticMetricsGroup):
             for training_cfg in self.training_cfg_list
         )
 
-        layer_to_layer_count = {layer: count for count, layer in enumerate(SMI_LAYERS)}
+        layer_to_layer_count = {
+            layer: count for count, layer in enumerate(sorted(SMI_LAYERS))
+        }
+        idx_to_idx_count = {
+            idx: count for count, idx in enumerate(sorted(self.global_idx))
+        }
 
         logger.info(f"Filling values of P-SMI")
         for shadow_idx, (psmi_mean, psmi_max, psmi_min) in enumerate(
@@ -76,15 +81,20 @@ class PSmiStatic(StaticMetricsGroup):
         ):
             for layer in SMI_LAYERS:
                 for idx in self.global_idx:
+
+                    # Counters
                     layer_count = layer_to_layer_count[layer]
+                    idx_count = idx_to_idx_count[idx]
+
+                    # Countainers
                     p_smi_mean_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
-                        idx
+                        idx_count
                     ] = psmi_mean[checkpoint][layer][idx]
                     p_smi_max_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
-                        idx
+                        idx_count
                     ] = psmi_max[checkpoint][layer][idx]
                     p_smi_min_per_shadow_per_layer_per_idx[shadow_idx][layer_count][
-                        idx
+                        idx_count
                     ] = psmi_min[checkpoint][layer][idx]
 
         # ==================== Filling containers ====================
@@ -109,8 +119,12 @@ class PSmiStatic(StaticMetricsGroup):
         ]:
             for layer in SMI_LAYERS:
                 for idx in self.global_idx:
+                    # Counters
                     layer_count = layer_to_layer_count[layer]
-                    result.append(container[layer_count][idx])
+                    idx_count = idx_to_idx_count[idx]
+
+                    # Result
+                    result.append(container[layer_count][idx_count])
 
         return result
 
