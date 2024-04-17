@@ -19,6 +19,8 @@ from .membership_inference import (
     get_logit_gaps_for_mia,
     norm_pdf,
     get_mia_memo_score,
+    get_brier_scores_for_mia,
+    get_losses_for_mia,
 )
 from .training_cfg import TrainingCfg
 from .possible_training_cfg import get_possible_training_cfg

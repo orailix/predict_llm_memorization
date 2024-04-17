@@ -8,6 +8,9 @@ import typing as t
 from loguru import logger
 
 from ..utils import DeploymentCfg
+from .counterfactual_memo_static import CounterfactualMemoStatic
+from .counterfactual_simplicity import CounterfactualSimplicity
+from .loss_static import LossStatic
 from .memo_mia_static import MemoMembershipStatic
 from .p_smi_static import PSmiStatic
 from .static_metrics_group import StaticMetricsGroup
@@ -15,6 +18,9 @@ from .static_metrics_group import StaticMetricsGroup
 NAMES_TO_METRICS: t.Dict[str, t.Type[StaticMetricsGroup]] = {
     "p_smi": PSmiStatic,
     "memo_mia": MemoMembershipStatic,
+    "memo_counterfactual": CounterfactualMemoStatic,
+    "simplicity_counterfactual": CounterfactualSimplicity,
+    "loss": LossStatic,
 }
 
 
