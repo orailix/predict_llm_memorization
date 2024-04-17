@@ -58,7 +58,7 @@ class SampleLoss(DynamicMetricsGroup):
         # ==================== Metrics values ====================
         losses = []
         for count, _ in enumerate(forward_values_all.global_index.tolist()):
-            losses.append(forward_values_all.loss_asw[count])
+            losses.append(forward_values_all.loss_asw[count].item())
 
         # ==================== Output ====================
 
