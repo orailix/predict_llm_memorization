@@ -15,8 +15,5 @@
 # Cleaning modules
 module purge
 
-# Prepare deploy
-bash /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/_prepare_deploy.sh
-
 # Code execution
 srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/memo_mia_static.sh
