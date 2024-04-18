@@ -11,6 +11,7 @@ from ..utils import DeploymentCfg
 from .counterfactual_memo_static import CounterfactualMemoStatic
 from .counterfactual_simplicity import CounterfactualSimplicity
 from .loss_static import LossStatic
+from .memo_logit_gap_static import MemoLogitGapStatic
 from .memo_mia_static import MemoMembershipStatic
 from .p_smi_static import PSmiStatic
 from .static_metrics_group import StaticMetricsGroup
@@ -21,6 +22,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[StaticMetricsGroup]] = {
     "memo_counterfactual": CounterfactualMemoStatic,
     "simplicity_counterfactual": CounterfactualSimplicity,
     "loss": LossStatic,
+    "memo_logit_gap": MemoLogitGapStatic,
 }
 
 

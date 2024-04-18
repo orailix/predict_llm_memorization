@@ -35,6 +35,9 @@ class MemoLogitGapMetrics(DynamicMetricsGroup):
         ds = get_dataset(training_cfg)
         ds = get_random_split(ds, training_cfg)
         self.global_idx = sorted(ds["global_index"])
+
+        # Parsing args
+        logger.info(f"Using sigma={sigma}.")
         self.sigma = sigma
 
         # Main initialization
