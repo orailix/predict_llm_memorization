@@ -57,27 +57,15 @@ sbatch p_smi_full_dataset.slurm
 sbatch p_smi_static.slurm
 ```
 
-#### 7 - CPU: Compute the memorization_membership_inference static metric
+#### 7 - CPU: Compute other static metrics
 
 ```bash
-sbatch memo_mia_static.slurm
-```
-
-#### 8 - CPU: Compute the counterfactual static metrics
-
-```bash
-sbatch counterfactual_static.slurm
-```
-
-#### 9 - CPU: Compute the loss static metrics
-
-```bash
-sbatch loss.slurm
+sbatch static_metrics.slurm
 ```
 
 ## Prepare local download
 
-#### 10 - CPU: Clean and compress the metrics
+#### 8 - CPU: Clean and compress the metrics
 
 **Warning: you should check that the cleaning only affect the compressed forward values. Check script `clean_forward.sh`**
 
