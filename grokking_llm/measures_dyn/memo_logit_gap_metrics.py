@@ -11,6 +11,7 @@ from loguru import logger
 
 from ..training import get_dataset, get_random_split
 from ..utils import ForwardValues, TrainingCfg, get_forward_values
+from ..utils.constants import SIGMA_LOGIT_GAP
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -24,7 +25,7 @@ class MemoLogitGapMetrics(DynamicMetricsGroup):
     def __init__(
         self,
         training_cfg: TrainingCfg,
-        sigma: float = 8,
+        sigma: float = SIGMA_LOGIT_GAP,
     ) -> None:
 
         # List of global idx

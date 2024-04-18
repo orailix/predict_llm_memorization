@@ -23,6 +23,7 @@ from ..utils import (
     get_shadow_forward_values_for_mia,
     norm_pdf,
 )
+from ..utils.constants import MEMO_SCORE_EPSILON
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -37,7 +38,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         self,
         training_cfg: TrainingCfg,
         shadow_deployment_cfg: DeploymentCfg,
-        memo_epsilon: float = 1e-3,
+        memo_epsilon: float = MEMO_SCORE_EPSILON,
     ) -> None:
 
         # Parsing args

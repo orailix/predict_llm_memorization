@@ -11,7 +11,7 @@ from loguru import logger
 
 from ..training import get_dataset, get_random_split
 from ..utils import ForwardValues, TrainingCfg, get_forward_values, p_smi_estimator
-from ..utils.constants import SMI_LAYERS
+from ..utils.constants import SMI_LAYERS, SMI_N_EST
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -29,7 +29,7 @@ class PSmiMetrics(DynamicMetricsGroup):
     def __init__(
         self,
         training_cfg: TrainingCfg,
-        n_estimator: int = 2000,
+        n_estimator: int = SMI_N_EST,
         full_dataset: bool = False,
     ) -> None:
         # Logging

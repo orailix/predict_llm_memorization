@@ -12,7 +12,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 
 from ..utils import ForwardValues, TrainingCfg, get_forward_values, smi_estimator
-from ..utils.constants import SMI_LAYERS
+from ..utils.constants import SMI_LAYERS, SMI_N_EST, SMI_N_NEIGHBORS
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -39,7 +39,10 @@ class SmiMetrics(DynamicMetricsGroup):
     """
 
     def __init__(
-        self, training_cfg: TrainingCfg, n_estimator: int = 2000, n_neighbors: int = 3
+        self,
+        training_cfg: TrainingCfg,
+        n_estimator: int = SMI_N_EST,
+        n_neighbors: int = SMI_N_NEIGHBORS,
     ) -> None:
         super().__init__(training_cfg)
         self.n_estimator = n_estimator

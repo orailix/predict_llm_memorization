@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from ..measures_dyn import PSmiMetrics
 from ..utils import DeploymentCfg, TrainingCfg, get_p_smi_containers
-from ..utils.constants import SMI_LAYERS
+from ..utils.constants import SMI_LAYERS, SMI_N_EST
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -21,7 +21,10 @@ class PSmiStatic(StaticMetricsGroup):
     """Class used to compute Pointwise Sliced Mutual Information static metric."""
 
     def __init__(
-        self, deployment_cfg: DeploymentCfg, n_estimator: int = 2000, njobs: int = 1
+        self,
+        deployment_cfg: DeploymentCfg,
+        n_estimator: int = SMI_N_EST,
+        njobs: int = 1,
     ) -> None:
         super().__init__(deployment_cfg)
         logger.info(f"Using n_estimator={n_estimator} and njobs={njobs}")
