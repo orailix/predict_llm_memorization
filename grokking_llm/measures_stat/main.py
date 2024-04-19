@@ -9,7 +9,7 @@ from loguru import logger
 
 from ..utils import DeploymentCfg
 from .counterfactual_memo_static import CounterfactualMemoStatic
-from .counterfactual_simplicity import CounterfactualSimplicity
+from .counterfactual_simplicity import CounterfactualSimplicityStatic
 from .loss_static import LossStatic
 from .memo_logit_gap_static import MemoLogitGapStatic
 from .memo_mia_static import MemoMembershipStatic
@@ -20,7 +20,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[StaticMetricsGroup]] = {
     "p_smi": PSmiStatic,
     "memo_mia": MemoMembershipStatic,
     "memo_counterfactual": CounterfactualMemoStatic,
-    "simplicity_counterfactual": CounterfactualSimplicity,
+    "simplicity_counterfactual": CounterfactualSimplicityStatic,
     "loss": LossStatic,
     "memo_logit_gap": MemoLogitGapStatic,
 }

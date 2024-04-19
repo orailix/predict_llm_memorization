@@ -15,9 +15,10 @@ from grokking_llm.utils.deployment.deployment_cfg import DeploymentCfg
 from ..training import get_random_split
 from ..utils import (
     DeploymentCfg,
-    get_brier_scores_for_mia,
+    get_logit_gaps_for_mia,
     get_shadow_forward_values_for_mia,
 )
+from ..utils.constants import SIGMA_LOGIT_GAP
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -31,7 +32,16 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
     This is a static metric, that is computed and averaged over all models
     of a deployment config."""
 
-    def __init__(self, deployment_cfg: DeploymentCfg) -> None:
+    column_offset = 1
+
+    def __init__(
+        self, deployment_cfg: DeploymentCfg, sigma: float = SIGMA_LOGIT_GAP
+    ) -> None:
+
+        # Parsing args
+        logger.info(f"Using sigma={sigma}.")
+        self.sigma = sigma
+
         super().__init__(deployment_cfg)
         self.combine_fct = lambda t: t[0] - t[1]
 
@@ -72,7 +82,7 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
         # Fetching the brier score for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
         # At position logits_gaps[i][j] we find the brier score for sample with index i and shadow model j
-        brier_scores = get_brier_scores_for_mia(
+        logit_gaps = get_logit_gaps_for_mia(
             shadow_forward_values, global_idx=self.global_idx
         )
 
@@ -93,22 +103,22 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
                     target_global_idx in shadow_global_idx
                 )
 
-        # ==================== Mean brier score  ====================
+        # ==================== Mean eval metric  ====================
 
-        mean_pos_brier_per_idx = torch.zeros(num_samples)
-        mean_neg_brier_per_idx = torch.zeros(num_samples)
+        mean_pos_eval_metric_per_idx = torch.zeros(num_samples)
+        mean_neg_eval_metric_per_idx = torch.zeros(num_samples)
 
-        logger.debug(f"Computing mean pos/neg brier score per sample")
+        logger.debug(f"Computing mean eval metric per sample")
         for target_global_idx in tqdm(self.global_idx):
 
             # Getting logits_gaps for pos and neg shadow models
             pos_scores = [
-                brier_scores[target_global_idx][shadow_idx]
+                torch.tanh(logit_gaps[target_global_idx][shadow_idx] / self.sigma) / 2
                 for shadow_idx in range(num_shadow)
                 if target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]
             neg_scores = [
-                brier_scores[target_global_idx][shadow_idx]
+                torch.tanh(logit_gaps[target_global_idx][shadow_idx] / self.sigma) / 2
                 for shadow_idx in range(1, num_shadow)
                 if not target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]
@@ -119,22 +129,22 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
                 logger.warning(
                     f"No positive brier score for the following global index: {target_global_idx}"
                 )
-                mean_pos_brier_per_idx[idx_count] = 0
+                mean_pos_eval_metric_per_idx[idx_count] = 0
             else:
-                mean_pos_brier_per_idx[idx_count] = float(np.mean(pos_scores))
+                mean_pos_eval_metric_per_idx[idx_count] = float(np.mean(pos_scores))
 
             if len(neg_scores) == 0:
                 logger.warning(
                     f"No negative brier score for the following global index: {target_global_idx}"
                 )
-                mean_neg_brier_per_idx[idx_count] = 0
+                mean_neg_eval_metric_per_idx[idx_count] = 0
             else:
-                mean_neg_brier_per_idx[idx_count] = float(np.mean(neg_scores))
+                mean_neg_eval_metric_per_idx[idx_count] = float(np.mean(neg_scores))
 
         # ==================== Combining ====================
 
         metric_per_idx = self.combine_fct(
-            (mean_pos_brier_per_idx, mean_neg_brier_per_idx)
+            (mean_pos_eval_metric_per_idx, mean_neg_eval_metric_per_idx)
         )
 
         # ==================== Output ====================

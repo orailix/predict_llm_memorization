@@ -9,7 +9,7 @@ from ..utils import DeploymentCfg
 from .counterfactual_memo_static import CounterfactualMemoStatic
 
 
-class CounterfactualSimplicity(CounterfactualMemoStatic):
+class CounterfactualSimplicityStatic(CounterfactualMemoStatic):
     """Class used to compute counterfactual simplicity metrics.
 
     Counterfactual simplicity: sum of the average performance of the models
@@ -18,6 +18,8 @@ class CounterfactualSimplicity(CounterfactualMemoStatic):
 
     This is a static metric, that is computed and averaged over all models
     of a deployment config."""
+
+    column_offset = 1
 
     def __init__(self, deployment_cfg: DeploymentCfg) -> None:
         super().__init__(deployment_cfg)

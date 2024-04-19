@@ -25,6 +25,8 @@ class LossStatic(StaticMetricsGroup):
     This is a static metric, that is computed and averaged over all models
     of a deployment config."""
 
+    column_offset = 1
+
     def __init__(self, deployment_cfg: DeploymentCfg) -> None:
         super().__init__(deployment_cfg)
 

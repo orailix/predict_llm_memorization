@@ -135,54 +135,6 @@ def get_logit_gaps_for_mia(
     return logits_gaps
 
 
-def get_brier_scores_for_mia(
-    forward_values_list: t.List[LightForwardValues],
-    global_idx: t.List[int],
-) -> t.Dict[int, torch.Tensor]:
-    """Fetches the brier score for each shadow model.
-    Shape: `num_samples` entries, each enty has size `num_shadow`
-    At position brier_scores[i][j] we find the brier score for sample with index i and shadow model j
-    """
-
-    # Init
-    logger.debug("Fetching the brier score for each shadow model and target global idx")
-    num_shadow = len(forward_values_list)
-    brier_scores = {
-        target_global_idx: torch.zeros(num_shadow) for target_global_idx in global_idx
-    }
-
-    # Converting into set to accelerate lookup
-    global_idx = set(global_idx)
-
-    # Iterating over shadow values...
-    for shadow_idx, shadow_values in enumerate(tqdm(forward_values_list)):
-        # Iterating over the target global index for this shadow value...
-        for count, target_global_idx in enumerate(shadow_values.global_index.tolist()):
-
-            # Skipping idx that are not in global_idx
-            if target_global_idx not in global_idx:
-                continue
-
-            # Extracting the logits gap
-            target_predicted_logits = shadow_values.mcq_predicted_logits[count]
-            target_predicted_probas = torch.softmax(target_predicted_logits, axis=0)
-            true_label_index = shadow_values.inserted_label_index[count]
-
-            y_true_onehot = torch.nn.functional.one_hot(
-                true_label_index,
-                num_classes=MAX_NUM_MCQ_ANSWER,
-            )
-            target_brier_score = ((y_true_onehot - target_predicted_probas) ** 2).sum(
-                axis=0
-            )
-
-            # Saving it at the correct position
-            brier_scores[target_global_idx][shadow_idx] = target_brier_score
-
-    # Output
-    return brier_scores
-
-
 def get_losses_for_mia(
     forward_values_list: t.List[LightForwardValues],
     global_idx: t.List[int],

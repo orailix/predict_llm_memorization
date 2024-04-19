@@ -29,6 +29,8 @@ class MemoLogitGapStatic(StaticMetricsGroup):
     This is a static metric, that is computed and averaged over all models
     of a deployment config."""
 
+    column_offset = 1
+
     def __init__(
         self, deployment_cfg: DeploymentCfg, sigma: float = SIGMA_LOGIT_GAP
     ) -> None:
