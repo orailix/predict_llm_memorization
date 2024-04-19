@@ -39,11 +39,15 @@ sbatch cpu_target_metrics.slurm
 
 #### 4 - CPU: Compute the memorization metrics of the target model
 
+This metric stands appart because it requires a lot of RAM, so it need a dedicated node.
+
 ```bash
 sbatch memo_mia_metrics.slurm
 ```
 
 #### 5 - CPU: Compute the p-smi metric of all models
+
+This dynamic metric is in fact required for static computations. Moreover, it requires a lot of RAM, and it is optimized to run on a dedicated CPU node.
 
 ```bash
 sbatch p_smi_full_dataset.slurm

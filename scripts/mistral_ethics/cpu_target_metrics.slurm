@@ -4,7 +4,7 @@
 #SBATCH --job-name=cpu_target_metrics
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=40
 #SBATCH --partition=cpu_p1
 #SBATCH --hint=nomultithread
 #SBATCH --time=05:00:00
