@@ -27,4 +27,6 @@ jobs:
       - name: Show installed dependencies
         run: pip freeze
       - name: Run unit tests
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: PYTHONPATH=. python -m pytest
