@@ -16,7 +16,6 @@ from ..utils import (
     get_logit_gaps_for_mia,
     get_shadow_forward_values_for_mia,
 )
-from ..utils.constants import SIGMA_LOGIT_GAP
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -32,15 +31,13 @@ class MemoLogitGapStatic(StaticMetricsGroup):
     column_offset = 1
 
     def __init__(
-        self, deployment_cfg: DeploymentCfg, sigma: float = SIGMA_LOGIT_GAP
+        self,
+        deployment_cfg: DeploymentCfg,
     ) -> None:
-
-        # Parsing args
-        logger.info(f"Using sigma={sigma}.")
-        self.sigma = sigma
 
         # Main init
         super().__init__(deployment_cfg)
+        self.combine_fct = torch.mean
 
     @property
     def metrics_group_name(self) -> str:
@@ -92,8 +89,7 @@ class MemoLogitGapStatic(StaticMetricsGroup):
 
             idx_count = idx_to_idx_count[target_global_idx]
             current_logit_gaps = logits_gaps[target_global_idx]
-            current_memo_scores = torch.tanh(current_logit_gaps / self.sigma)
-            memo_score[idx_count] = torch.mean(current_memo_scores, axis=0)
+            memo_score[idx_count] = self.combine_fct(current_logit_gaps, axis=0)
 
         # ==================== Output ====================
 

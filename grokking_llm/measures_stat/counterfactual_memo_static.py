@@ -18,7 +18,6 @@ from ..utils import (
     get_logit_gaps_for_mia,
     get_shadow_forward_values_for_mia,
 )
-from ..utils.constants import SIGMA_LOGIT_GAP
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -34,13 +33,7 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
 
     column_offset = 1
 
-    def __init__(
-        self, deployment_cfg: DeploymentCfg, sigma: float = SIGMA_LOGIT_GAP
-    ) -> None:
-
-        # Parsing args
-        logger.info(f"Using sigma={sigma}.")
-        self.sigma = sigma
+    def __init__(self, deployment_cfg: DeploymentCfg) -> None:
 
         super().__init__(deployment_cfg)
         self.combine_fct = lambda t: t[0] - t[1]
@@ -113,12 +106,12 @@ class CounterfactualMemoStatic(StaticMetricsGroup):
 
             # Getting logits_gaps for pos and neg shadow models
             pos_scores = [
-                torch.tanh(logit_gaps[target_global_idx][shadow_idx] / self.sigma) / 2
+                logit_gaps[target_global_idx][shadow_idx]
                 for shadow_idx in range(num_shadow)
                 if target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]
             neg_scores = [
-                torch.tanh(logit_gaps[target_global_idx][shadow_idx] / self.sigma) / 2
+                logit_gaps[target_global_idx][shadow_idx]
                 for shadow_idx in range(1, num_shadow)
                 if not target_sample_is_in_shadow[target_global_idx][shadow_idx]
             ]

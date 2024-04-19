@@ -8,6 +8,7 @@ from .counterfactual_simplicity import CounterfactualSimplicityStatic
 from .loss_static import LossStatic
 from .main import run_main_measure_stat
 from .memo_logit_gap_static import MemoLogitGapStatic
+from .memo_logit_gap_std_static import MemoLogitGapStdStatic
 from .memo_mia_static import MemoMembershipStatic
 from .p_smi_static import PSmiStatic
 from .static_metrics_group import StaticMetricsGroup

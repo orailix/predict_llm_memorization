@@ -16,7 +16,7 @@ def get_static_container(
     """
     `metrics_df` is supposed to be the result of metrics.load_metrics_df()
     where `metrics` is an instance of one of CounterfactualSimplicityStatic,
-    CounterfactualMemoStatic, LossStatic, MemoLogitGapStatic, or MemoMembershipStatic.
+    CounterfactualMemoStatic, LossStatic, MemoLogitGapStatic, or MemoMembershipStatic, MemoLogitGapStdStatic.
 
     `column_offset` is an int corresponding to the number of column to skip in the df,
     in addition to the "checkpoint" column, that is always skipped. For example for LossStatic,
