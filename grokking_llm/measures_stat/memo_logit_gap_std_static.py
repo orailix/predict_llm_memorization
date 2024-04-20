@@ -3,21 +3,12 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
-import typing as t
-
 import torch
-from loguru import logger
-from tqdm import tqdm
 
 from grokking_llm.utils.deployment.deployment_cfg import DeploymentCfg
 
-from ..utils import (
-    DeploymentCfg,
-    get_logit_gaps_for_mia,
-    get_shadow_forward_values_for_mia,
-)
+from ..utils import DeploymentCfg
 from .memo_logit_gap_static import MemoLogitGapStatic
-from .static_metrics_group import StaticMetricsGroup
 
 
 class MemoLogitGapStdStatic(MemoLogitGapStatic):
@@ -28,8 +19,6 @@ class MemoLogitGapStdStatic(MemoLogitGapStatic):
 
     This is a static metric, that is computed and averaged over all models
     of a deployment config."""
-
-    column_offset = 1
 
     def __init__(
         self,
