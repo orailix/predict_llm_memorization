@@ -31,6 +31,7 @@ MAX_NUM_MCQ_ANSWER = 16
 
 # Training arguments excluded from config ID
 TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
+    "after_c_only_every_n",
     "num_train_epochs",
     "per_device_eval_batch_size",
     "evaluation_strategy",
@@ -63,6 +64,7 @@ TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
 
 # Default training arguments
 TRAIN_CFG_DEFAULT_TRAINING_ARGS = dict(
+    after_c_only_every_n=None,
     warmup_steps=5,
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,

@@ -3,6 +3,7 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import shutil
 import typing as t
 from pathlib import Path
 
@@ -41,8 +42,15 @@ class CustomTrainer(transformers.Trainer):
 
     """Custom class to custom the compute_loss function."""
 
-    def __init__(self, *args, last_token_only: bool = False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        last_token_only: bool = False,
+        after_c_only_every_n: t.Optional[str] = None,
+        **kwargs,
+    ):
         self.last_token_only = last_token_only
+        self.after_c_only_every_n = after_c_only_every_n
         super().__init__(*args, **kwargs)
 
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -67,16 +75,41 @@ class CustomTrainer(transformers.Trainer):
         current_folder = f"checkpoint-{current_step}"
 
         for child in Path(run_dir).iterdir():
-            if (
+
+            # Check that we are dealing with a checkpoint dir
+            # which is not the latest
+            if not (
                 child.is_dir()
                 and "checkpoint-" in child.name
                 and child.name != current_folder
             ):
-                if (child / "optimizer.pt").is_file():
-                    (child / "optimizer.pt").unlink()
+                continue
 
-                if (child / "scheduler.pt").is_file():
-                    (child / "scheduler.pt").unlink()
+            # Removing the optimizer and schedler state
+            if (child / "optimizer.pt").is_file():
+                logger.debug(
+                    f"Removing file of non-last checkpoint: {child / 'optimizer.pt'}"
+                )
+                (child / "optimizer.pt").unlink()
+
+            if (child / "scheduler.pt").is_file():
+                logger.debug(
+                    f"Removing file of non-last checkpoint: {child / 'scheduler.pt'}"
+                )
+                (child / "scheduler.pt").unlink()
+
+            # Removing the checkpoint based on self.after_c_only_every_n
+            if self.after_c_only_every_n is None:
+                continue
+
+            dir_checkpoint_number = int(child.name[len("checkpoint-") :])
+            c, n = self.after_c_only_every_n.split(",")
+            c, n = int(c), int(n)
+            if dir_checkpoint_number > c and not dir_checkpoint_number % n == 0:
+                logger.debug(
+                    f"Removing dir based on after_c_only_every_n={self.after_c_only_every_n}: {child}"
+                )
+                shutil.rmtree(child)
 
 
 def get_trainer(
@@ -112,8 +145,14 @@ def get_trainer(
     )
 
     # Training arguments
-    training_args = transformers.TrainingArguments(
-        **cfg.training_args, output_dir=cfg.get_output_dir()
+    cfg_training_args_for_hf = {
+        key: val
+        for key, val in cfg.training_args.items()
+        if key != "after_c_only_every_n"
+    }
+    after_c_only_every_n = cfg.training_args["after_c_only_every_n"]
+    hf_training_args = transformers.TrainingArguments(
+        **cfg_training_args_for_hf, output_dir=cfg.get_output_dir()
     )
 
     # Creating the Trainer
@@ -122,7 +161,8 @@ def get_trainer(
         model=model,
         train_dataset=processed_train_dataset,
         eval_dataset=processed_eval_dataset,
-        args=training_args,
+        args=hf_training_args,
+        after_c_only_every_n=after_c_only_every_n,
     )
 
     # Saving model if needed
