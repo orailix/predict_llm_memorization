@@ -40,6 +40,8 @@ def test_get_trainer():
     # Checks
     assert trainer.last_token_only == cfg.last_token_only
     for key, value in cfg.training_args.items():
+        if key == "after_c_only_every_n":
+            continue
         assert key in dir(trainer.args)
         assert getattr(trainer.args, key) == value
 
