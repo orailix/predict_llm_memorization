@@ -11,7 +11,7 @@ from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from ..utils import TrainingCfg
-from ..utils.constants import MAX_NUM_MCQ_ANSWER
+from ..utils.constants import MAX_NUM_MCQ_ANSWER, MMLU_MAX_SIZE
 from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU, MOD_DUMMY_LLAMA, MOD_MISTRAL_7B
 from .formatting import format_arc, format_ethics, format_label, format_mmlu
 
@@ -63,13 +63,21 @@ def get_dataset(
         split_train = "train"
         split_test = "test"
 
+    # Train set
     ds_train = datasets.load_dataset(cfg.dataset, *args, split=split_train)
     ds_train = ds_train.add_column("global_index", np.array(range(len(ds_train))))
+    if cfg.dataset == DS_MMLU:
+        ds_train = ds_train.select(range(MMLU_MAX_SIZE))
+
+    # Test set
     ds_test = datasets.load_dataset(cfg.dataset, *args, split=split_test)
     ds_test = ds_test.add_column(
         "global_index", np.array(range(len(ds_train), len(ds_train) + len(ds_test)))
     )
+    if cfg.dataset == DS_MMLU:
+        ds_test = ds_test.select([])
 
+    # Output
     if split == TRAIN_SPLIT_HF:
         result = ds_train
     elif split == TEST_SPLIT_HF:

@@ -29,6 +29,9 @@ DATASET_RANDOM_LABEL = 0
 # Maximum number of answers for MCQ
 MAX_NUM_MCQ_ANSWER = 16
 
+# Maximum number of sample for MMLU
+MMLU_MAX_SIZE = 33750
+
 # Training arguments excluded from config ID
 TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
     "after_c_only_every_n",
