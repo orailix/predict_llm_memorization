@@ -1,5 +1,5 @@
 loguru>=0.7.2
-transformers==4.35.2
+transformers==4.40.0
 torch==2.1.0
 huggingface_hub==0.19.4
 accelerate==0.25.0
