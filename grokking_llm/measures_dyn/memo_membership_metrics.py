@@ -4,12 +4,9 @@
 # Apache Licence v2.0.
 
 import typing as t
-from dataclasses import dataclass
-from functools import cached_property
 from typing import List
 
 import numpy as np
-import torch
 from loguru import logger
 from tqdm import tqdm
 
@@ -17,10 +14,10 @@ from ..training import get_dataset, get_random_split
 from ..utils import (
     DeploymentCfg,
     TrainingCfg,
-    get_logit_gaps_for_mia,
+    get_logit_gaps_for_pointwise,
     get_mia_memo_score,
     get_possible_training_cfg,
-    get_shadow_forward_values_for_mia,
+    get_shadow_forward_values_for_pointwise,
     norm_pdf,
 )
 from ..utils.constants import MEMO_SCORE_EPSILON
@@ -33,6 +30,8 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
     Memorization is defined as DP-distinguishability. As such, it is
     quantified by evaluating the accuracy of membership inference attacks.
     """
+
+    column_offset = 1
 
     def __init__(
         self,
@@ -90,7 +89,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
 
         # ==================== Forward values ====================
 
-        self_and_shadow_forward_values = get_shadow_forward_values_for_mia(
+        self_and_shadow_forward_values = get_shadow_forward_values_for_pointwise(
             [self.training_cfg] + self.shadow_training_cfg,
             checkpoint=None,
             on_dataset=self.training_cfg.get_config_id(),
@@ -111,7 +110,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         # Fetching the logits gap for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
         # At position logits_gaps[i][j] we find the logits gap for sample with index i and shadow model j
-        logits_gaps = get_logit_gaps_for_mia(
+        logits_gaps = get_logit_gaps_for_pointwise(
             self_and_shadow_forward_values, global_idx=self.global_idx
         )
 

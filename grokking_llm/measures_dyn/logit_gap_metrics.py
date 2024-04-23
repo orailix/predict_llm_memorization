@@ -21,6 +21,8 @@ class LogitGapMetrics(DynamicMetricsGroup):
     and the following label with greatest predicted probability.
     """
 
+    column_offset = 1
+
     def __init__(
         self,
         training_cfg: TrainingCfg,
@@ -39,11 +41,11 @@ class LogitGapMetrics(DynamicMetricsGroup):
 
     @property
     def metrics_group_name(self) -> str:
-        return "memo_logits_gap"
+        return "logits_gap"
 
     @property
     def metrics_names(self) -> t.List[str]:
-        return ["mean_memo"] + [f"memo_{idx}" for idx in self.global_idx]
+        return ["mean_gap"] + [f"gap_{idx}" for idx in self.global_idx]
 
     def metrics_computation_core(self, checkpoint: int) -> List[float]:
 
