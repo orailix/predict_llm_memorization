@@ -16,6 +16,7 @@ MOD_MISTRAL_7B = "mistralai/Mistral-7B-v0.1"
 MOD_MISTRAL_7B_CHAT = "mistralai/Mistral-7B-Instruct-v0.1"
 MOD_LLAMA_7B = "meta-llama/Llama-2-7b-hf"
 MOD_LLAMA_7B_CHAT = "meta-llama/Llama-2-7b-chat-hf"
+MOD_GEMMA_7B = "google/gemma-7b"
 MOD_DUMMY_LLAMA = "BlackSamorez/llama-2-tiny-testing"
 
 # Dataset names

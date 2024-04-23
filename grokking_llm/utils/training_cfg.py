@@ -22,6 +22,7 @@ from .hf_hub import (
     DS_ETHICS,
     DS_MMLU,
     MOD_DUMMY_LLAMA,
+    MOD_GEMMA_7B,
     MOD_LLAMA_7B,
     MOD_MISTRAL_7B,
 )
@@ -586,19 +587,21 @@ TRAINING_ARGS:"""
 
         # MAIN CONFIG
 
-        if model in [MOD_MISTRAL_7B, MOD_LLAMA_7B, MOD_DUMMY_LLAMA]:
+        if model in [MOD_MISTRAL_7B, MOD_LLAMA_7B, MOD_GEMMA_7B, MOD_DUMMY_LLAMA]:
             self.model = model
         elif model.lower() == TRAIN_CFG_MISTRAL:
             self.model = MOD_MISTRAL_7B
         elif model.lower() == TRAIN_CFG_LLAMA:
             self.model = MOD_LLAMA_7B
+        elif model.lower() == TRAIN_CFG_GEMMA:
+            self.model = MOD_GEMMA_7B
         elif model.lower() == TRAIN_CFG_DUMMY_LLAMA:
             logger.info(f"Using dummy Llama model for testing.: {MOD_DUMMY_LLAMA}")
             logger.info("DO NOT USE FOR NON-TESTING PURPOSE")
             self.model = MOD_DUMMY_LLAMA
         else:
             raise ValueError(
-                f"`model`={model} should be in {[TRAIN_CFG_MISTRAL, TRAIN_CFG_LLAMA, TRAIN_CFG_DUMMY_LLAMA, MOD_MISTRAL_7B, MOD_LLAMA_7B, MOD_DUMMY_LLAMA]}."
+                f"`model`={model} should be in {[TRAIN_CFG_MISTRAL, TRAIN_CFG_LLAMA, TRAIN_CFG_GEMMA, TRAIN_CFG_DUMMY_LLAMA, MOD_MISTRAL_7B, MOD_LLAMA_7B, MOD_GEMMA_7B, MOD_DUMMY_LLAMA]}."
             )
 
         if dataset in [DS_ARC, DS_ETHICS, DS_MMLU]:
