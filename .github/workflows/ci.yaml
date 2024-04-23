@@ -6,9 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches:
-      - main
-      - notebooks
+    branches: [ main ]
 
 jobs:
   Unit-tests:
