@@ -14,11 +14,11 @@ from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
-class MemoProbaGapMetrics(DynamicMetricsGroup):
+class LogitGapMetrics(DynamicMetricsGroup):
     """Class used to compute memorization metrics.
 
-    Memorization is defined as the probability gap between the true label
-    and the following label  with greatest predicted probability.
+    Memorization is defined as the logit gap between the true label
+    and the following label with greatest predicted probability.
     """
 
     def __init__(
@@ -39,7 +39,7 @@ class MemoProbaGapMetrics(DynamicMetricsGroup):
 
     @property
     def metrics_group_name(self) -> str:
-        return "memo_proba_gap"
+        return "memo_logits_gap"
 
     @property
     def metrics_names(self) -> t.List[str]:
@@ -67,33 +67,33 @@ class MemoProbaGapMetrics(DynamicMetricsGroup):
         # Unpacking some useful variables
         num_samples = len(self.global_idx)
 
-        # Fetching the proba gap for each shadow model
+        # Fetching the logits gap for each shadow model
         logger.debug(
-            "Fetching the proba gaps for each shadow model and target global idx"
+            "Fetching the logits gaps for each shadow model and target global idx"
         )
-        proba_gaps = dict()
+        logits_gaps = dict()
         # Iterating over the target global index for this shadow value...
         for count, target_global_idx in enumerate(
             forward_values_all.global_index.tolist()
         ):
-            # Extracting the proba gap
-            target_predicted_proba = forward_values_all.mcq_predicted_proba[
+            # Extracting the logits gap
+            target_predicted_logits = forward_values_all.mcq_predicted_logits[
                 count
             ].tolist()
             true_label_index = forward_values_all.inserted_label_index[count]
-            label_proba = target_predicted_proba[true_label_index]
-            other_proba = (
-                target_predicted_proba[:true_label_index]
-                + target_predicted_proba[true_label_index + 1 :]
+            label_logits = target_predicted_logits[true_label_index]
+            other_logits = (
+                target_predicted_logits[:true_label_index]
+                + target_predicted_logits[true_label_index + 1 :]
             )
-            target_proba_gap = label_proba - max(other_proba)
+            target_logits_gap = label_logits - max(other_logits)
 
             # Saving it at the correct position
-            proba_gaps[target_global_idx] = target_proba_gap
+            logits_gaps[target_global_idx] = target_logits_gap
 
         # Sorting
         memorization_score = [
-            proba_gaps[target_global_idx] for target_global_idx in self.global_idx
+            logits_gaps[target_global_idx] for target_global_idx in self.global_idx
         ]
 
         # Logging
