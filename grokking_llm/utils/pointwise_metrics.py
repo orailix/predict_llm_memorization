@@ -26,7 +26,7 @@ def get_pointwise_container(
     where `metrics` is an instance of one of:
     - Static measures: CounterfactualSimplicityStatic, CounterfactualMemoStatic, LossStatic,
         MemoLogitGapStatic, or MemoMembershipStatic, MemoLogitGapStdStatic
-    - Dynamic measures: MemoMembershipMetrics, SampleLoss, LogitGapMetrics
+    - Dynamic measures: MemoMembershipMetrics, SampleLossMetrics, LogitGapMetrics
 
     Both static and dynamic P-SMI measures are excluded from this format, because they are
     more complex and include layer and smi-type details.

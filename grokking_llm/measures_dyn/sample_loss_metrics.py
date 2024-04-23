@@ -13,7 +13,7 @@ from ..utils import ForwardValues, TrainingCfg, get_forward_values
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
-class SampleLoss(DynamicMetricsGroup):
+class SampleLossMetrics(DynamicMetricsGroup):
     """Class used to compute the loss for each sample of the training set."""
 
     column_offset = 1

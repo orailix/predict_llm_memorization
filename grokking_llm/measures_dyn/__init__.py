@@ -12,7 +12,7 @@ from .main import run_main_measure_dyn
 from .memo_membership_metrics import MemoMembershipMetrics
 from .p_smi_metrics import PSmiMetrics
 from .perf_metrics import PerfMetrics
-from .sample_loss_metrics import SampleLoss
+from .sample_loss_metrics import SampleLossMetrics
 from .smi_metrics import SmiMetrics
 from .utils.dataloaders import get_dataloaders_for_measures
 from .weights_metrics import WeightsMetrics
