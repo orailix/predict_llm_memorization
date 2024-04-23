@@ -1,4 +1,5 @@
 *
 !mistral_ethics/
+!mmlu_tests/
 !bind_gpu.sh
 !.gitignore
