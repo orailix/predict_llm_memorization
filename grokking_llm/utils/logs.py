@@ -25,3 +25,6 @@ warnings.filterwarnings(
 warnings.filterwarnings(
     "ignore", r"torch.utils._pytree._register_pytree_node is deprecated."
 )
+warnings.filterwarnings(
+    "ignore", r"IProgress not found."
+)
