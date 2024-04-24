@@ -31,7 +31,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
     quantified by evaluating the accuracy of membership inference attacks.
     """
 
-    column_offset = 1
+    column_offset = 2
 
     def __init__(
         self,
