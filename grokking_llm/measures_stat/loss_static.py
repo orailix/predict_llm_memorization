@@ -5,15 +5,17 @@
 
 import typing as t
 
-import numpy as np
 import torch
 from loguru import logger
 from tqdm import tqdm
 
 from grokking_llm.utils.deployment.deployment_cfg import DeploymentCfg
 
-from ..training import get_random_split
-from ..utils import DeploymentCfg, get_losses_for_mia, get_shadow_forward_values_for_mia
+from ..utils import (
+    DeploymentCfg,
+    get_losses_for_pointwise,
+    get_shadow_forward_values_for_pointwise,
+)
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -42,7 +44,7 @@ class LossStatic(StaticMetricsGroup):
 
         # ==================== Forward values ====================
 
-        shadow_forward_values = get_shadow_forward_values_for_mia(
+        shadow_forward_values = get_shadow_forward_values_for_pointwise(
             training_cfg_list=self.training_cfg_list,
             checkpoint=checkpoint,
             on_dataset="full_dataset",
@@ -67,7 +69,9 @@ class LossStatic(StaticMetricsGroup):
         # Fetching the losses for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
         # At position losses[i][j] we find the loss for sample with index i and shadow model j
-        losses = get_losses_for_mia(shadow_forward_values, global_idx=self.global_idx)
+        losses = get_losses_for_pointwise(
+            shadow_forward_values, global_idx=self.global_idx
+        )
 
         # ==================== Mean loss  ====================
 

@@ -13,8 +13,8 @@ from grokking_llm.utils.deployment.deployment_cfg import DeploymentCfg
 
 from ..utils import (
     DeploymentCfg,
-    get_logit_gaps_for_mia,
-    get_shadow_forward_values_for_mia,
+    get_logit_gaps_for_pointwise,
+    get_shadow_forward_values_for_pointwise,
 )
 from .static_metrics_group import StaticMetricsGroup
 
@@ -51,7 +51,7 @@ class MemoLogitGapStatic(StaticMetricsGroup):
 
         # ==================== Forward values ====================
 
-        shadow_forward_values = get_shadow_forward_values_for_mia(
+        shadow_forward_values = get_shadow_forward_values_for_pointwise(
             training_cfg_list=self.training_cfg_list,
             checkpoint=checkpoint,
             on_dataset="full_dataset",
@@ -76,7 +76,7 @@ class MemoLogitGapStatic(StaticMetricsGroup):
         # Fetching the logits gap for each shadow model
         # Shape: `num_samples` entries, each enty has size `num_shadow`
         # At position logits_gaps[i][j] we find the logits gap for sample with index i and shadow model j
-        logits_gaps = get_logit_gaps_for_mia(
+        logits_gaps = get_logit_gaps_for_pointwise(
             shadow_forward_values, global_idx=self.global_idx
         )
 

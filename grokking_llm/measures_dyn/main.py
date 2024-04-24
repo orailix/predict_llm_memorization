@@ -13,12 +13,11 @@ from .compress_forward_metrics import CompressForwardMetrics
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
-from .memo_logit_gap_metrics import MemoLogitGapMetrics
+from .logit_gap_metrics import LogitGapMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
-from .memo_proba_gap_metrics import MemoProbaGapMetrics
 from .p_smi_metrics import PSmiMetrics
 from .perf_metrics import PerfMetrics
-from .sample_loss_metrics import SampleLoss
+from .sample_loss_metrics import SampleLossMetrics
 from .smi_metrics import SmiMetrics
 from .weights_metrics import WeightsMetrics
 
@@ -29,10 +28,9 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "smi": SmiMetrics,
     "p_smi": PSmiMetrics,
     "weights": WeightsMetrics,
-    "memo_proba_gap": MemoProbaGapMetrics,
-    "memo_logit_gap": MemoLogitGapMetrics,
     "compress_forward": CompressForwardMetrics,
-    "sample_loss": SampleLoss,
+    "sample_loss": SampleLossMetrics,
+    "logit_gap": LogitGapMetrics,
 }
 
 p_smi_on_full_dataset = "p_smi_on_full_dataset"
