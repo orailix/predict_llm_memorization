@@ -19,6 +19,6 @@ python -u -m grokking_llm measure-dyn smi --config=7sLH0svuW_pNh8Uecl5Exg &
 python -u -m grokking_llm measure-dyn p_smi --config=7sLH0svuW_pNh8Uecl5Exg &
 python -u -m grokking_llm measure-dyn weights --config=7sLH0svuW_pNh8Uecl5Exg &
 python -u -m grokking_llm measure-dyn memo_proba_gap --config=7sLH0svuW_pNh8Uecl5Exg &
-python -u -m grokking_llm measure-dyn memo_logit_gap --config=7sLH0svuW_pNh8Uecl5Exg &
+python -u -m grokking_llm measure-dyn logit_gap --config=7sLH0svuW_pNh8Uecl5Exg &
 python -u -m grokking_llm measure-dyn sample_loss --config=7sLH0svuW_pNh8Uecl5Exg;
 wait;
