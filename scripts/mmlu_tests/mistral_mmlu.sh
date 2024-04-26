@@ -5,6 +5,7 @@ cd /gpfswork/rech/yfw/upp42qa/grokking_llm
 conda activate expe
 
 # Training
+python -u /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mmlu_tests/setup.py;
 python -u -m grokking_llm train --config=lvAxlU7wprkJOR9K4h-aAg;
 
 # Basic measures
