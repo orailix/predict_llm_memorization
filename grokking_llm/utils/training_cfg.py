@@ -233,7 +233,7 @@ TRAINING_ARGS:"""
             if not self.training_args["resume_from_checkpoint"]:
                 result = False
             else:
-                result = len(self.get_available_checkpoints()) >= 1
+                result = len(self.get_available_checkpoints()) >= 2
         else:
             result = str(self.training_args["resume_from_checkpoint"])
 
