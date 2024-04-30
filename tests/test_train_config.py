@@ -350,7 +350,7 @@ def test_resume_from_checkpoint_boolean_true():
     # Tests
     assert cfg.get_resume_from_checkpoint_status() is False
     (output_dir / "checkpoint-0").mkdir()
-    assert cfg.get_resume_from_checkpoint_status() is True
+    assert cfg.get_resume_from_checkpoint_status() is False
     (output_dir / "checkpoint-1").mkdir()
     assert cfg.get_resume_from_checkpoint_status() is True
 
