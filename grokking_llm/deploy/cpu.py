@@ -60,10 +60,10 @@ def run_deploy_cpu(
 
     # Deploy -- njobs == 1
     if njobs == 1:
-        while not deployment_cfg.stack_todo_cpu.empty():
+        while not deployment_cfg.stack_todo.empty():
 
             try:
-                training_cfg_path = deployment_cfg.stack_todo_cpu.pop()
+                training_cfg_path = deployment_cfg.stack_todo.pop()
                 for measure_name in metrics:
                     run_main_measure_dyn(
                         measure_name,
@@ -71,26 +71,26 @@ def run_deploy_cpu(
                         checkpoint=checkpoint,
                         force_recompute=force_recompute,
                     )
-                deployment_cfg.stack_done_cpu.push(training_cfg_path)
+                deployment_cfg.stack_done.push(training_cfg_path)
             except KeyboardInterrupt as e:
                 logger.info(
                     "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
                 )
-                deployment_cfg.stack_todo_cpu.push(training_cfg_path)
+                deployment_cfg.stack_todo.push(training_cfg_path)
                 raise e
 
             except GotSigterm as e:
                 logger.info(
                     "Sigterm detecter, pushing current config to the TODO_GPU stack..."
                 )
-                deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+                deployment_cfg.stack_todo.push(training_cfg_path)
                 raise e
 
             except Exception as e:
                 logger.info(
                     "Error detected, pushing the current config to the TODO_GPU stack..."
                 )
-                deployment_cfg.stack_todo_cpu.push(training_cfg_path)
+                deployment_cfg.stack_todo.push(training_cfg_path)
                 raise e
 
         logger.info(f"End of CPU deployment")
@@ -105,7 +105,7 @@ def run_deploy_cpu(
     )
 
     try:
-        todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
+        todo_cpu = deployment_cfg.stack_todo.pop_all()
 
         Parallel(n_jobs=njobs)(
             delayed(run_main_measure_dyn)(
@@ -120,25 +120,25 @@ def run_deploy_cpu(
 
         # Stacks
         logger.debug("Updating TODO_CPU and DONE_CPU stacks.")
-        deployment_cfg.stack_done_cpu.push_chunk(todo_cpu)
+        deployment_cfg.stack_done.push_chunk(todo_cpu)
 
     except KeyboardInterrupt as e:
         logger.info(
             "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
         )
-        deployment_cfg.stack_todo_cpu.push_chunk(todo_cpu)
+        deployment_cfg.stack_todo.push_chunk(todo_cpu)
         raise e
 
     except GotSigterm as e:
         logger.info("Sigterm detecter, pushing current config to the TODO_GPU stack...")
-        deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+        deployment_cfg.stack_todo.push(training_cfg_path)
         raise e
 
     except Exception as e:
         logger.info(
             "Error detected, pushing the current config to the TODO_GPU stack..."
         )
-        deployment_cfg.stack_todo_cpu.push_chunk(todo_cpu)
+        deployment_cfg.stack_todo.push_chunk(todo_cpu)
         raise e
 
     # Logging

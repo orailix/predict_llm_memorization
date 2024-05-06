@@ -31,11 +31,8 @@ def run_deploy_prepare(config: t.Union[str, Path]) -> None:
 
     # Cleaning
     logger.debug(f"Cleaning existing stacks in {deployment_cfg.stacks_dir}")
-    deployment_cfg.stack_all.reset()
-    deployment_cfg.stack_todo_gpu.reset()
-    deployment_cfg.stack_todo_cpu.reset()
-    deployment_cfg.stack_done_gpu.reset()
-    deployment_cfg.stack_done_cpu.reset()
+    deployment_cfg.stack_todo.reset()
+    deployment_cfg.stack_done.reset()
     for child in deployment_cfg.export_dir.iterdir():
         if (
             child.is_file()
@@ -54,9 +51,7 @@ def run_deploy_prepare(config: t.Union[str, Path]) -> None:
 
     # Push to stacks
     logger.debug(f"Pushing exported configs to stacks in {deployment_cfg.stacks_dir}")
-    deployment_cfg.stack_all.push_chunk(to_push)
-    deployment_cfg.stack_todo_gpu.push_chunk(to_push)
-    deployment_cfg.stack_todo_cpu.push_chunk(to_push)
+    deployment_cfg.stack_todo.push_chunk(to_push)
 
     # Logging
     logger.info(f"End of deployment preparation: {deployment_cfg.get_deployment_id()}")

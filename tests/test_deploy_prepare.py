@@ -84,13 +84,9 @@ def test_prepare_product():
     deployment_cfg = DeploymentCfg.autoconfig("deployment_2")
 
     # Checking stacks
-    stack_content_all = deployment_cfg.stack_all.pop_all()
-    stack_content_todo_gpu = deployment_cfg.stack_todo_gpu.pop_all()
-    stack_content_todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
-    assert stack_content_all == stack_content_todo_cpu == stack_content_todo_gpu
-    assert len(stack_content_all) == 11**3
-    assert deployment_cfg.stack_done_gpu.empty()
-    assert deployment_cfg.stack_done_cpu.empty()
+    stack_content_todo = deployment_cfg.stack_todo.pop_all()
+    assert len(stack_content_todo) == 11**3
+    assert deployment_cfg.stack_done.empty()
 
     # Counting exports
     count_export = 0
@@ -103,7 +99,7 @@ def test_prepare_product():
         ):
             count_export += 1
 
-            assert str(child) in stack_content_all
+            assert str(child) in stack_content_todo
 
             if not checked_import:
                 TrainingCfg.from_file(child)
@@ -126,13 +122,9 @@ def test_prepare_zip():
     deployment_cfg = DeploymentCfg.autoconfig("deployment_3")
 
     # Checking stacks
-    stack_content_all = deployment_cfg.stack_all.pop_all()
-    stack_content_todo_gpu = deployment_cfg.stack_todo_gpu.pop_all()
-    stack_content_todo_cpu = deployment_cfg.stack_todo_cpu.pop_all()
-    assert stack_content_all == stack_content_todo_cpu == stack_content_todo_gpu
-    assert len(stack_content_all) == 11
-    assert deployment_cfg.stack_done_gpu.empty()
-    assert deployment_cfg.stack_done_cpu.empty()
+    stack_content_todo = deployment_cfg.stack_todo.pop_all()
+    assert len(stack_content_todo) == 11
+    assert deployment_cfg.stack_done.empty()
 
     # Counting exports
     count_export = 0
@@ -145,7 +137,7 @@ def test_prepare_zip():
         ):
             count_export += 1
 
-            assert str(child) in stack_content_all
+            assert str(child) in stack_content_todo
 
             if not checked_import:
                 TrainingCfg.from_file(child)
