@@ -26,9 +26,11 @@ class ForwardMetrics(DynamicMetricsGroup):
         training_cfg: TrainingCfg,
         target_cfg: t.Optional[TrainingCfg] = None,
         full_dataset: bool = False,
+        compress_before_save: bool = False,
     ) -> None:
 
         # Parsing arguments
+        self.compress_before_save = compress_before_save
         self.full_dataset = full_dataset
         if self.full_dataset:
             if target_cfg is not None:
@@ -223,7 +225,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 del outputs
                 torch.cuda.empty_cache()
 
-            # Saving ForwardValues
+            # Building ForwardValues
             forward_values = ForwardValues(
                 name=info,
                 num_samples=num_sample_count,
@@ -249,6 +251,14 @@ class ForwardMetrics(DynamicMetricsGroup):
                 raise ValueError(
                     f"Inconsistent dataloader size: {forward_values.num_samples} != {forward_values.input_ids.size(0)}"
                 )
+
+            # Need compressing ?
+            if self.compress_before_save:
+                forward_values.name = f"compressed_{forward_values.name}"
+                forward_values.mcq_states_per_layer = {
+                    layer: torch.empty(0)
+                    for layer in forward_values.mcq_states_per_layer
+                }
 
             # Saving
             forward_values.save(forward_export_dir)

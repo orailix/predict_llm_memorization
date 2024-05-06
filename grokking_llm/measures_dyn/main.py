@@ -35,6 +35,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
 
 p_smi_on_full_dataset = "p_smi_on_full_dataset"
 forward_on_full_dataset = "forward_on_full_dataset"
+forward_on_full_dataset_compressed = "forward_on_full_dataset_compressed"
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")
 memorized_on_shadow_pattern = re.compile("^memo_on_shadow_.+$")
 
@@ -59,6 +60,10 @@ def run_main_measure_dyn(
         metrics_class = ForwardMetrics
         logger.info(f"Detected a `forward_on_full_dataset` metrics.")
         metrics_class_kwargs = {"full_dataset": True}
+    elif name == forward_on_full_dataset_compressed:
+        metrics_class = ForwardMetrics
+        logger.info(f"Detected a `forward_on_full_dataset_compressed` metrics.")
+        metrics_class_kwargs = {"full_dataset": True, "compress_before_save": True}
     elif forward_on_cfg_pattern.match(name):
         metrics_class = ForwardMetrics
         logger.info(f"Detected a `foward_on` metrics: initializing the target_cfg.")
