@@ -12,7 +12,14 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from ..utils import TrainingCfg
 from ..utils.constants import MAX_NUM_MCQ_ANSWER, MMLU_MAX_SIZE
-from ..utils.hf_hub import DS_ARC, DS_ETHICS, DS_MMLU, MOD_DUMMY_LLAMA, MOD_MISTRAL_7B
+from ..utils.hf_hub import (
+    DS_ARC,
+    DS_ETHICS,
+    DS_MMLU,
+    MOD_DUMMY_LLAMA,
+    MOD_MISTRAL_7B,
+    TOK_DUMMY_LLAMA,
+)
 from .formatting import format_arc, format_ethics, format_label, format_mmlu
 
 # Dataset splits
@@ -254,7 +261,7 @@ def get_tokenizer(
 
     # Special case for Dummy Llama, which has no tokenizer
     if cfg.model == MOD_DUMMY_LLAMA:
-        model_to_ask = MOD_MISTRAL_7B
+        model_to_ask = TOK_DUMMY_LLAMA
     else:
         model_to_ask = cfg.model
 
@@ -266,7 +273,9 @@ def get_tokenizer(
         truncation_side="left",
         add_eos_token=True,
     )
-    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = (
+        tokenizer.eos_token if tokenizer.eos_token is not None else "</s>"
+    )
 
     return tokenizer
 

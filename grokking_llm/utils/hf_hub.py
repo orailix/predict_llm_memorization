@@ -18,6 +18,7 @@ MOD_LLAMA_7B = "meta-llama/Llama-2-7b-hf"
 MOD_LLAMA_7B_CHAT = "meta-llama/Llama-2-7b-chat-hf"
 MOD_GEMMA_7B = "google/gemma-7b"
 MOD_DUMMY_LLAMA = "BlackSamorez/llama-2-tiny-testing"
+TOK_DUMMY_LLAMA = "julien-c/dummy-diff-tokenizer"
 
 # Dataset names
 DS_ARC = "ai2_arc"
