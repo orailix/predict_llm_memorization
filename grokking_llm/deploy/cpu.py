@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 
 from ..measures_dyn import run_main_measure_dyn
-from ..utils import DeploymentCfg
+from ..utils import DeploymentCfg, GotSigterm
 
 CPU_METRICS = [
     "general",
@@ -79,6 +79,13 @@ def run_deploy_cpu(
                 deployment_cfg.stack_todo_cpu.push(training_cfg_path)
                 raise e
 
+            except GotSigterm as e:
+                logger.info(
+                    "Sigterm detecter, pushing current config to the TODO_GPU stack..."
+                )
+                deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+                raise e
+
             except Exception as e:
                 logger.info(
                     "Error detected, pushing the current config to the TODO_GPU stack..."
@@ -120,6 +127,11 @@ def run_deploy_cpu(
             "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
         )
         deployment_cfg.stack_todo_cpu.push_chunk(todo_cpu)
+        raise e
+
+    except GotSigterm as e:
+        logger.info("Sigterm detecter, pushing current config to the TODO_GPU stack...")
+        deployment_cfg.stack_todo_gpu.push(training_cfg_path)
         raise e
 
     except Exception as e:

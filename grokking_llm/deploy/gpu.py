@@ -12,7 +12,7 @@ from loguru import logger
 
 from ..measures_dyn import run_main_measure_dyn
 from ..training import run_main_train
-from ..utils import DeploymentCfg, TrainingCfg
+from ..utils import DeploymentCfg, GotSigterm, TrainingCfg
 
 
 def run_deploy_gpu(
@@ -146,6 +146,13 @@ def run_deploy_gpu(
         except KeyboardInterrupt as e:
             logger.info(
                 "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
+            )
+            deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+            raise e
+
+        except GotSigterm as e:
+            logger.info(
+                "Sigterm detecter, pushing current config to the TODO_GPU stack..."
             )
             deployment_cfg.stack_todo_gpu.push(training_cfg_path)
             raise e
