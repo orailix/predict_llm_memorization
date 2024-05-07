@@ -13,7 +13,7 @@ sigusr1_handler() {
 }
 
 # Register the sigusr1_handler function to handle SIGUSR1 signal
-trap 'sigusr1_handler' USR1
+trap 'sigusr1_handler' USR1 SIGINT SIGTERM
 
 # Prepare deploy
 python -u -m grokking_llm deploy-gpu \
