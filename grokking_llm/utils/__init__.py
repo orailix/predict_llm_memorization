@@ -8,12 +8,12 @@
 from . import logs
 from . import env_vars
 from . import hf_hub
-from .slurm_sigterm import GotSigterm
 
 # Now, we import the objects that can be accessed with `from grokking_llm.utils import ...`
 from .deployment.deployment_cfg import DeploymentCfg
 from .deployment.disk_stacks import DiskStack
 from .deployment.parsed_section import ParsedSection
+from .end_signals import GotEndSignal
 from .forward_values import ForwardValues, get_forward_values
 from .pointwise_metrics import (
     LightForwardValues,

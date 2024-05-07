@@ -12,7 +12,7 @@ from loguru import logger
 
 from ..measures_dyn import run_main_measure_dyn
 from ..training import run_main_train
-from ..utils import DeploymentCfg, GotSigterm, TrainingCfg
+from ..utils import DeploymentCfg, GotEndSignal, TrainingCfg
 
 
 def run_deploy_gpu(
@@ -150,7 +150,7 @@ def run_deploy_gpu(
             deployment_cfg.stack_todo.push(training_cfg_path)
             raise e
 
-        except GotSigterm as e:
+        except GotEndSignal as e:
             logger.info(
                 "Sigterm detecter, pushing current config to the TODO_GPU stack..."
             )
