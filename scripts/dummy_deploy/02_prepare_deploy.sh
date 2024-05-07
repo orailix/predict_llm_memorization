@@ -5,4 +5,4 @@ cd /gpfswork/rech/yfw/upp42qa/grokking_llm
 conda activate expe
 
 # Prepare deploy
-python -u -m grokking_llm prepare_deploy --config=pMODxji4NjwWuG_UmiW4zQ
+python -u -m grokking_llm deploy-prepare --config=pMODxji4NjwWuG_UmiW4zQ
