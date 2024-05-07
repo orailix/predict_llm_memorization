@@ -8,7 +8,8 @@ conda activate expe
 sigusr1_handler() {
     echo "Received SIGUSR1 signal"
     # Pass the signal to the Python script
-    kill -USR1 $PYTHON_SCRIPT_PID
+    kill -USR1 $PYTHON_SCRIPT_PID;
+    wait $PYTHON_SCRIPT_PID;
 }
 
 # Register the sigusr1_handler function to handle SIGUSR1 signal
