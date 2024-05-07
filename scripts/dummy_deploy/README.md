@@ -14,3 +14,8 @@ These scripts can be executed from any location.
 python 01_init_configs.py
 bash 02_prepare_deploy.sh
 ```
+
+## 2- Training
+
+- [ ] Verify that all `*.sh` scripts are executable
+- [ ] Verify that the paths and names of files are correct will `less` command
