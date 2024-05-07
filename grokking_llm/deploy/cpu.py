@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 
 from ..measures_dyn import run_main_measure_dyn
-from ..utils import DeploymentCfg, GotSigterm
+from ..utils import DeploymentCfg, GotEndSignal
 
 CPU_METRICS = [
     "general",
@@ -79,7 +79,7 @@ def run_deploy_cpu(
                 deployment_cfg.stack_todo.push(training_cfg_path)
                 raise e
 
-            except GotSigterm as e:
+            except GotEndSignal as e:
                 logger.info(
                     "Sigterm detecter, pushing current config to the TODO_GPU stack..."
                 )
@@ -129,7 +129,7 @@ def run_deploy_cpu(
         deployment_cfg.stack_todo.push_chunk(todo_cpu)
         raise e
 
-    except GotSigterm as e:
+    except GotEndSignal as e:
         logger.info("Sigterm detecter, pushing current config to the TODO_GPU stack...")
         deployment_cfg.stack_todo.push(training_cfg_path)
         raise e
