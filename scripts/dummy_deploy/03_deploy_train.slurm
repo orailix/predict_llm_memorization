@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --account=yfw@cpu
-#SBATCH --job-name=deploy_train
+#SBATCH --job-name=03_deploy_train
 #SBATCH --partition=prepost
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -16,4 +16,4 @@
 module purge
 
 # Code execution with binding via bind_gpu.sh : 1 GPU per task
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/dummy_deploy/deploy_train.sh
+srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/dummy_deploy/03_deploy_train.sh
