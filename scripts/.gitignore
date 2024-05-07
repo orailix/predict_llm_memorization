@@ -3,4 +3,7 @@
 !mmlu_tests/
 !bind_gpu.sh
 !dummy_deploy/
+!mmlu_llama/
+!mmlu_mistral/
+!mmlu_gemma/
 !.gitignore
