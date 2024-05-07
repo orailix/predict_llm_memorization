@@ -3,10 +3,12 @@
 # Copyright 2023-present Laboratoire d'Informatique de Polytechnique.
 # Apache Licence v2.0.
 
+import os
 import sys
 from pathlib import Path
 
 sys.path.append("/gpfswork/rech/yfw/upp42qa/grokking_llm")
+os.environ["OMP_NUM_THREADS"] = "1"
 
 from loguru import logger
 
