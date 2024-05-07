@@ -33,8 +33,8 @@ def run_deploy_gpu(
     """
 
     # Parsing checkpoint list
-    if self_forward == "all":
-        self_forward = "all"
+    if self_forward == "all" or self_forward is None:
+        pass
     else:
         self_forward = self_forward.split(",")
         self_forward = [
