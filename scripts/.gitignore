@@ -2,4 +2,5 @@
 !mistral_ethics/
 !mmlu_tests/
 !bind_gpu.sh
+!dummy_deploy/
 !.gitignore

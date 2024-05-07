@@ -1,0 +1,46 @@
+{
+  "devices": {
+    "accelerator": "cuda"
+  },
+  "lora": {
+    "lora_alpha": 16.0,
+    "lora_dropout": 0.5,
+    "lora_r": 8
+  },
+  "loss": {
+    "last_token_only": true
+  },
+  "main": {
+    "dataset": "mmlu",
+    "model": "mistral"
+  },
+  "preprocess": {
+    "data_seed": 0,
+    "label_noise": 0.03334,
+    "max_len": 512
+  },
+  "random_split": {
+    "split_id": 0,
+    "split_prop": 0.5,
+    "split_test": false
+  },
+  "training_args": {
+    "after_c_only_every_n": "37,37",
+    "bf16": true,
+    "evaluation_strategy": "no",
+    "gradient_accumulation_steps": 1,
+    "gradient_checkpointing": false,
+    "learning_rate": 2.5e-05,
+    "logging_steps": 7,
+    "logging_strategy": "steps",
+    "max_steps": 111,
+    "optim": "adamw_torch",
+    "per_device_eval_batch_size": 48,
+    "per_device_train_batch_size": 4,
+    "remove_unused_columns": false,
+    "resume_from_checkpoint": true,
+    "save_steps": 7,
+    "save_strategy": "steps",
+    "warmup_steps": 5
+  }
+}
