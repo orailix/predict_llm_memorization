@@ -43,11 +43,8 @@ class DeploymentCfg:
         # Stacks
         self.stacks_dir = self.export_dir / "stacks"
         self.stacks_dir.mkdir(exist_ok=True, parents=True)
-        self.stack_all = DiskStack(self.stacks_dir / "stack_all")
-        self.stack_todo_gpu = DiskStack(self.stacks_dir / "stack_todo_gpu")
-        self.stack_todo_cpu = DiskStack(self.stacks_dir / "stack_todo_cpu")
-        self.stack_done_gpu = DiskStack(self.stacks_dir / "stack_done_gpu")
-        self.stack_done_cpu = DiskStack(self.stacks_dir / "stack_done_cpu")
+        self.stack_todo = DiskStack(self.stacks_dir / "todo.diskstack")
+        self.stack_done = DiskStack(self.stacks_dir / "done.diskstack")
 
         # Static metrics
         self.metrics_dir = self.export_dir / "metrics"

@@ -83,6 +83,25 @@ class LightForwardValues:
             inserted_label_index=forward_values.inserted_label_index,
         )
 
+    def filter_global_index(self, global_index_to_keep: t.List[int]):
+        """Filters the forward values based on a list of global index to keep."""
+
+        # Looking for index of elements to keep
+        to_keep = set(global_index_to_keep)
+        idx_to_keep = []
+        for idx, global_index in enumerate(self.global_index.tolist()):
+            if global_index in to_keep:
+                idx_to_keep.append(idx)
+
+        # Converting to tensor
+        idx_to_keep = torch.Tensor(idx_to_keep).int()
+
+        # In-place filtering
+        self.global_index = self.global_index[idx_to_keep]
+        self.inserted_label_index = self.inserted_label_index[idx_to_keep]
+        self.loss_asw = self.loss_asw[idx_to_keep]
+        self.mcq_predicted_logits = self.mcq_predicted_logits[idx_to_keep]
+
 
 def get_shadow_forward_values_for_pointwise(
     training_cfg_list: t.List[TrainingCfg],
@@ -91,12 +110,14 @@ def get_shadow_forward_values_for_pointwise(
 ) -> t.List[LightForwardValues]:
     """Gets forward values of all shadow models.
 
+    The forward values are retrieved with "enable_full_dataset" set to "True",
+    so you may consider filtering the global idx depending on the situation.
+
     Args:
         - training_cfg_list: A list of TrainingCfg referring to the shadow models
         - checkpoint: If not None, the checkpoint at which to lokk at forward values.
         If None, the latest checkpoint will be used.
-        - on_dataset: If "full_dataset", the test set will be included as well.
-        If not, it is supposed to be the config_id of a valid target TrainingCfg.
+        - on_dataset: If not "full_dataset", it is supposed to be the config_id of a valid target TrainingCfg.
     """
 
     # Logging
@@ -118,12 +139,14 @@ def get_shadow_forward_values_for_pointwise(
             checkpoint=current_checkpoint,
             name=f"train_trl_on_{on_dataset}",
             enable_compressed=True,
+            enable_full_dataset=True,
         )
         forward_values_rdl = get_forward_values(
             training_cfg=shadow_cfg,
             checkpoint=current_checkpoint,
             name=f"train_rdl_on_{on_dataset}",
             enable_compressed=True,
+            enable_full_dataset=True,
         )
         forward_values_all = ForwardValues.concat(
             forward_values_trl, forward_values_rdl, "train_all"

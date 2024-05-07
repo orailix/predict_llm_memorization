@@ -12,7 +12,7 @@ from loguru import logger
 
 from ..measures_dyn import run_main_measure_dyn
 from ..training import run_main_train
-from ..utils import DeploymentCfg, TrainingCfg
+from ..utils import DeploymentCfg, GotSigterm, TrainingCfg
 
 
 def run_deploy_gpu(
@@ -60,12 +60,12 @@ def run_deploy_gpu(
         target_cfg = TrainingCfg.autoconfig(forward_latest_on)
 
     # Deploy
-    while not deployment_cfg.stack_todo_gpu.empty():
+    while not deployment_cfg.stack_todo.empty():
 
         try:
 
             # Getting training cfg
-            training_cfg_path = deployment_cfg.stack_todo_gpu.pop()
+            training_cfg_path = deployment_cfg.stack_todo.pop()
             logger.info(
                 f"The following training cfg is assigned to GPU {gpu}: {training_cfg_path}"
             )
@@ -138,7 +138,7 @@ def run_deploy_gpu(
                 )
 
             # Exiting
-            deployment_cfg.stack_done_gpu.push(training_cfg_path)
+            deployment_cfg.stack_done.push(training_cfg_path)
             logger.info(
                 f"GPU {gpu} has successfully processed training cfg: {training_cfg_path}"
             )
@@ -147,12 +147,19 @@ def run_deploy_gpu(
             logger.info(
                 "KeyboadInterrupt detected, pushing the current config to the TODO_GPU stack..."
             )
-            deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+            deployment_cfg.stack_todo.push(training_cfg_path)
+            raise e
+
+        except GotSigterm as e:
+            logger.info(
+                "Sigterm detecter, pushing current config to the TODO_GPU stack..."
+            )
+            deployment_cfg.stack_todo.push(training_cfg_path)
             raise e
 
         except Exception as e:
             logger.info(
                 "Error detected, pushing the current config to the TODO_GPU stack..."
             )
-            deployment_cfg.stack_todo_gpu.push(training_cfg_path)
+            deployment_cfg.stack_todo.push(training_cfg_path)
             raise e

@@ -102,6 +102,9 @@ class ForwardValues:
     @classmethod
     def load(cls, path: t.Union[str, Path]):
 
+        # Logging
+        logger.debug(f"Loading form path: {path}")
+
         # Sanity checks
         if not isinstance(path, Path):
             path = Path(path)
@@ -197,6 +200,7 @@ def get_forward_values(
     checkpoint: int,
     name: str,
     enable_compressed: bool = False,
+    enable_full_dataset: bool = False,
 ) -> ForwardValues:
     """Gets the forward values.
 
@@ -204,7 +208,8 @@ def get_forward_values(
         training_cfg: The config of the model to get the values from
         checkpoint: The checkpoint of the model to get the values from
         name: The name of the forwad values to look for
-        enable_compressed: If the forward values are not found, look at a compressed version of them."""
+        enable_compressed: If the forward values are not found, look at a compressed version of them.
+        enable_full_dataset: If the forward values are not found, look at full_dataset version of them."""
 
     # Logging
     logger.debug(
@@ -227,7 +232,7 @@ def get_forward_values(
         if load_path.is_file():
             return ForwardValues.load(load_path)
 
-    # Can we replace "on_<config_id>.safetensors" ?
+    # Can we delete "on_<config_id>.safetensors" ?
     possible_config_id = name[-22:]
     if possible_config_id == training_cfg.get_config_id():
         new_name = name[:-26]
@@ -238,6 +243,21 @@ def get_forward_values(
             return ForwardValues.load(load_path)
 
         # Fourth attempt
+        if enable_compressed:
+            load_path = forward_export_dir / f"compressed_{new_name}.safetensors"
+            if load_path.is_file():
+                return ForwardValues.load(load_path)
+
+    # Can we replace "on_<config_id>.safetensors" with "on_full_dataset" ?
+    if enable_full_dataset and len(name) == 35 and name[-26:-22] == "_on_":
+        new_name = name[:-26] + "_on_full_dataset"
+
+        # Fifth attempt
+        load_path = forward_export_dir / f"{new_name}.safetensors"
+        if load_path.is_file():
+            return ForwardValues.load(load_path)
+
+        # Sixth attempt
         if enable_compressed:
             load_path = forward_export_dir / f"compressed_{new_name}.safetensors"
             if load_path.is_file():
