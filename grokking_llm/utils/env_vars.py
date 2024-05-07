@@ -26,8 +26,13 @@ if paths.env_vars_cfg_path.is_file():
         raise ValueError("Your environment var config should contain a `main` section.")
 
     for key, value in env_vars_cfg_object["main"].items():
-        logger.debug(f"Exporting env var {key}={value}")
-        os.environ[key] = value
+        if key in os.environ:
+            logger.debug(
+                f"Skipping env var {key}={value} because {key} was already an env variable"
+            )
+        else:
+            logger.debug(f"Exporting env var {key}={value}")
+            os.environ[key] = value
 
 else:
     logger.info(f"No environment var confit found at {paths.env_vars_cfg_path}.")
