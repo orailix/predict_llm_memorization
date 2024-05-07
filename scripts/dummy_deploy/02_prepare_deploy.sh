@@ -6,4 +6,4 @@ conda activate expe
 export OMP_NUM_THREADS=1
 
 # Prepare deploy
-python -u -m grokking_llm deploy-prepare --config=pMODxji4NjwWuG_UmiW4zQ
+python -u -m grokking_llm deploy-prepare --config=Nu00vbIUZIlYkpR_g0LnwQ

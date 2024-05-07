@@ -7,5 +7,5 @@ export OMP_NUM_THREADS=1
 
 # Prepare deploy
 python -u -m grokking_llm deploy-gpu \
-    --config=pMODxji4NjwWuG_UmiW4zQ \
+    --config=Nu00vbIUZIlYkpR_g0LnwQ \
     --training;

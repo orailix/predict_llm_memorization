@@ -12,7 +12,7 @@
   },
   "main": {
     "dataset": "mmlu",
-    "model": "mistral"
+    "model": "dummy-llama"
   },
   "preprocess": {
     "data_seed": 0,
