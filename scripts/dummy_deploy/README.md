@@ -1,8 +1,8 @@
 # Dummy CPU test to check deployment scripts are operational
 
-**Deployment id:** `Nu00vbIUZIlYkpR_g0LnwQ`
+**Deployment id:** `SNFuH5grLjkCFCVDdPB1-g`
 
-**Base config id:** `DnNaAzJjv1deCx8eISFJwQ`
+**Base config id:** `gUY641ZWZR0-s3hU0xSPTA`
 
 ## 1- Init and prepare config
 

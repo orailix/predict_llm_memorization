@@ -7,10 +7,11 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --hint=nomultithread
-#SBATCH --time=00:02:00
+#SBATCH --time=00:02:30
 #SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
 #SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
 #SBATCH --no-requeue
+#SBATCH --signal=USR1@30
 
 # Cleaning modules
 module purge
