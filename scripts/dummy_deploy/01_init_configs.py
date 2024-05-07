@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 sys.path.append("/gpfswork/rech/yfw/upp42qa/grokking_llm")
-os.environ["OMP_NUM_THREADS"] = "1"
 
 from loguru import logger
 
