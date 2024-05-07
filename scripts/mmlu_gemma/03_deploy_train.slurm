@@ -4,8 +4,8 @@
 #SBATCH --job-name=gemma_mmlu
 #SBATCH -C a100
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=8
-#SBATCH --gres=gpu:8
+#SBATCH --ntasks-per-node=2
+#SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00

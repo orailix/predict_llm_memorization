@@ -3,6 +3,7 @@
 source ~/.bashrc
 cd /gpfswork/rech/yfw/upp42qa/grokking_llm
 conda activate expe
+export OMP_NUM_THREADS=8
 
 # Function to handle SIGUSR1 signal
 sigusr1_handler() {
