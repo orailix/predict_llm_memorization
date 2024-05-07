@@ -3,3 +3,4 @@
 !*.cfg
 !*.md
 !*.py
+!*.slurm

@@ -1,6 +1,6 @@
 {
   "devices": {
-    "accelerator": "cuda"
+    "accelerator": "cpu"
   },
   "lora": {
     "lora_alpha": 16.0,
