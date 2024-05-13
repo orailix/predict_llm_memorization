@@ -82,7 +82,7 @@ class ForwardMetrics(DynamicMetricsGroup):
 
         # Accelerator init
         try:
-            accelerator = Accelerator(mixed_precision="fp16")
+            accelerator = Accelerator(mixed_precision="bf16")
         except ValueError:
             # In case the accelerator has already been implemented, we cannot change the mixed precision
             accelerator = Accelerator()
