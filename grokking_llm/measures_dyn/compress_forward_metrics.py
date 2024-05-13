@@ -60,6 +60,7 @@ class CompressForwardMetrics(DynamicMetricsGroup):
                 or child.stem[: len("compressed_")] == "compressed_"
             ):
                 logger.debug(f"Skipping file: {forward_export_dir}")
+                continue
 
             # Loading forward values
             logger.debug(f"Compressing {child}")
