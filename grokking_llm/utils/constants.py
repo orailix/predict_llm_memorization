@@ -64,8 +64,6 @@ TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
     "report_to",
     "dataloader_persistent_workers",
     "resume_from_checkpoint",
-    "fp16",
-    "bf16",
 ]
 
 # Default training arguments
