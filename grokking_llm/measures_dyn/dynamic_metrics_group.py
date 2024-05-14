@@ -54,6 +54,7 @@ class DynamicMetricsGroup(ABC):
         # Saving training configuration
         self.training_cfg = training_cfg
         self.config_input_id = training_cfg.get_config_id()
+        self.smi_layers = self.training_cfg.smi_layers
 
         # Logging
         logger.info(

@@ -171,6 +171,18 @@ TRAINING_ARGS:"""
 
         return hash(to_hash)
 
+    @property
+    def smi_layers(self) -> t.List[int]:
+        if self.model == MOD_MISTRAL_7B:
+            return [1, 2, 3, 4, 8, 16, 24, 29, 30, 31, 32]
+        elif self.model == MOD_LLAMA_7B:
+            return [1, 2, 3, 4, 8, 16, 24, 29, 30, 31, 32]
+        elif self.model == MOD_GEMMA_7B:
+            return [1, 2, 3, 4, 7, 14, 21, 25, 26, 27, 28]
+
+        else:
+            raise ValueError("smi_layers should not be defined for this config")
+
     # ==================== OUTPUT DIR ====================
 
     def get_output_dir(self) -> Path:
