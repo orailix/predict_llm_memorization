@@ -179,9 +179,8 @@ TRAINING_ARGS:"""
             return [1, 2, 3, 4, 8, 16, 24, 29, 30, 31, 32]
         elif self.model == MOD_GEMMA_7B:
             return [1, 2, 3, 4, 7, 14, 21, 25, 26, 27, 28]
-
         else:
-            raise ValueError("smi_layers should not be defined for this config")
+            return None
 
     # ==================== OUTPUT DIR ====================
 
