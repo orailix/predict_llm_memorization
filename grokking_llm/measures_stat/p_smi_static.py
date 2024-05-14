@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from ..measures_dyn import PSmiMetrics
 from ..utils import DeploymentCfg, TrainingCfg, get_p_smi_containers
-from ..utils.constants import SMI_LAYERS, SMI_N_EST
+from ..utils.constants import SMI_N_EST
 from .static_metrics_group import StaticMetricsGroup
 
 
@@ -40,7 +40,7 @@ class PSmiStatic(StaticMetricsGroup):
 
         result = []
         for psmi_type in ["mean", "max", "min"]:
-            for layer in SMI_LAYERS:
+            for layer in self.smi_layers:
                 for idx in self.global_idx:
                     result.append(f"{psmi_type}_psmi_{layer}_{idx}")
 
@@ -52,7 +52,7 @@ class PSmiStatic(StaticMetricsGroup):
 
         num_model = len(self.training_cfg_list)
         num_idx = len(self.global_idx)
-        num_layer = len(SMI_LAYERS)
+        num_layer = len(self.smi_layers)
         p_smi_mean_per_shadow_per_layer_per_idx = torch.zeros(
             num_model, num_layer, num_idx, dtype=float
         )
@@ -72,7 +72,7 @@ class PSmiStatic(StaticMetricsGroup):
         )
 
         layer_to_layer_count = {
-            layer: count for count, layer in enumerate(sorted(SMI_LAYERS))
+            layer: count for count, layer in enumerate(sorted(self.smi_layers))
         }
         idx_to_idx_count = {
             idx: count for count, idx in enumerate(sorted(self.global_idx))
@@ -82,7 +82,7 @@ class PSmiStatic(StaticMetricsGroup):
         for shadow_idx, (psmi_mean, psmi_max, psmi_min) in enumerate(
             tqdm(dynamic_p_smi_containers)
         ):
-            for layer in SMI_LAYERS:
+            for layer in self.smi_layers:
                 for idx in self.global_idx:
 
                     # Counters
@@ -120,7 +120,7 @@ class PSmiStatic(StaticMetricsGroup):
             psmi_max_per_layer_per_idx,
             psmi_min_per_layer_per_idx,
         ]:
-            for layer in SMI_LAYERS:
+            for layer in self.smi_layers:
                 for idx in self.global_idx:
                     # Counters
                     layer_count = layer_to_layer_count[layer]

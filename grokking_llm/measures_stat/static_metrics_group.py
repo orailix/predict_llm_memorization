@@ -55,6 +55,7 @@ class StaticMetricsGroup(ABC):
         # Saving configuration
         self.deployment_cfg = deployment_cfg
         self.config_id = deployment_cfg.get_deployment_id()
+        self.smi_layers = self.deployment_cfg.base_config.smi_layers
 
         # Logging
         logger.info(

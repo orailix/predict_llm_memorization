@@ -12,7 +12,7 @@ from joblib import Parallel, delayed
 from loguru import logger
 
 from ..utils import ForwardValues, TrainingCfg, get_forward_values, smi_estimator
-from ..utils.constants import SMI_LAYERS, SMI_N_EST, SMI_N_NEIGHBORS
+from ..utils.constants import SMI_N_EST, SMI_N_NEIGHBORS
 from .dynamic_metrics_group import DynamicMetricsGroup
 
 
@@ -59,17 +59,17 @@ class SmiMetrics(DynamicMetricsGroup):
             [
                 f"{dl}_smi_mean_{layer}"
                 for dl in ["train_all", "train_trl", "train_rdl", "test"]
-                for layer in SMI_LAYERS
+                for layer in self.smi_layers
             ]
             + [
                 f"{dl}_smi_max_{layer}"
                 for dl in ["train_all", "train_trl", "train_rdl", "test"]
-                for layer in SMI_LAYERS
+                for layer in self.smi_layers
             ]
             + [
                 f"{dl}_smi_min_{layer}"
                 for dl in ["train_all", "train_trl", "train_rdl", "test"]
-                for layer in SMI_LAYERS
+                for layer in self.smi_layers
             ]
         )
 
@@ -105,9 +105,9 @@ class SmiMetrics(DynamicMetricsGroup):
         # Storing the values
         # Dim 1 => train_all, train_trl, train_rdl, test
         # Dim 2 => layer #1, layer #2, etc
-        smi_mean = np.zeros((4, len(SMI_LAYERS)), dtype=float)
-        smi_max = np.zeros((4, len(SMI_LAYERS)), dtype=float)
-        smi_min = np.zeros((4, len(SMI_LAYERS)), dtype=float)
+        smi_mean = np.zeros((4, len(self.smi_layers)), dtype=float)
+        smi_max = np.zeros((4, len(self.smi_layers)), dtype=float)
+        smi_min = np.zeros((4, len(self.smi_layers)), dtype=float)
 
         # Iterating over forward values
         for idx, forward_values in enumerate(
@@ -136,7 +136,7 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing each layer
-            n_jobs = min(len(SMI_LAYERS), os.cpu_count())
+            n_jobs = min(len(self.smi_layers), os.cpu_count())
             logger.info(
                 f"Computing the SMI for each layer using a pool of {n_jobs} processes."
             )
@@ -148,10 +148,10 @@ class SmiMetrics(DynamicMetricsGroup):
 
             smi_per_layer = Parallel(n_jobs=n_jobs)(
                 delayed(process_layer)(forward_values.mcq_states_per_layer[layer])
-                for layer in SMI_LAYERS
+                for layer in self.smi_layers
             )
 
-            for layer_idx in range(len(SMI_LAYERS)):
+            for layer_idx in range(len(self.smi_layers)):
                 smi_mean[idx, layer_idx] = smi_per_layer[layer_idx][0]
                 smi_max[idx, layer_idx] = smi_per_layer[layer_idx][1]
                 smi_min[idx, layer_idx] = smi_per_layer[layer_idx][2]
@@ -162,16 +162,16 @@ class SmiMetrics(DynamicMetricsGroup):
             [
                 smi_mean[dl_idx, layer_idx]
                 for dl_idx in range(4)
-                for layer_idx in range(len(SMI_LAYERS))
+                for layer_idx in range(len(self.smi_layers))
             ]
             + [
                 smi_max[dl_idx, layer_idx]
                 for dl_idx in range(4)
-                for layer_idx in range(len(SMI_LAYERS))
+                for layer_idx in range(len(self.smi_layers))
             ]
             + [
                 smi_min[dl_idx, layer_idx]
                 for dl_idx in range(4)
-                for layer_idx in range(len(SMI_LAYERS))
+                for layer_idx in range(len(self.smi_layers))
             ]
         )

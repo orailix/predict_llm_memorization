@@ -13,7 +13,6 @@ from tqdm import tqdm
 
 from ..training import compute_mcq_last_token_loss, get_model
 from ..utils import ForwardValues, TrainingCfg
-from ..utils.constants import SMI_LAYERS
 from .dynamic_metrics_group import DynamicMetricsGroup
 from .utils.dataloaders import get_dataloaders_for_measures
 
@@ -216,7 +215,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 mcq_predicted_logits_items.append(mcq_logits)
 
                 # MCQ states per layer
-                for layer in SMI_LAYERS:
+                for layer in self.smi_layers:
                     mcq_states_per_layer_items[layer].append(
                         outputs["hidden_states"][layer][:, -3, :].cpu()
                     )
@@ -242,7 +241,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 mcq_predicted_logits=torch.cat(mcq_predicted_logits_items, dim=0),
                 mcq_states_per_layer={
                     layer: torch.cat(mcq_states_per_layer_items[layer], dim=0)
-                    for layer in SMI_LAYERS
+                    for layer in self.smi_layers
                 },
             )
 
