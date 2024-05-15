@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=yfw@a100
+#SBATCH --account=yfw@cpu
 #SBATCH --job-name=llama_mmlu
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
