@@ -90,6 +90,7 @@ def deploy_gpu(
     training: bool = True,
     self_forward: t.Optional[str] = None,
     self_forward_full_dataset: bool = False,
+    self_forward_compress: bool = False,
     forward_latest_on: t.Optional[str] = None,
 ):
     if config is None:
@@ -99,6 +100,7 @@ def deploy_gpu(
         training=training,
         self_forward=self_forward,
         self_forward_full_dataset=self_forward_full_dataset,
+        self_forward_compress=self_forward_compress,
         forward_latest_on=forward_latest_on,
     )
 
