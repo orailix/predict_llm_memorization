@@ -102,7 +102,7 @@ def run_main_measure_dyn(
             )
     elif checkpoint == "latest":
         checkpoint = training_cfg.latest_checkpoint
-    elif "," in checkpoint:
+    elif type(checkpoint) == str and "," in checkpoint:
         checkpoint = [int(item) for item in checkpoint.split(",")]
     else:
         try:
