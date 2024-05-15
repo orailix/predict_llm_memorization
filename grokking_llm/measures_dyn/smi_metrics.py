@@ -136,7 +136,14 @@ class SmiMetrics(DynamicMetricsGroup):
             logger.debug(f"y size: {y.size()}")
 
             # Multiprocessing each layer
-            n_jobs = min(len(self.smi_layers), os.cpu_count())
+            if "OMP_NUM_THREADS" in os.environ:
+                n_jobs = min(
+                    int(os.environ["OMP_NUM_THREADS"]),
+                    os.cpu_count(),
+                    len(self.smi_layers),
+                )
+            else:
+                n_jobs = min(len(self.smi_layers), os.cpu_count())
             logger.info(
                 f"Computing the SMI for each layer using a pool of {n_jobs} processes."
             )
