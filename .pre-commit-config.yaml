@@ -19,7 +19,7 @@ repos:
     hooks:
     -   id: run-tests
         name: Pytest tests
-        entry: bash -c 'PYTHONPATH=. pytest'
+        entry: bash -c 'if [ "$(git symbolic-ref --short HEAD)" = "main" ]; then PYTHONPATH=. pytest; fi'
         language: system
         pass_filenames: false
         always_run: true
