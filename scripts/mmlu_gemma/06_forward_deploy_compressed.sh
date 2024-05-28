@@ -19,7 +19,7 @@ trap 'sigusr1_handler' USR1 SIGINT SIGTERM
 python -u -m grokking_llm deploy-gpu \
     --config=mD9ImObzoCshT5dpStKiMA \
     --no-training \
-    --self-forward=3750,37500 \
+    --self-forward=3750,15000,37500 \
     --self-forward-full-dataset \
     --self-forward-compress &
 PYTHON_SCRIPT_PID=$!
