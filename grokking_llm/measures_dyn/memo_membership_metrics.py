@@ -96,10 +96,8 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
         )
 
         # Filtering global idx
-        self_and_shadow_forward_values = [
+        for item in self_and_shadow_forward_values:
             item.filter_global_index(self.global_idx)
-            for item in self_and_shadow_forward_values
-        ]
 
         # Unpacking some useful variables
         num_samples = len(self.global_idx)
