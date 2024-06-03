@@ -89,11 +89,17 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
 
         # ==================== Forward values ====================
 
-        self_and_shadow_forward_values = get_shadow_forward_values_for_pointwise(
-            [self.training_cfg] + self.shadow_training_cfg,
+        self_forward_values = get_shadow_forward_values_for_pointwise(
+            [self.training_cfg],
             checkpoint=checkpoint,
             on_dataset=self.training_cfg.get_config_id(),
         )
+        shadow_forward_values = get_shadow_forward_values_for_pointwise(
+            self.shadow_training_cfg,
+            checkpoint=None,
+            on_dataset=self.training_cfg.get_config_id(),
+        )
+        self_and_shadow_forward_values = self_forward_values + shadow_forward_values
 
         # Filtering global idx
         for item in self_and_shadow_forward_values:
