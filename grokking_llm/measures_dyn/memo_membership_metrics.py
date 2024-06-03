@@ -91,7 +91,7 @@ class MemoMembershipMetrics(DynamicMetricsGroup):
 
         self_and_shadow_forward_values = get_shadow_forward_values_for_pointwise(
             [self.training_cfg] + self.shadow_training_cfg,
-            checkpoint=None,
+            checkpoint=checkpoint,
             on_dataset=self.training_cfg.get_config_id(),
         )
 
