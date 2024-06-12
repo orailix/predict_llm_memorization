@@ -6,4 +6,5 @@
 !mmlu_llama/
 !mmlu_mistral/
 !mmlu_gemma/
+!arc_mistral/
 !.gitignore
