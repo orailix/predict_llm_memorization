@@ -248,11 +248,4 @@ def norm_pdf(mean, std, x):
 
 def get_mia_memo_score(pos_likelihood, neg_likelihood, epsilon):
 
-    if pos_likelihood < epsilon and neg_likelihood < epsilon:
-        return 0
-
-    total = pos_likelihood + neg_likelihood
-    pos_proba = pos_likelihood / total
-    neg_proba = neg_likelihood / total
-
-    return pos_proba - neg_proba
+    return np.log(pos_likelihood / neg_likelihood)
