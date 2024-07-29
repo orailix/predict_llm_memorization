@@ -64,6 +64,7 @@ class SampleLossMetrics(DynamicMetricsGroup):
 
         # ==================== Output ====================
 
-        mean_metric = np.mean(losses)
+        ordered_losses = [losses[idx] for idx in self.global_idx]
+        mean_metric = np.mean(ordered_losses)
         logger.debug(f"Mean Value: {mean_metric}")
-        return [mean_metric] + [losses[idx] for idx in self.global_idx]
+        return [mean_metric] + ordered_losses
