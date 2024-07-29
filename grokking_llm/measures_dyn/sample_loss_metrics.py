@@ -58,12 +58,12 @@ class SampleLossMetrics(DynamicMetricsGroup):
         )
 
         # ==================== Metrics values ====================
-        losses = []
-        for count, _ in enumerate(forward_values_all.global_index.tolist()):
-            losses.append(forward_values_all.loss_asw[count].item())
+        losses = dict()
+        for count, idx in enumerate(forward_values_all.global_index.tolist()):
+            losses[idx] = forward_values_all.loss_asw[count].item()
 
         # ==================== Output ====================
 
         mean_metric = np.mean(losses)
         logger.debug(f"Mean Value: {mean_metric}")
-        return [mean_metric] + losses
+        return [mean_metric] + [losses[idx] for idx in self.global_idx]
