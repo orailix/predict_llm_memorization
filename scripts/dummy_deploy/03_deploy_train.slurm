@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --hint=nomultithread
 #SBATCH --time=00:02:00
-#SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
-#SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
+#SBATCH --output=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
+#SBATCH --error=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/dummy_deploy/03_deploy_train.out
 #SBATCH --no-requeue
 #SBATCH --signal=USR1@30
 
@@ -17,4 +17,4 @@
 module purge
 
 # Code execution with binding via bind_gpu.sh : 1 GPU per task
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/dummy_deploy/03_deploy_train.sh
+srun /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/dummy_deploy/03_deploy_train.sh

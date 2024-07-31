@@ -9,12 +9,12 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00
-#SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/target_forward.out
-#SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/target_forward.out
+#SBATCH --output=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/target_forward.out
+#SBATCH --error=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/target_forward.out
 #SBATCH --no-requeue
 
 # Cleaning modules
 module purge
 
 # Code execution
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/target_forward.sh
+srun /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/target_forward.sh

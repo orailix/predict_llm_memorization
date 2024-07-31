@@ -8,12 +8,12 @@
 #SBATCH --partition=cpu_p1
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00
-#SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/p_smi_static.out
-#SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/p_smi_static.out
+#SBATCH --output=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/p_smi_static.out
+#SBATCH --error=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/p_smi_static.out
 #SBATCH --no-requeue
 
 # Cleaning modules
 module purge
 
 # Code execution
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/p_smi_static.sh
+srun /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/p_smi_static.sh

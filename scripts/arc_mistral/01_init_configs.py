@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.append("/gpfswork/rech/yfw/upp42qa/grokking_llm")
+sys.path.append("/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm")
 
 from loguru import logger
 

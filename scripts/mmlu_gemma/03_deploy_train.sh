@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ~/.bashrc
-cd /gpfswork/rech/yfw/upp42qa/grokking_llm
+cd /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm
 conda activate expe
 
 # Function to handle SIGUSR1 signal

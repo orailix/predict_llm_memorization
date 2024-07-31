@@ -13,7 +13,7 @@ sbatch train_forward_latest.slurm
 At this point, you should manually check that all model have been successfully trained, for example with:
 
 ```bash
-upp42qa@jean-zay3:/gpfswork/rech/yfw/upp42qa/grokking_llm/output/individual$ find . -type d -name checkpoint-15600 | wc -l
+upp42qa@jean-zay3:/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/output/individual$ find . -type d -name checkpoint-15600 | wc -l
 100
 ```
 

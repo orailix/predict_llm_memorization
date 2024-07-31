@@ -8,15 +8,15 @@
 #SBATCH --partition=cpu_p1
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00
-#SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/p_smi_full_dataset.out
-#SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/p_smi_full_dataset.out
+#SBATCH --output=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/p_smi_full_dataset.out
+#SBATCH --error=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/p_smi_full_dataset.out
 #SBATCH --no-requeue
 
 # Cleaning modules
 module purge
 
 # Prepare deploy
-bash /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/_prepare_deploy.sh
+bash /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/_prepare_deploy.sh
 
 # Code execution
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/p_smi_full_dataset.sh
+srun /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/mistral_ethics/p_smi_full_dataset.sh

@@ -9,10 +9,10 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
 #SBATCH --time=20:00:00
-#SBATCH --output=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/mmlu_mistral/06_forward_deploy_compressed.out
-#SBATCH --error=/gpfswork/rech/yfw/upp42qa/grokking_llm/logs/mmlu_mistral/06_forward_deploy_compressed.out
+#SBATCH --output=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/mmlu_mistral/06_forward_deploy_compressed.out
+#SBATCH --error=/lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/logs/mmlu_mistral/06_forward_deploy_compressed.out
 #SBATCH --no-requeue
 #SBATCH --signal=USR1@60
 
 # Code execution with binding via bind_gpu.sh : 1 GPU per task
-srun /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/bind_gpu.sh /gpfswork/rech/yfw/upp42qa/grokking_llm/scripts/mmlu_mistral/06_forward_deploy_compressed.sh
+srun /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/bind_gpu.sh /lustre/fswork/projects/rech/yfw/upp42qa/grokking_llm/scripts/mmlu_mistral/06_forward_deploy_compressed.sh
