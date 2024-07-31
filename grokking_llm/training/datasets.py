@@ -10,7 +10,7 @@ import numpy as np
 from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
-from ..utils import TrainingCfg
+from ..utils import TrainingCfg, paths
 from ..utils.constants import MAX_NUM_MCQ_ANSWER, MMLU_MAX_SIZE
 from ..utils.hf_hub import (
     DS_ARC,
@@ -30,6 +30,24 @@ TEST_SPLIT_HF = "test_hf"
 
 # Disable caching
 datasets.disable_caching()
+
+
+def save_dataset(
+    cfg: TrainingCfg = None,
+):
+    """Saves a dataset so it can be used offline."""
+    # Loading full dataset
+    if cfg.dataset == DS_ARC:
+        args = ("ARC-Challenge",)
+    elif cfg.dataset == DS_MMLU:
+        args = ("all",)
+    elif cfg.dataset == DS_ETHICS:
+        args = ()
+
+    ds = datasets.load_dataset(cfg.dataset, *args)
+    save_path = paths.hf_home / "saved_datasets" / cfg.dataset
+    save_path.mkdir(exist_ok=True, parents=True)
+    ds.save_to_disk(str(save_path))
 
 
 def get_dataset(
@@ -71,13 +89,21 @@ def get_dataset(
         split_test = "test"
 
     # Train set
-    ds_train = datasets.load_dataset(cfg.dataset, *args, split=split_train)
+    try:
+        ds_train = datasets.load_dataset(cfg.dataset, *args, split=split_train)
+    except:
+        ds = datasets.load_from_disk(paths.hf_home / "saved_datasets" / cfg.dataset)
+        ds_train = ds[split_train]
     ds_train = ds_train.add_column("global_index", np.array(range(len(ds_train))))
     if cfg.dataset == DS_MMLU:
         ds_train = ds_train.select(range(MMLU_MAX_SIZE))
 
     # Test set
-    ds_test = datasets.load_dataset(cfg.dataset, *args, split=split_test)
+    try:
+        ds_test = datasets.load_dataset(cfg.dataset, *args, split=split_test)
+    except:
+        ds = datasets.load_from_disk(paths.hf_home / "saved_datasets" / cfg.dataset)
+        ds_test = ds[split_test]
     ds_test = ds_test.add_column(
         "global_index", np.array(range(len(ds_train), len(ds_train) + len(ds_test)))
     )
