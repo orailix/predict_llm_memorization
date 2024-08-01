@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --account=yfw@a100
-#SBATCH --job-name=mistral_arc
+#SBATCH --job-name=mistral_ethics
 #SBATCH -C a100
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
