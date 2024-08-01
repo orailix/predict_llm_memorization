@@ -11,7 +11,12 @@ from loguru import logger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from ..utils import TrainingCfg, paths
-from ..utils.constants import MAX_NUM_MCQ_ANSWER, MMLU_MAX_SIZE
+from ..utils.constants import (
+    ARC_MAX_SIZE,
+    ETHICS_MAX_SIZE,
+    MAX_NUM_MCQ_ANSWER,
+    MMLU_MAX_SIZE,
+)
 from ..utils.hf_hub import (
     DS_ARC,
     DS_ETHICS,
@@ -97,6 +102,10 @@ def get_dataset(
     ds_train = ds_train.add_column("global_index", np.array(range(len(ds_train))))
     if cfg.dataset == DS_MMLU:
         ds_train = ds_train.select(range(MMLU_MAX_SIZE))
+    if cfg.dataset == DS_ARC:
+        ds_train = ds_train.select(range(ARC_MAX_SIZE))
+    if cfg.dataset == DS_ETHICS:
+        ds_train = ds_train.select(range(ETHICS_MAX_SIZE))
 
     # Test set
     try:
