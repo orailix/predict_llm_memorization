@@ -32,6 +32,8 @@ MAX_NUM_MCQ_ANSWER = 16
 
 # Maximum number of sample for MMLU
 MMLU_MAX_SIZE = 33750
+ARC_MAX_SIZE = 1078
+ETHICS_MAX_SIZE = 13901
 
 # Training arguments excluded from config ID
 TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
