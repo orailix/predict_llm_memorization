@@ -1,8 +1,8 @@
 # ETHICS MISTRAL
 
-**Deployment id:** `TODO`
+**Deployment id:** `JNeyT5OUP3GFtJ_QNojppg`
 
-**Base config id:** `TODO`
+**Base config id:** `M-H-RqkPbMpWRGgOcg-PRA`
 
 **Num sample in train:**        15880
 **Num sample in split:**        15880 // 2 = 7940
