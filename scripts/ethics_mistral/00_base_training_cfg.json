@@ -11,7 +11,7 @@
     "last_token_only": true
   },
   "main": {
-    "dataset": "arc",
+    "dataset": "ethics",
     "model": "mistral"
   },
   "preprocess": {
@@ -25,12 +25,12 @@
     "split_test": false
   },
   "training_args": {
-    "after_c_only_every_n": "250,250",
+    "after_c_only_every_n": "1985,1985",
     "bf16": true,
     "evaluation_strategy": "no",
     "gradient_checkpointing": false,
     "learning_rate": 2.5e-05,
-    "logging_steps": 50,
+    "logging_steps": 397,
     "logging_strategy": "steps",
     "num_train_epochs": 10,
     "optim": "adamw_torch",
@@ -39,7 +39,7 @@
     "gradient_accumulation_steps": 2,
     "remove_unused_columns": false,
     "resume_from_checkpoint": true,
-    "save_steps": 50,
+    "save_steps": 397,
     "save_strategy": "steps",
     "warmup_steps": 5
   }

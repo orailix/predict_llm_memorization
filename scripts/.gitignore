@@ -7,4 +7,5 @@
 !mmlu_mistral/
 !mmlu_gemma/
 !arc_mistral/
+!ethics_mistral/
 !.gitignore
