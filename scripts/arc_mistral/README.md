@@ -1,4 +1,4 @@
-# MMLU MISTRAL
+# ARC MISTRAL
 
 **Deployment id:** `H5gQZhfMsLE5_NTX9hR7TA`
 
