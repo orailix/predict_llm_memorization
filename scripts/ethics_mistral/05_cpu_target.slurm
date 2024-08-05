@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --account=yfw@cpu
-#SBATCH --job-name=arc_m_ct
+#SBATCH --job-name=eth_m_ct
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=40
