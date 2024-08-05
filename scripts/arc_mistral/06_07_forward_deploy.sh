@@ -17,11 +17,10 @@ trap 'sigusr1_handler' USR1 SIGINT SIGTERM
 
 # Prepare deploy
 python -u -m grokking_llm deploy-gpu \
-    --config=JNeyT5OUP3GFtJ_QNojppg \
+    --config=H5gQZhfMsLE5_NTX9hR7TA \
     --no-training \
-    --self-forward=1985,7940,13895,19850 \
-    --self-forward-full-dataset \
-    --self-forward-compress &
+    --self-forward=50,100,150,200,250,1000,1750,2500 \
+    --self-forward-full-dataset &
 PYTHON_SCRIPT_PID=$!
 
 # Wait for the Python script to finish
