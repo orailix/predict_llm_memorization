@@ -9,6 +9,7 @@ import typer
 
 from .deploy import (
     run_deploy_clean_forward_values,
+    run_deploy_compress_all_forward_values,
     run_deploy_cpu,
     run_deploy_gpu,
     run_deploy_prepare,
@@ -77,11 +78,31 @@ def deploy_prepare(
 @app.command()
 def deploy_clean_forward_values(
     config: t.Optional[str] = None,
-    compressed_only: bool = False,
+    ignore_training_cfg_id: t.Optional[str] = None,
+    delete_compressed: bool = False,
+    delete_uncompressed: bool = False,
 ):
     if config is None:
         raise ValueError(f"You should pass a config with the --config option.")
-    run_deploy_clean_forward_values(config=config, compressed_only=compressed_only)
+
+    run_deploy_clean_forward_values(
+        config=config,
+        ignore_training_cfg_id=ignore_training_cfg_id,
+        delete_compressed=delete_compressed,
+        delete_uncompressed=delete_uncompressed,
+    )
+
+
+@app.command()
+def deploy_compress_all_forward_values(
+    config: t.Optional[str] = None,
+):
+    if config is None:
+        raise ValueError(f"You should pass a config with the --config option.")
+
+    run_deploy_compress_all_forward_values(
+        config=config,
+    )
 
 
 @app.command()
