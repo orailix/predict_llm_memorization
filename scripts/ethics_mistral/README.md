@@ -3,6 +3,7 @@
 **Deployment id:** `JNeyT5OUP3GFtJ_QNojppg`
 
 **Base config id:** `M-H-RqkPbMpWRGgOcg-PRA`
+**Split 1 cfg id:** `F-YNKVV6BmvAi-547IiC4w`
 
 **Num sample in train:**        15880
 **Num sample in split:**        15880 // 2 = 7940
