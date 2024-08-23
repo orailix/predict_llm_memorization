@@ -244,19 +244,31 @@ def get_p_smi_containers(
             # Container
             if "mean_" in col_name:
                 container = p_smi_mean_checkpoint_layer_idx
-                layer_idx = col_name[len("mean_psmi_") :]
+                if "slope" not in col_name:
+                    layer_idx = col_name[len("mean_psmi_") :]
+                else:
+                    layer_idx = col_name[len("mean_psmi_slope_") :]
                 count_mean += 1
             elif "max_" in col_name:
                 container = p_smi_max_checkpoint_layer_idx
-                layer_idx = col_name[len("max_psmi_") :]
+                if "slope" not in col_name:
+                    layer_idx = col_name[len("max_psmi_") :]
+                else:
+                    layer_idx = col_name[len("max_psmi_slope_") :]
                 count_max += 1
             elif "min_" in col_name:
                 container = p_smi_min_checkpoint_layer_idx
-                layer_idx = col_name[len("min_psmi_") :]
+                if "slope" not in col_name:
+                    layer_idx = col_name[len("min_psmi_") :]
+                else:
+                    layer_idx = col_name[len("min_psmi_slope_") :]
                 count_min += 1
             elif "std_" in col_name:
                 container = p_smi_std_checkpoint_layer_idx
-                layer_idx = col_name[len("std_psmi_") :]
+                if "slope" not in col_name:
+                    layer_idx = col_name[len("std_psmi_") :]
+                else:
+                    layer_idx = col_name[len("std_psmi_slope_") :]
                 count_std += 1
             else:
                 raise ValueError(f"Name: {col_name}")
