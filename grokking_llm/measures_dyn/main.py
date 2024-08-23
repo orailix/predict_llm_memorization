@@ -30,7 +30,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "smi": SmiMetrics,
     "p_smi": PSmiMetrics,
     "p_smi_slope": PSmiSlopeMetrics,
-    "p_std_std": PSmiStdMetrics,
+    "p_smi_std": PSmiStdMetrics,
     "weights": WeightsMetrics,
     "compress_forward": CompressForwardMetrics,
     "sample_loss": SampleLossMetrics,
