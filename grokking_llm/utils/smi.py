@@ -77,6 +77,7 @@ def p_smi_estimator(
     y: torch.Tensor,
     smi_quantile: float = 0.99,
     n_estimator: int = 100,
+    return_std: bool = False,
 ) -> t.Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Estimates the (sample-wise) Pointsize Sliced Mutual Information [1]
 
@@ -177,9 +178,13 @@ def p_smi_estimator(
     smi_mean = np.mean(pmi.numpy(), axis=1)
     smi_max = np.quantile(pmi, smi_quantile, axis=1)
     smi_min = np.quantile(pmi, 1 - smi_quantile, axis=1)
+    smi_std = np.std(pmi.numpy(), axis=1)
 
     # Output
-    return (smi_mean, smi_max, smi_min)
+    if not return_std:
+        return (smi_mean, smi_max, smi_min)
+    else:
+        return (smi_mean, smi_max, smi_min, smi_std)
 
 
 def norm_pdf(mean, std, x):
@@ -195,7 +200,8 @@ def get_p_smi_containers(
 ]:
     """
     `metrics_df` is supposed to be the result of metrics.load_metrics_df()
-    where `metrics` is an instance either of PSmiMetrics or PSmiStatic.
+    where `metrics` is an instance either of PSmiMetrics or PSmiStatic or PSmiSlopeMetrics, PSmiStdMetrics
+    If `metrics` is an instance of PSmiStdMetrics, it returns (p_smi_std_per_checkpoint_per_layer_per_idx, None, None)
 
     Returns (
         p_smi_mean_per_checkpoint_per_layer_per_idx,
@@ -208,13 +214,20 @@ def get_p_smi_containers(
     checkpoints = metrics_df.iloc[:, 0].tolist()
 
     # Init containers
+    count_mean = 0
     p_smi_mean_checkpoint_layer_idx = {
         chk: collections.defaultdict(dict) for chk in checkpoints
     }
+    count_max = 0
     p_smi_max_checkpoint_layer_idx = {
         chk: collections.defaultdict(dict) for chk in checkpoints
     }
+    count_min = 0
     p_smi_min_checkpoint_layer_idx = {
+        chk: collections.defaultdict(dict) for chk in checkpoints
+    }
+    count_std = 0
+    p_smi_std_checkpoint_layer_idx = {
         chk: collections.defaultdict(dict) for chk in checkpoints
     }
 
@@ -232,12 +245,19 @@ def get_p_smi_containers(
             if "mean_" in col_name:
                 container = p_smi_mean_checkpoint_layer_idx
                 layer_idx = col_name[len("mean_psmi_") :]
+                count_mean += 1
             elif "max_" in col_name:
                 container = p_smi_max_checkpoint_layer_idx
                 layer_idx = col_name[len("max_psmi_") :]
+                count_max += 1
             elif "min_" in col_name:
                 container = p_smi_min_checkpoint_layer_idx
                 layer_idx = col_name[len("min_psmi_") :]
+                count_min += 1
+            elif "std_" in col_name:
+                container = p_smi_std_checkpoint_layer_idx
+                layer_idx = col_name[len("std_psmi_") :]
+                count_std += 1
             else:
                 raise ValueError(f"Name: {col_name}")
 
@@ -247,9 +267,27 @@ def get_p_smi_containers(
 
             container[chk][layer][idx] = content
 
+    # Sanity check
+    if count_std > 0 and (count_mean + count_max + count_min) > 0:
+        raise RuntimeError(
+            "You should not have both STD and MEAN/MAX/MIN psmi within the same dataframe"
+        )
+
+    if not (count_mean == count_max == count_min):
+        raise RuntimeError(
+            f"Different count of MEAN/MAX/MIN psmi columns: {count_mean}, {count_max}, {count_min}"
+        )
+
     # Output
-    return (
-        p_smi_mean_checkpoint_layer_idx,
-        p_smi_max_checkpoint_layer_idx,
-        p_smi_min_checkpoint_layer_idx,
-    )
+    if count_std == 0:
+        return (
+            p_smi_mean_checkpoint_layer_idx,
+            p_smi_max_checkpoint_layer_idx,
+            p_smi_min_checkpoint_layer_idx,
+        )
+    else:
+        return (
+            p_smi_std_checkpoint_layer_idx,
+            None,
+            None,
+        )
