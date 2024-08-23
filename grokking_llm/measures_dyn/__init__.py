@@ -11,6 +11,8 @@ from .logit_gap_metrics import LogitGapMetrics
 from .main import run_main_measure_dyn
 from .memo_membership_metrics import MemoMembershipMetrics
 from .p_smi_metrics import PSmiMetrics
+from .p_smi_slope_metrics import PSmiSlopeMetrics
+from .p_smi_std_metrics import PSmiStdMetrics
 from .perf_metrics import PerfMetrics
 from .sample_loss_metrics import SampleLossMetrics
 from .smi_metrics import SmiMetrics

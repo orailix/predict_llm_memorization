@@ -16,6 +16,8 @@ from .general_metrics import GeneralMetrics
 from .logit_gap_metrics import LogitGapMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
 from .p_smi_metrics import PSmiMetrics
+from .p_smi_slope_metrics import PSmiSlopeMetrics
+from .p_smi_std_metrics import PSmiStdMetrics
 from .perf_metrics import PerfMetrics
 from .sample_loss_metrics import SampleLossMetrics
 from .smi_metrics import SmiMetrics
@@ -27,6 +29,8 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "perf": PerfMetrics,
     "smi": SmiMetrics,
     "p_smi": PSmiMetrics,
+    "p_smi_slope": PSmiSlopeMetrics,
+    "p_std_std": PSmiStdMetrics,
     "weights": WeightsMetrics,
     "compress_forward": CompressForwardMetrics,
     "sample_loss": SampleLossMetrics,
@@ -34,6 +38,8 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
 }
 
 p_smi_on_full_dataset = "p_smi_on_full_dataset"
+p_smi_slope_on_full_dataset = "p_smi_slope_on_full_dataset"
+p_smi_std_on_full_dataset = "p_smi_std_on_full_dataset"
 forward_on_full_dataset = "forward_on_full_dataset"
 forward_on_full_dataset_compressed = "forward_on_full_dataset_compressed"
 forward_on_cfg_pattern = re.compile("^forward_on_.+$")
@@ -55,6 +61,14 @@ def run_main_measure_dyn(
     elif name == p_smi_on_full_dataset:
         metrics_class = PSmiMetrics
         logger.info(f"Detected a `p_smi_on_full_dataset` metrics.")
+        metrics_class_kwargs = {"full_dataset": True}
+    elif name == p_smi_slope_on_full_dataset:
+        metrics_class = PSmiSlopeMetrics
+        logger.info(f"Detected a `p_smi_slope_on_full_dataset` metrics.")
+        metrics_class_kwargs = {"full_dataset": True}
+    elif name == p_smi_std_on_full_dataset:
+        metrics_class = PSmiStdMetrics
+        logger.info(f"Detected a `p_smi_std_on_full_dataset` metrics.")
         metrics_class_kwargs = {"full_dataset": True}
     elif name == forward_on_full_dataset:
         metrics_class = ForwardMetrics
