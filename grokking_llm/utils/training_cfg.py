@@ -182,6 +182,17 @@ TRAINING_ARGS:"""
         else:
             return None
 
+    @property
+    def all_layers(self) -> t.List[int]:
+        if self.model == MOD_MISTRAL_7B:
+            return list(range(1, 33))
+        elif self.model == MOD_LLAMA_7B:
+            return list(range(1, 33))
+        elif self.model == MOD_GEMMA_7B:
+            return list(range(1, 28))
+        else:
+            return None
+
     # ==================== OUTPUT DIR ====================
 
     def get_output_dir(self) -> Path:

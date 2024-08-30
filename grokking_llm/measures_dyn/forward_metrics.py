@@ -26,6 +26,7 @@ class ForwardMetrics(DynamicMetricsGroup):
         target_cfg: t.Optional[TrainingCfg] = None,
         full_dataset: bool = False,
         compress_before_save: bool = False,
+        save_all_layers: bool = False,
     ) -> None:
 
         # Parsing arguments
@@ -44,6 +45,12 @@ class ForwardMetrics(DynamicMetricsGroup):
         else:
             self.target_cfg = target_cfg
             self.target_cfg_name = self.target_cfg.get_config_id()
+
+        # Layers to compute
+        if save_all_layers:
+            self.layers_to_save = self.training_cfg.all_layers
+        else:
+            self.layers_to_save = self.training_cfg.smi_layers
 
         # Main initialization
         super().__init__(training_cfg)
@@ -215,7 +222,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 mcq_predicted_logits_items.append(mcq_logits)
 
                 # MCQ states per layer
-                for layer in self.smi_layers:
+                for layer in self.layers_to_save:
                     mcq_states_per_layer_items[layer].append(
                         outputs["hidden_states"][layer][:, -3, :].cpu()
                     )
@@ -241,7 +248,7 @@ class ForwardMetrics(DynamicMetricsGroup):
                 mcq_predicted_logits=torch.cat(mcq_predicted_logits_items, dim=0),
                 mcq_states_per_layer={
                     layer: torch.cat(mcq_states_per_layer_items[layer], dim=0)
-                    for layer in self.smi_layers
+                    for layer in self.layers_to_save
                 },
             )
 
