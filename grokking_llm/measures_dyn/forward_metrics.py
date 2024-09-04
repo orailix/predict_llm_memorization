@@ -48,9 +48,9 @@ class ForwardMetrics(DynamicMetricsGroup):
 
         # Layers to compute
         if save_all_layers:
-            self.layers_to_save = self.training_cfg.all_layers
+            self.layers_to_save = self.target_cfg.all_layers
         else:
-            self.layers_to_save = self.training_cfg.smi_layers
+            self.layers_to_save = self.target_cfg.smi_layers
 
         # Main initialization
         super().__init__(training_cfg)
