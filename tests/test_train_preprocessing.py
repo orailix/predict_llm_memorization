@@ -352,12 +352,13 @@ def test_dataset_tokenization():
         # BOS token and padding
         assert 1 in tokenized[idx]["input_ids"]
         bos_idx = tokenized[idx]["input_ids"].index(1)
-        for _ in range(30):
-            random_pad_idx = np.random.randint(bos_idx)
-            assert (
-                tokenized[idx]["input_ids"][random_pad_idx]
-                == tokenizer_obj.eos_token_id
-            )
+        if bos_idx > 0:
+            for _ in range(30):
+                random_pad_idx = np.random.randint(0, bos_idx)
+                assert (
+                    tokenized[idx]["input_ids"][random_pad_idx]
+                    == tokenizer_obj.eos_token_id
+                )
 
         # CLS label and EOS token
         assert tokenized[idx]["input_ids"][-1] == tokenizer_obj.eos_token_id
