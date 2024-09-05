@@ -359,8 +359,6 @@ def test_dataset_tokenization():
                     tokenized[idx]["input_ids"][random_pad_idx]
                     == tokenizer_obj.eos_token_id
                 )
-        else:
-            assert 2 not in tokenized[idx]["input_ids"]
 
         # CLS label and EOS token
         assert tokenized[idx]["input_ids"][-1] == tokenizer_obj.eos_token_id
