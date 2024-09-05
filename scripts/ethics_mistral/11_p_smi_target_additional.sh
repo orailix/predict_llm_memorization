@@ -6,8 +6,8 @@ conda activate expe
 export OMP_NUM_THREADS=13;
 
 # CPU computations
-python -u -m grokking_llm measure-dyn p_smi --config=M-H-RqkPbMpWRGgOcg-PRA &
-python -u -m grokking_llm measure-dyn p_smi_slope --config=M-H-RqkPbMpWRGgOcg-PRA &
-python -u -m grokking_llm measure-dyn p_smi_std --config=M-H-RqkPbMpWRGgOcg-PRA;
+python -u -m grokking_llm measure-dyn p_smi_all_layers --config=M-H-RqkPbMpWRGgOcg-PRA &
+python -u -m grokking_llm measure-dyn p_smi_slope_all_layers --config=M-H-RqkPbMpWRGgOcg-PRA &
+python -u -m grokking_llm measure-dyn p_smi_std_all_layers --config=M-H-RqkPbMpWRGgOcg-PRA;
 
 wait;

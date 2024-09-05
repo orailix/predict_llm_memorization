@@ -6,6 +6,6 @@ conda activate expe
 export OMP_NUM_THREADS=20;
 
 # CPU computations
-python -u -m grokking_llm measure-dyn mahalanobis --config=dRfdcYPXxygGJ2kuZfsYew;
+python -u -m grokking_llm measure-dyn mahalanobis_all_layers --config=dRfdcYPXxygGJ2kuZfsYew;
 
 wait;
