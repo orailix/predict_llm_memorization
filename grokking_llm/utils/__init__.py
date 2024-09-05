@@ -15,6 +15,7 @@ from .deployment.disk_stacks import DiskStack
 from .deployment.parsed_section import ParsedSection
 from .end_signals import GotEndSignal
 from .forward_values import ForwardValues, get_forward_values
+from .mahalanobis import mahalanobis_distance
 from .pointwise_metrics import (
     LightForwardValues,
     get_logit_gaps_for_pointwise,

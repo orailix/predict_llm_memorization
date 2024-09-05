@@ -14,6 +14,7 @@ from .dynamic_metrics_group import DynamicMetricsGroup
 from .forward_metrics import ForwardMetrics
 from .general_metrics import GeneralMetrics
 from .logit_gap_metrics import LogitGapMetrics
+from .mahalanobis_metrics import MahalanobisMetrics
 from .memo_membership_metrics import MemoMembershipMetrics
 from .p_smi_metrics import PSmiMetrics
 from .p_smi_slope_metrics import PSmiSlopeMetrics
@@ -35,6 +36,7 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
     "compress_forward": CompressForwardMetrics,
     "sample_loss": SampleLossMetrics,
     "logit_gap": LogitGapMetrics,
+    "mahalanobis": MahalanobisMetrics,
 }
 
 p_smi_on_full_dataset = "p_smi_on_full_dataset"
