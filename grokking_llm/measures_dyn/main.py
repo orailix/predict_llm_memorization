@@ -42,6 +42,10 @@ NAMES_TO_METRICS: t.Dict[str, t.Type[DynamicMetricsGroup]] = {
 p_smi_on_full_dataset = "p_smi_on_full_dataset"
 p_smi_slope_on_full_dataset = "p_smi_slope_on_full_dataset"
 p_smi_std_on_full_dataset = "p_smi_std_on_full_dataset"
+p_smi_all_layers = "p_smi_all_layers"
+p_smi_slope_all_layers = "p_smi_slope_all_layers"
+p_smi_std_all_layers = "p_smi_std_all_layers"
+mahalanobis_all_layers = "mahalanobis_all_layers"
 forward_on_all_layers = "forward_on_all_layers"
 forward_on_full_dataset = "forward_on_full_dataset"
 forward_on_full_dataset_compressed = "forward_on_full_dataset_compressed"
@@ -73,6 +77,22 @@ def run_main_measure_dyn(
         metrics_class = PSmiStdMetrics
         logger.info(f"Detected a `p_smi_std_on_full_dataset` metrics.")
         metrics_class_kwargs = {"full_dataset": True}
+    elif name == p_smi_all_layers:
+        metrics_class = PSmiMetrics
+        logger.info(f"Detected a `p_smi_all_layers` metrics.")
+        metrics_class_kwargs = {"all_layers": True}
+    elif name == p_smi_slope_all_layers:
+        metrics_class = PSmiSlopeMetrics
+        logger.info(f"Detected a `p_smi_slope_all_layers` metrics.")
+        metrics_class_kwargs = {"all_layers": True}
+    elif name == p_smi_std_all_layers:
+        metrics_class = PSmiStdMetrics
+        logger.info(f"Detected a `p_smi_std_all_layers` metrics.")
+        metrics_class_kwargs = {"all_layers": True}
+    elif name == mahalanobis_all_layers:
+        metrics_class = MahalanobisMetrics
+        logger.info(f"Detected a `mahalanobis_all_layers` metrics.")
+        metrics_class_kwargs = {"all_layers": True}
     elif name == forward_on_all_layers:
         metrics_class = ForwardMetrics
         logger.info(f"Detected a `forward_on_all_layers` metrics.")

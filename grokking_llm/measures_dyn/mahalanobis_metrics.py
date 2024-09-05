@@ -19,7 +19,11 @@ class MahalanobisMetrics(DynamicMetricsGroup):
     """Class used to compute the Mahalanobis distance of each instance based on the
     distribution of the hidden representations of the test set."""
 
-    def __init__(self, training_cfg: TrainingCfg) -> None:
+    def __init__(
+        self,
+        training_cfg: TrainingCfg,
+        all_layers: bool = False,
+    ) -> None:
 
         # Logging
         logger.info(f"Initializing a MahalanobisMetrics estimator.")
@@ -33,6 +37,13 @@ class MahalanobisMetrics(DynamicMetricsGroup):
         self.full_idx_set = set(ds_full["global_index"])
         self.target_idx_set = set(ds_target["global_index"])
 
+        # All layers ?
+        self.all_layers = all_layers
+        if all_layers:
+            self.layers_to_process = training_cfg.all_layers
+        else:
+            self.layers_to_process = training_cfg.smi_layers
+
         # Main initialization
         super().__init__(training_cfg)
 
@@ -44,7 +55,7 @@ class MahalanobisMetrics(DynamicMetricsGroup):
     def metrics_names(self) -> t.List[str]:
 
         result = []
-        for layer in self.smi_layers:
+        for layer in self.layers_to_process:
             for idx in sorted(self.target_idx_set):
                 result.append(f"mahalanobis_{layer}_{idx}")
 
@@ -117,6 +128,6 @@ class MahalanobisMetrics(DynamicMetricsGroup):
         # ==================== Output ====================
 
         result = []
-        for layer in self.smi_layers:
+        for layer in self.layers_to_process:
             for idx in sorted(self.target_idx_set):
                 result.append(mahalanobis_per_layer_per_idx[layer][idx])

@@ -25,6 +25,7 @@ class PSmiSlopeMetrics(DynamicMetricsGroup):
         self,
         training_cfg: TrainingCfg,
         full_dataset: bool = False,
+        all_layers: bool = False,
     ) -> None:
         # Logging
         logger.info(f"Initializing a PSmiSlopeMetrics with full_dataset={full_dataset}")
@@ -42,6 +43,13 @@ class PSmiSlopeMetrics(DynamicMetricsGroup):
             ds = get_dataset(training_cfg, split="train")
             self.global_idx = sorted(ds["global_index"])
 
+        # All layers ?
+        self.all_layers = all_layers
+        if all_layers:
+            self.layers_to_process = training_cfg.all_layers
+        else:
+            self.layers_to_process = training_cfg.smi_layers
+
         # Main initialization
         super().__init__(training_cfg)
 
@@ -57,7 +65,7 @@ class PSmiSlopeMetrics(DynamicMetricsGroup):
 
         result = []
         for psmi_type in ["mean", "max", "min"]:
-            for layer in self.smi_layers:
+            for layer in self.layers_to_process:
                 for idx in self.global_idx:
                     result.append(f"{psmi_type}_psmi_slope_{layer}_{idx}")
 
@@ -108,7 +116,7 @@ class PSmiSlopeMetrics(DynamicMetricsGroup):
             )
 
         # Filling values
-        for layer in self.smi_layers:
+        for layer in self.layers_to_process:
             for idx in self.global_idx:
                 # Mean PSMI
                 p_smi_slope_mean_layer_idx[layer][idx] = (
@@ -135,7 +143,7 @@ class PSmiSlopeMetrics(DynamicMetricsGroup):
             p_smi_slope_max_layer_idx,
             p_smi_slope_min_layer_idx,
         ]:
-            for layer in self.smi_layers:
+            for layer in self.layers_to_process:
                 for idx in self.global_idx:
                     result.append(container[layer][idx])
 
