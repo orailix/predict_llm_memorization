@@ -23,6 +23,7 @@ class PSmiStdMetrics(DynamicMetricsGroup):
         training_cfg: TrainingCfg,
         n_estimator: int = SMI_N_EST,
         full_dataset: bool = False,
+        all_layers: bool = False,
     ) -> None:
         # Logging
         logger.info(
@@ -42,6 +43,13 @@ class PSmiStdMetrics(DynamicMetricsGroup):
             ds = get_dataset(training_cfg, split="train")
             self.global_idx = sorted(ds["global_index"])
 
+        # All layers ?
+        self.all_layers = all_layers
+        if all_layers:
+            self.layers_to_process = training_cfg.all_layers
+        else:
+            self.layers_to_process = training_cfg.smi_layers
+
         # Main initialization
         super().__init__(training_cfg)
 
@@ -59,7 +67,7 @@ class PSmiStdMetrics(DynamicMetricsGroup):
     def metrics_names(self) -> t.List[str]:
 
         result = []
-        for layer in self.smi_layers:
+        for layer in self.layers_to_process:
             for idx in self.global_idx:
                 result.append(f"std_psmi_{layer}_{idx}")
 
@@ -117,7 +125,7 @@ class PSmiStdMetrics(DynamicMetricsGroup):
             layer: p_smi_estimator(
                 X_per_layer[layer], y, n_estimator=self.n_estimator, return_std=True
             )
-            for layer in self.smi_layers
+            for layer in self.layers_to_process
         }
         logger.debug("End of P-SMI core computation")
 
@@ -133,7 +141,7 @@ class PSmiStdMetrics(DynamicMetricsGroup):
 
         # Result
         result = []
-        for layer in self.smi_layers:
+        for layer in self.layers_to_process:
             for idx in self.global_idx:
                 result.append(psmi_std_per_layer_per_idx[layer][idx])
 
