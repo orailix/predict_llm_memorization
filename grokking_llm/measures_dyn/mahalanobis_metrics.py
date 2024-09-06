@@ -82,7 +82,7 @@ class MahalanobisMetrics(DynamicMetricsGroup):
         )
 
         # Sanity check
-        if forward_values_all.global_index.size(0) != len(self.full_idx_set):
+        if forward_values_all.global_index.size(0) != len(self.global_idx):
             raise RuntimeError(
                 f"Incorrect loading of the forward values: {len(forward_values_all)} != {len(self.global_idx)}"
             )
