@@ -108,3 +108,5 @@ class MahalanobisMetrics(DynamicMetricsGroup):
         for layer in self.layers_to_process:
             for idx in sorted(self.global_idx):
                 result.append(mahalanobis_per_layer_per_idx[layer][idx])
+
+        return result
