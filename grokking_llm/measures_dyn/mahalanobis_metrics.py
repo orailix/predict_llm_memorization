@@ -89,7 +89,7 @@ class MahalanobisMetrics(DynamicMetricsGroup):
 
         # ==================== Estimating distance ====================
 
-        mahalanobis_per_layer_per_idx = collections.defaultdict[dict]
+        mahalanobis_per_layer_per_idx = collections.defaultdict(dict)
         for layer in list(forward_values_all.mcq_states_per_layer):
 
             # Estimating
