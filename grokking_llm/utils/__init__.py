@@ -22,6 +22,7 @@ from .pointwise_metrics import (
     get_losses_for_pointwise,
     get_mia_memo_score,
     get_pointwise_container,
+    get_pointwise_layerwise_container,
     get_shadow_forward_values_for_pointwise,
     norm_pdf,
 )
