@@ -4,9 +4,11 @@
 # Apache Licence v2.0.
 
 import gc
+import io
 import typing as t
 from abc import ABC, abstractmethod, abstractproperty
 
+import numpy as np
 import pandas as pd
 import torch
 from loguru import logger
@@ -178,17 +180,35 @@ class DynamicMetricsGroup(ABC):
 
     # ==================== METRICS DF ====================
 
-    def load_metrics_df(self) -> pd.DataFrame:
-        """Loads the dataframe representing the individual metrics values"""
+    def load_metrics_df(
+        self, authorized_checkpoints: t.Optional[t.List[int]] = None
+    ) -> pd.DataFrame:
+        """Loads the dataframe representing the individual metrics values
+
+        Args:
+            - authorized_checkpoint: If not None, only the checkpoints included in this list will be kept"""
 
         # Output file exists ?
         if not self.output_file.exists():
             self._init_output_file()
 
-        result = pd.read_csv(self.output_file, dtype=float)
+        # Do we need to filter checkpoints ?
+        if authorized_checkpoints is None:
+            result = pd.read_csv(self.output_file, dtype=float)
+        else:
+            lines = self.output_file.read_text().split("\n")
+            filtered_lines = lines[:1].copy()
+            for l in lines[1:]:
+                if len(l) == 0:
+                    continue
+                if int(l.split(",")[0]) in authorized_checkpoints:
+                    filtered_lines.append(l)
+            buffer = io.StringIO("\n".join(filtered_lines))
+            result = pd.read_csv(buffer, dtype=float)
+
+        # Output
         result["checkpoint"] = result["checkpoint"].astype(int)
         result = result.sort_values("checkpoint")
-
         return result
 
     def get_checkpoint_measured(self) -> t.List[int]:

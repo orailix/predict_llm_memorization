@@ -64,6 +64,42 @@ def get_pointwise_container(
     return values_per_checkpoint_per_idx
 
 
+def get_pointwise_layerwise_container(
+    metrics_df: pd.DataFrame,
+    column_offset: int = 0,
+) -> t.Dict[int, t.Dict[int, float]]:
+    """
+    Same as `get_pointwise_container`, but support layer-wise metrics, such as Mahalanobis distance.
+
+    Returns values_per_checkpoint_per_layer_per_idx.
+    """
+
+    # Checkpoints
+    checkpoints = metrics_df.iloc[:, 0].tolist()
+
+    # Init container
+    values_per_checkpoint_per_layer_per_idx = {
+        chk: collections.defaultdict(dict) for chk in checkpoints
+    }
+
+    # Getting values
+    for row_idx, chk in enumerate(checkpoints):
+        for col_idx, col_name in enumerate(metrics_df.columns):
+
+            # Offset
+            if col_idx <= column_offset or col_name == "epoch":
+                continue
+
+            content = metrics_df.iloc[row_idx, col_idx]
+            layer = int(col_name.split("_")[1])
+            idx = int(col_name.split("_")[2])
+
+            values_per_checkpoint_per_layer_per_idx[chk][layer][idx] = content
+
+    # Output
+    return values_per_checkpoint_per_layer_per_idx
+
+
 @dataclass
 class LightForwardValues:
     """A class with only global_index, mcq_predicted_proba, mcq_predicted_logits, inserted_label_index,
