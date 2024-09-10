@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.feature_selection import mutual_info_classif
+from tqdm import tqdm
 
 
 def smi_estimator(
@@ -232,7 +233,7 @@ def get_p_smi_containers(
     }
 
     # Getting checkpoint idx
-    for row_idx, chk in enumerate(checkpoints):
+    for row_idx, chk in enumerate(tqdm(checkpoints)):
         for col_idx, col_name in enumerate(metrics_df.columns):
 
             # "checkpoint" column

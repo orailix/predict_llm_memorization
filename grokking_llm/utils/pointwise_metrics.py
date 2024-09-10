@@ -48,7 +48,7 @@ def get_pointwise_container(
     checkpoints = metrics_df.iloc[:, 0].tolist()
 
     # Getting values
-    for row_idx, chk in enumerate(checkpoints):
+    for row_idx, chk in enumerate(tqdm(checkpoints)):
         for col_idx, col_name in enumerate(metrics_df.columns):
 
             # Offset
@@ -83,7 +83,7 @@ def get_pointwise_layerwise_container(
     }
 
     # Getting values
-    for row_idx, chk in enumerate(checkpoints):
+    for row_idx, chk in enumerate(tqdm(checkpoints)):
         for col_idx, col_name in enumerate(metrics_df.columns):
 
             # Offset
