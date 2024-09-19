@@ -3,6 +3,7 @@
 logs/*
 .venv/
 output*
+.secrets.baseline
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
