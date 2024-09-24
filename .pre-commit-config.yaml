@@ -15,14 +15,6 @@ repos:
     -   id: isort
         name: isort
         args: ["--profile", "black"]
--   repo: local
-    hooks:
-    -   id: run-tests
-        name: Pytest tests
-        entry: bash -c 'if [ "$(git symbolic-ref --short HEAD)" = "main" ]; then PYTHONPATH=. pytest; fi'
-        language: system
-        pass_filenames: false
-        always_run: true
 -   repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
@@ -33,3 +25,11 @@ repos:
     -   id: detect-secrets
         name: 'detect-secrets-jupyter'
         args: ['--baseline', '.secrets.baseline', "--base64-limit", "0.0", '--exclude-files', '.*[^i][^p][^y][^n][^b]$', '--exclude-lines', '"(hash|id|image/\w+)":.*', ]
+-   repo: local
+    hooks:
+    -   id: run-tests
+        name: Pytest tests
+        entry: bash -c 'if [ "$(git symbolic-ref --short HEAD)" = "main" ]; then PYTHONPATH=. pytest; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
