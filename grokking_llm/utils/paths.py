@@ -42,16 +42,6 @@ else:
         f'main_cfg["paths.hf_home"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
     )
 
-# Path to data
-if main_cfg_object["paths.data"]["mode"] == RELATIVE_PATH:
-    data = root / main_cfg_object["paths.data"]["val"]
-elif main_cfg_object["paths.data"]["mode"] == ABSOLUTE_PATH:
-    data = Path(main_cfg_object["paths.data"]["val"])
-else:
-    raise ValueError(
-        f'main_cfg["paths.data"]["mode"] not in {[RELATIVE_PATH, ABSOLUTE_PATH]}'
-    )
-
 # Path to output
 if main_cfg_object["paths.output"]["mode"] == RELATIVE_PATH:
     output = root / main_cfg_object["paths.output"]["val"]
