@@ -13,7 +13,6 @@ def test_configs():
     paths.main_cfg_object
     paths.root
     paths.hf_home
-    paths.data
     paths.output
     paths.logs
 
