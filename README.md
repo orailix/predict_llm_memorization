@@ -2,7 +2,7 @@
 
 *Jérémie Dentan, Davide Buscaldi, Sonia Vanier - École Polytechnique*
 
-This repository implements the experiments of our preprint "Predicting and analysing memorization within fine-tuned Large Language Models". 
+This repository implements the experiments of our preprint "Predicting and analysing memorization within fine-tuned Large Language Models".
 
 Please cite this work as follows:
 
@@ -18,8 +18,8 @@ Please cite this work as follows:
 
 **The repository contains two branches:**
 
-- `main`: with Python source code for the experiments, as well as Jupyter notebooks for the figures
-- `deploy`: with Bash and Slurm scripts for deployment on an HPC cluster
+- [`main`](https://github.com/orailix/predict_llm_memorization/tree/main): with Python source code for the experiments, as well as Jupyter notebooks for the figures
+- [`deploy`](https://github.com/orailix/predict_llm_memorization/tree/deploy): with Bash and Slurm scripts for deployment on an HPC cluster
 
 **Important notice:** the module we developed is called  `grokking_llm` because the original purpose of this project was to study the Grokking phenomenon on LLM.
 
