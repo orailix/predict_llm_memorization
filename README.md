@@ -4,6 +4,10 @@
 
 This repository implements the experiments of our preprint "Predicting and analysing memorization within fine-tuned Large Language Models".
 
+**License and Copyright**
+
+Copyright 2023-present Laboratoire d'Informatique de Polytechnique. Apache Licence v2.0.
+
 Please cite this work as follows:
 
 ```bibtex
