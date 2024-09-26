@@ -1,10 +1,18 @@
 # Predicting and analysing memorization within fine-tuned Large Language Models
 
-*Jérémie Dentan, Davide Buscaldi, Sonia Vanier - École Polytechnique*
+Jérémie Dentan$^1$, Davide Buscaldi$^{1, 2}$, Aymen Shabou$^3$, Sonia Vanier$^{1}$
+
+$^1$LIX (École Polytechnique, IP Paris, CNRS) $^2$LIPN (Sorbonne Paris Nord) $^3$Crédit Agricole SA
+
+
+## Presentation of the repository
 
 This repository implements the experiments of our preprint "Predicting and analysing memorization within fine-tuned Large Language Models".
 
-**License and Copyright**
+### Abstract of the paper
+
+Large Language Models have received significant attention due to their abilities to solve a wide range of complex tasks. However these models memorize a significant proportion of their training data, posing a serious threat when disclosed at inference time. To mitigate this unintended memorization, it is crucial to understand what elements are memorized and why. Most existing works provide *a posteriori* explanations, which has a limited impact in practice. To address this gap, we propose a new approach based on sliced mutual information to detect memorized samples *a priori*, in a classification setting. It is efficient from the early stages of training, and is readily adaptable to practical scenarios. Our method is supported by new theoretical results that we demonstrate, and requires a low computational budget. We obtain strong empirical results, paving the way for systematic inspection and protection of these vulnerable samples before memorization happens.
+### License and Copyright
 
 Copyright 2023-present Laboratoire d'Informatique de Polytechnique. Apache Licence v2.0.
 
@@ -14,20 +22,22 @@ Please cite this work as follows:
 @misc{dentan_predicting_2024,
 	title = {Predicting and analysing memorization within fine-tuned Large Language Models},
 	url = {http://arxiv.org/abs/TOBECOMPLETED},
-	author = {Dentan, Jérémie and Buscaldi, Davide and Vanier, Sonia},
+	author = {Dentan, Jérémie and Buscaldi, Davide and Shabou, Aymen and Vanier, Sonia},
 	month = sep,
 	year = {2024},
 }
 ```
 
-**The repository contains two branches:**
+### Overview of the repository
+
+The repository contains two branches:
 
 - [`main`](https://github.com/orailix/predict_llm_memorization/tree/main): with Python source code for the experiments, as well as Jupyter notebooks for the figures
 - [`deploy`](https://github.com/orailix/predict_llm_memorization/tree/deploy): with Bash and Slurm scripts for deployment on an HPC cluster
 
 **Important notice:** the module we developed is called  `grokking_llm` because the original purpose of this project was to study the Grokking phenomenon on LLM.
 
-### Overview of `main` branch
+## Overview of `main` branch
 
 **Main configs: `configs` folder**
 

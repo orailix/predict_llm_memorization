@@ -15,11 +15,13 @@ authors:
     orcid: 'https://orcid.org/0009-0001-5561-8030'
   - given-names: Davide
     family-names: Buscaldi
+  - given-names: Aymen
+    family-names: Shabou
   - given-names: Sonia
     family-names: Vanier
 identifiers:
   - type: url
-    value: 'https://arxiv.org/pdf/2409.11844v1'
+    value: 'https://arxiv.org/pdf/TOBECOMPLETED'
 repository-code: 'https://github.com/orailix/predict_llm_memorization'
 abstract: >-
   Large Language Models have received significant attention
