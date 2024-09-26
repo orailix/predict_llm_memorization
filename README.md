@@ -1,8 +1,8 @@
 # Predicting and analysing memorization within fine-tuned Large Language Models
 
-Jérémie Dentan$^1$, Davide Buscaldi$^{1, 2}$, Aymen Shabou$^3$, Sonia Vanier$^{1}$
+Jérémie Dentan<sup>1</sup>, Davide Buscaldi<sup>1, 2</sup>, Aymen Shabou<sup>3</sup>, Sonia Vanier<sup>1</sup>
 
-$^1$LIX (École Polytechnique, IP Paris, CNRS) $^2$LIPN (Sorbonne Paris Nord) $^3$Crédit Agricole SA
+<sup>1</sup>LIX (École Polytechnique, IP Paris, CNRS) <sup>2</sup>LIPN (Sorbonne Paris Nord) <sup>3</sup>Crédit Agricole SA
 
 
 ## Presentation of the repository
