@@ -21,7 +21,7 @@ Please cite this work as follows:
 ```bibtex
 @misc{dentan_predicting_2024,
 	title = {Predicting and analysing memorization within fine-tuned Large Language Models},
-	url = {http://arxiv.org/abs/TOBECOMPLETED},
+	url = {https://arxiv.org/abs/2409.18858},
 	author = {Dentan, Jérémie and Buscaldi, Davide and Shabou, Aymen and Vanier, Sonia},
 	month = sep,
 	year = {2024},
