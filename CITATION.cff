@@ -21,7 +21,7 @@ authors:
     family-names: Vanier
 identifiers:
   - type: url
-    value: 'https://arxiv.org/pdf/TOBECOMPLETED'
+    value: 'https://arxiv.org/abs/2409.18858'
 repository-code: 'https://github.com/orailix/predict_llm_memorization'
 abstract: >-
   Large Language Models have received significant attention
