@@ -133,6 +133,11 @@ TRAINING_ARGS:"""
         for key in sorted(self.training_args):
             if key in TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID:
                 continue
+            if (
+                key == "num_train_epochs"
+                and self.training_args[key] == TRAIN_CFG_DEFAULT_NUM_TRAIN_EPOCHS
+            ):
+                continue
             description += f"{key}={self.training_args[key]};"
 
         # Persistent, replicable and URL-free hash

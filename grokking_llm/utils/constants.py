@@ -21,6 +21,7 @@ TRAIN_CFG_DEFAULT_LORA_ALPHA = 16
 TRAIN_CFG_DEFAULT_LORA_DROPOUT = 0.05
 TRAIN_CFG_DEFAULT_ACCELERATOR = "cpu"
 TRAIN_CFG_DEFAULT_LAST_TOKEN_ONLY = False
+TRAIN_CFG_DEFAULT_NUM_TRAIN_EPOCHS = 10
 
 # Dataset status
 DATASET_BARE_LABEL = -1
@@ -38,11 +39,9 @@ ETHICS_MAX_SIZE = 13901
 # Training arguments excluded from config ID
 TRAINING_ARGS_EXCLUDED_FROM_CONFIG_ID = [
     "after_c_only_every_n",
-    "num_train_epochs",
     "per_device_eval_batch_size",
     "evaluation_strategy",
     "eval_accumulation_steps",
-    "num_train_epochs",
     "max_steps",
     "log_level",
     "log_level_replica",
