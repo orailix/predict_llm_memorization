@@ -3,8 +3,8 @@
 
 cff-version: 1.2.0
 title: >-
-  Predicting and analysing memorization within fine-tuned
-  Large Language Models
+  Predicting memorization within Large Language Models
+  fine-tuned for classification
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -23,23 +23,4 @@ identifiers:
   - type: url
     value: 'https://arxiv.org/abs/2409.18858'
 repository-code: 'https://github.com/orailix/predict_llm_memorization'
-abstract: >-
-  Large Language Models have received significant attention
-  due to their abilities to solve a wide range of complex
-  tasks. However these models memorize a significant
-  proportion of their training data, posing a serious threat
-  when disclosed at inference time. To mitigate this
-  unintended memorization, it is crucial to understand what
-  elements are memorized and why. Most existing works
-  provide a posteriori explanations, which has a limited
-  impact in practice. To address this gap, we propose a new
-  approach based on sliced mutual information to detect
-  memorized samples a priori. It is efficient from the early
-  stages of training, and is readily adaptable to any
-  classification task. Our method is supported by new
-  theoretical results that we demonstrate, and requires a
-  low computational budget. We obtain strong empirical
-  results, paving the way for systematic inspection and
-  protection of these vulnerable samples before memorization
-  happens.
 license: Apache-2.0

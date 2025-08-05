@@ -7,11 +7,11 @@ Jérémie Dentan<sup>1</sup>, Davide Buscaldi<sup>1, 2</sup>, Aymen Shabou<sup>3
 
 ## Presentation of the repository
 
-This repository implements the experiments of our preprint "Predicting memorization within Large Language Models fine-tuned for classification".
+This repository implements the experiments of our paper "Predicting memorization within Large Language Models fine-tuned for classification", published at ECAI 2025.
 
 ### Abstract of the paper
 
-Large Language Models have received significant attention due to their abilities to solve a wide range of complex tasks. However these models memorize a significant proportion of their training data, posing a serious threat when disclosed at inference time. To mitigate this unintended memorization, it is crucial to understand what elements are memorized and why. This area of research is largely unexplored, with most existing works providing \textit{a posteriori} explanations. To address this gap, we propose a new approach to detect memorized samples \textit{a priori} in LLMs fine-tuned for classification tasks. This method is effective from the early stages of training and readily adaptable to other classification settings, such as training vision models from scratch. Our method is supported by new theoretical results, and requires a low computational budget. We achieve strong empirical results, paving the way for the systematic identification and protection of vulnerable samples before they are memorized.
+Large Language Models have received significant attention due to their abilities to solve a wide range of complex tasks. However these models memorize a significant proportion of their training data, posing a serious threat when disclosed at inference time. To mitigate this unintended memorization, it is crucial to understand what elements are memorized and why. This area of research is largely unexplored, with most existing works providing *a posteriori* explanations. To address this gap, we propose a new approach to detect memorized samples *a priori* in LLMs fine-tuned for classification tasks. This method is effective from the early stages of training and readily adaptable to other classification settings, such as training vision models from scratch. Our method is supported by new theoretical results, and requires a low computational budget. We achieve strong empirical results, paving the way for the systematic identification and protection of vulnerable samples before they are memorized.
 
 ### License and Copyright
 
@@ -20,12 +20,13 @@ Copyright 2023-present Laboratoire d'Informatique de Polytechnique. Apache Licen
 Please cite this work as follows:
 
 ```bibtex
-@misc{dentan_predicting_2024,
-	title = {Predicting memorization within Large Language Models fine-tuned for classification},
-	url = {https://arxiv.org/abs/2409.18858},
-	author = {Dentan, Jérémie and Buscaldi, Davide and Shabou, Aymen and Vanier, Sonia},
-	month = sep,
-	year = {2024},
+@inproceedings{dentan_predicting_2025,
+  title = {Predicting Memorization within Large Language Models Fine-Tuned for Classification},
+  author = {Dentan, Jérémie and Buscaldi, Davide and Shabou, Aymen and Vanier, Sonia},
+  booktitle = {Proceedings of the 28th European Conference on Artificial Intelligence (ECAI 2025)},
+  year = {2025},
+  note = {To appear},
+  url = {https://arxiv.org/abs/2409.18858}
 }
 ```
 
